@@ -4,7 +4,7 @@
   "main": "backend/server.js",
   "scripts": {
     "start": "cd backend && node server.js",
-    "build": "cd backend && npm install",
+    "build": "echo 'Backend only - no build needed'",
     "dev": "cd backend && node server.js"
   },
   "engines": {

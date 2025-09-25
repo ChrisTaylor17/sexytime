@@ -1,11 +1,8 @@
 [phases.setup]
-nixPkgs = ['nodejs-18_x', 'npm-9_x']
+nixPkgs = ['nodejs-18_x']
 
 [phases.install]
-cmds = ['npm ci --only=production']
-
-[phases.build]
-cmds = ['echo "Build complete"']
+cmds = ['cd backend && npm ci --only=production']
 
 [start]
 cmd = 'cd backend && node server.js'

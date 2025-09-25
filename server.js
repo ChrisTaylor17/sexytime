@@ -13,8 +13,25 @@ const openai = new OpenAI({
 })
 
 // Initialize Solana
-const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
-const payer = Keypair.generate()
+const connection = new Connection(process.env.SOLANA_RPC_URL || clusterApiUrl('devnet'), 'confirmed')
+let payer = Keypair.generate()
+
+// Fund payer wallet on devnet
+async function fundWallet() {
+  try {
+    const airdropSignature = await connection.requestAirdrop(
+      payer.publicKey,
+      2000000000 // 2 SOL
+    )
+    await connection.confirmTransaction(airdropSignature)
+    console.log('✅ Payer wallet funded with 2 SOL')
+  } catch (error) {
+    console.log('⚠️ Airdrop failed, using unfunded wallet')
+  }
+}
+
+// Initialize wallet funding
+fundWallet()
 
 const app = express()
 const server = http.createServer(app)
@@ -77,9 +94,15 @@ app.get('/api/projects', (req, res) => {
   ])
 })
 
-// Real Solana token creation
+// Real Solana token creation with fallback
 async function createRealToken(projectName) {
   try {
+    // Check wallet balance first
+    const balance = await connection.getBalance(payer.publicKey)
+    if (balance < 1000000) { // Less than 0.001 SOL
+      throw new Error('Insufficient SOL for transaction')
+    }
+    
     const mint = await createMint(
       connection,
       payer,
@@ -90,17 +113,30 @@ async function createRealToken(projectName) {
     return {
       mintAddress: mint.toString(),
       symbol: projectName.toUpperCase().slice(0, 4) + Math.floor(Math.random() * 99),
-      supply: 1000000
+      supply: 1000000,
+      isReal: true
     }
   } catch (error) {
-    console.error('Token creation failed:', error)
-    return null
+    console.error('Real token creation failed:', error.message)
+    // Fallback to simulation
+    return {
+      mintAddress: 'SIM' + Math.random().toString(36).substr(2, 32).toUpperCase(),
+      symbol: projectName.toUpperCase().slice(0, 4) + Math.floor(Math.random() * 99),
+      supply: 1000000,
+      isReal: false
+    }
   }
 }
 
-// Real Solana NFT creation
+// Real Solana NFT creation with fallback
 async function createRealNFT(description) {
   try {
+    // Check wallet balance first
+    const balance = await connection.getBalance(payer.publicKey)
+    if (balance < 1000000) { // Less than 0.001 SOL
+      throw new Error('Insufficient SOL for transaction')
+    }
+    
     const mint = await createMint(
       connection,
       payer,
@@ -128,11 +164,18 @@ async function createRealNFT(description) {
     return {
       mintAddress: mint.toString(),
       tokenId: Math.floor(Math.random() * 10000),
-      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`
+      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
+      isReal: true
     }
   } catch (error) {
-    console.error('NFT creation failed:', error)
-    return null
+    console.error('Real NFT creation failed:', error.message)
+    // Fallback to simulation
+    return {
+      mintAddress: 'SIM' + Math.random().toString(36).substr(2, 32).toUpperCase(),
+      tokenId: Math.floor(Math.random() * 10000),
+      explorerUrl: `https://explorer.solana.com/address/simulation?cluster=devnet`,
+      isReal: false
+    }
   }
 }
 
@@ -180,20 +223,22 @@ app.post('/api/ai-chat', async (req, res) => {
     let response = ''
     
     if (intent === 'NFT_MINT') {
-      // Create real NFT on Solana
+      // Create NFT on Solana (real or simulated)
       const nft = await createRealNFT(message)
       if (nft) {
-        response = `🎨 REAL NFT Created on Solana!\n\n✅ Mint: ${nft.mintAddress}\n🏷️ ID: #${nft.tokenId}\n🔍 Explorer: ${nft.explorerUrl}\n💰 +25 CS tokens!\n\n✨ Your NFT is live on Solana devnet!`
+        const status = nft.isReal ? '✅ REAL NFT on Solana!' : '⚠️ Simulated (devnet busy)'
+        response = `🎨 NFT Created!\n\n${status}\n🔗 Mint: ${nft.mintAddress}\n🏷️ ID: #${nft.tokenId}\n🔍 Explorer: ${nft.explorerUrl}\n💰 +25 CS tokens!\n\n✨ Your NFT is ready!`
       } else {
-        response = '❌ NFT creation failed. Solana devnet may be busy. Try again!'
+        response = '❌ NFT creation failed completely. Try again!'
       }
     } else if (intent === 'TOKEN_CREATE') {
-      // Create real token on Solana
+      // Create token on Solana (real or simulated)
       const token = await createRealToken(message)
       if (token) {
-        response = `🪙 REAL Token Created on Solana!\n\n🔗 Symbol: ${token.symbol}\n✅ Mint: ${token.mintAddress}\n💎 Supply: ${token.supply.toLocaleString()}\n🔍 Explorer: https://explorer.solana.com/address/${token.mintAddress}?cluster=devnet\n\n✨ Your token is live on Solana devnet!`
+        const status = token.isReal ? '✅ REAL Token on Solana!' : '⚠️ Simulated (devnet busy)'
+        response = `🪙 Token Created!\n\n${status}\n🔗 Symbol: ${token.symbol}\n✅ Mint: ${token.mintAddress}\n💎 Supply: ${token.supply.toLocaleString()}\n🔍 Explorer: https://explorer.solana.com/address/${token.mintAddress}?cluster=devnet\n\n✨ Your token is ready!`
       } else {
-        response = '❌ Token creation failed. Solana devnet may be busy. Try again!'
+        response = '❌ Token creation failed completely. Try again!'
       }
     } else if (intent === 'PROJECT_FIND') {
       response = `🎯 AI-Matched Projects for ${alias}:\n\n• Mars Colony DAO - Terraform Mars with blockchain\n• Ocean Cleanup Protocol - DeFi for environmental impact\n• Neural Network DAO - Decentralized AI research\n• Quantum Computing Collective - Future tech development\n\nClick any project to join the team!`

@@ -12,26 +12,49 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-// Initialize Solana
+// Initialize Solana with persistent funded wallet
 const connection = new Connection(process.env.SOLANA_RPC_URL || clusterApiUrl('devnet'), 'confirmed')
-let payer = Keypair.generate()
 
-// Fund payer wallet on devnet
-async function fundWallet() {
+// Use a persistent wallet or create one
+let payer
+if (process.env.SOLANA_PRIVATE_KEY) {
   try {
-    const airdropSignature = await connection.requestAirdrop(
-      payer.publicKey,
-      2000000000 // 2 SOL
-    )
-    await connection.confirmTransaction(airdropSignature)
-    console.log('✅ Payer wallet funded with 2 SOL')
+    const secretKey = JSON.parse(process.env.SOLANA_PRIVATE_KEY)
+    payer = Keypair.fromSecretKey(new Uint8Array(secretKey))
+    console.log('✅ Using persistent wallet:', payer.publicKey.toString())
+  } catch {
+    payer = Keypair.generate()
+    console.log('⚠️ Generated new wallet:', payer.publicKey.toString())
+  }
+} else {
+  payer = Keypair.generate()
+  console.log('🔑 Generated wallet:', payer.publicKey.toString())
+  console.log('🔑 Private key (save this):', JSON.stringify(Array.from(payer.secretKey)))
+}
+
+// Fund wallet if needed
+async function ensureFunding() {
+  try {
+    const balance = await connection.getBalance(payer.publicKey)
+    console.log(`💰 Current balance: ${balance / 1000000000} SOL`)
+    
+    if (balance < 100000000) { // Less than 0.1 SOL
+      console.log('🚨 Low balance, requesting airdrop...')
+      const airdropSignature = await connection.requestAirdrop(
+        payer.publicKey,
+        2000000000 // 2 SOL
+      )
+      await connection.confirmTransaction(airdropSignature)
+      console.log('✅ Airdrop successful!')
+    }
   } catch (error) {
-    console.log('⚠️ Airdrop failed, using unfunded wallet')
+    console.log('⚠️ Airdrop failed:', error.message)
   }
 }
 
-// Initialize wallet funding
-fundWallet()
+// Initialize funding
+ensureFunding()
+setInterval(ensureFunding, 300000) // Check every 5 minutes
 
 const app = express()
 const server = http.createServer(app)
@@ -94,87 +117,133 @@ app.get('/api/projects', (req, res) => {
   ])
 })
 
-// Real Solana token creation with fallback
+// Real Solana token creation with retry
 async function createRealToken(projectName) {
-  try {
-    // Check wallet balance first
-    const balance = await connection.getBalance(payer.publicKey)
-    if (balance < 1000000) { // Less than 0.001 SOL
-      throw new Error('Insufficient SOL for transaction')
-    }
-    
-    const mint = await createMint(
-      connection,
-      payer,
-      payer.publicKey,
-      payer.publicKey,
-      6 // decimals
-    )
-    return {
-      mintAddress: mint.toString(),
-      symbol: projectName.toUpperCase().slice(0, 4) + Math.floor(Math.random() * 99),
-      supply: 1000000,
-      isReal: true
-    }
-  } catch (error) {
-    console.error('Real token creation failed:', error.message)
-    // Fallback to simulation
-    return {
-      mintAddress: 'SIM' + Math.random().toString(36).substr(2, 32).toUpperCase(),
-      symbol: projectName.toUpperCase().slice(0, 4) + Math.floor(Math.random() * 99),
-      supply: 1000000,
-      isReal: false
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      console.log(`🪙 Token creation attempt ${attempt}/3`)
+      
+      // Check balance
+      const balance = await connection.getBalance(payer.publicKey)
+      console.log(`💰 Balance: ${balance / 1000000000} SOL`)
+      
+      if (balance < 10000000) { // Less than 0.01 SOL
+        console.log('🚨 Requesting emergency airdrop...')
+        const airdropSig = await connection.requestAirdrop(payer.publicKey, 1000000000)
+        await connection.confirmTransaction(airdropSig)
+      }
+      
+      console.log('🔨 Creating token mint...')
+      const mint = await createMint(
+        connection,
+        payer,
+        payer.publicKey,
+        payer.publicKey,
+        6, // decimals
+        undefined,
+        { commitment: 'confirmed' }
+      )
+      
+      console.log('✅ Token created successfully!')
+      
+      return {
+        mintAddress: mint.toString(),
+        symbol: projectName.toUpperCase().slice(0, 4) + Math.floor(Math.random() * 99),
+        supply: 1000000,
+        isReal: true
+      }
+    } catch (error) {
+      console.error(`❌ Token attempt ${attempt} failed:`, error.message)
+      if (attempt === 3) {
+        // Final fallback
+        return {
+          mintAddress: 'SIM' + Math.random().toString(36).substr(2, 32).toUpperCase(),
+          symbol: projectName.toUpperCase().slice(0, 4) + Math.floor(Math.random() * 99),
+          supply: 1000000,
+          isReal: false,
+          error: error.message
+        }
+      }
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, 2000))
     }
   }
 }
 
-// Real Solana NFT creation with fallback
+// Real Solana NFT creation with retry
 async function createRealNFT(description) {
-  try {
-    // Check wallet balance first
-    const balance = await connection.getBalance(payer.publicKey)
-    if (balance < 1000000) { // Less than 0.001 SOL
-      throw new Error('Insufficient SOL for transaction')
-    }
-    
-    const mint = await createMint(
-      connection,
-      payer,
-      payer.publicKey,
-      payer.publicKey,
-      0 // NFT has 0 decimals
-    )
-    
-    const tokenAccount = await getOrCreateAssociatedTokenAccount(
-      connection,
-      payer,
-      mint,
-      payer.publicKey
-    )
-    
-    await mintTo(
-      connection,
-      payer,
-      mint,
-      tokenAccount.address,
-      payer.publicKey,
-      1 // mint 1 NFT
-    )
-    
-    return {
-      mintAddress: mint.toString(),
-      tokenId: Math.floor(Math.random() * 10000),
-      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
-      isReal: true
-    }
-  } catch (error) {
-    console.error('Real NFT creation failed:', error.message)
-    // Fallback to simulation
-    return {
-      mintAddress: 'SIM' + Math.random().toString(36).substr(2, 32).toUpperCase(),
-      tokenId: Math.floor(Math.random() * 10000),
-      explorerUrl: `https://explorer.solana.com/address/simulation?cluster=devnet`,
-      isReal: false
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      console.log(`🎨 NFT creation attempt ${attempt}/3`)
+      
+      // Check balance
+      const balance = await connection.getBalance(payer.publicKey)
+      console.log(`💰 Balance: ${balance / 1000000000} SOL`)
+      
+      if (balance < 10000000) { // Less than 0.01 SOL
+        console.log('🚨 Requesting emergency airdrop...')
+        const airdropSig = await connection.requestAirdrop(payer.publicKey, 1000000000)
+        await connection.confirmTransaction(airdropSig)
+      }
+      
+      // Create mint
+      console.log('🔨 Creating mint...')
+      const mint = await createMint(
+        connection,
+        payer,
+        payer.publicKey,
+        payer.publicKey,
+        0, // NFT has 0 decimals
+        undefined,
+        { commitment: 'confirmed' }
+      )
+      
+      console.log('🏷️ Mint created:', mint.toString())
+      
+      // Create token account
+      const tokenAccount = await getOrCreateAssociatedTokenAccount(
+        connection,
+        payer,
+        mint,
+        payer.publicKey,
+        false,
+        'confirmed'
+      )
+      
+      // Mint NFT
+      await mintTo(
+        connection,
+        payer,
+        mint,
+        tokenAccount.address,
+        payer.publicKey,
+        1, // mint 1 NFT
+        [],
+        { commitment: 'confirmed' }
+      )
+      
+      console.log('✅ NFT minted successfully!')
+      
+      return {
+        mintAddress: mint.toString(),
+        tokenId: Math.floor(Math.random() * 10000),
+        explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
+        isReal: true
+      }
+    } catch (error) {
+      console.error(`❌ NFT attempt ${attempt} failed:`, error.message)
+      if (attempt === 3) {
+        // Final fallback
+        return {
+          mintAddress: 'SIM' + Math.random().toString(36).substr(2, 32).toUpperCase(),
+          tokenId: Math.floor(Math.random() * 10000),
+          explorerUrl: `https://explorer.solana.com/address/simulation?cluster=devnet`,
+          isReal: false,
+          error: error.message
+        }
+      }
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, 2000))
     }
   }
 }

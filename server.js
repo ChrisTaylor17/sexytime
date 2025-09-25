@@ -65,12 +65,32 @@ app.get('/api/projects', (req, res) => {
   ])
 })
 
-app.post('/api/ai-chat', (req, res) => {
+app.post('/api/ai-chat', async (req, res) => {
   const { message, alias } = req.body
-  res.json({ 
-    response: `Hello ${alias}! I'm your DAO AI assistant. I can help you create tokens, mint NFTs, and find projects. Try saying "create an NFT" or "mint tokens"!`,
-    timestamp: new Date().toISOString()
-  })
+  
+  try {
+    let response = ''
+    
+    if (message.toLowerCase().includes('nft') || message.toLowerCase().includes('mint')) {
+      // Simulate NFT creation
+      const nftId = Math.floor(Math.random() * 10000)
+      const mintAddress = 'NFT' + Math.random().toString(36).substr(2, 9).toUpperCase()
+      response = `🎨 NFT Created!\n\n✅ Mint Address: ${mintAddress}\n🏷️ Token ID: #${nftId}\n💰 Earned 25 CS tokens!\n\nYour NFT is now live on Solana devnet!`
+    } else if (message.toLowerCase().includes('token') || message.toLowerCase().includes('create')) {
+      // Simulate token creation
+      const symbol = 'TKN' + Math.floor(Math.random() * 999)
+      const mintAddress = 'TOKEN' + Math.random().toString(36).substr(2, 9).toUpperCase()
+      response = `🪙 Token Created!\n\n🔗 Symbol: ${symbol}\n✅ Mint: ${mintAddress}\n💎 Supply: 1,000,000\n\nYour project token is ready!`
+    } else if (message.toLowerCase().includes('project') || message.toLowerCase().includes('find')) {
+      response = `🎯 Found matching projects:\n\n• Mars Colony DAO - Building on Mars\n• Ocean Cleanup - Blockchain for good\n• AI Research Hub - Future tech\n\nClick a project to join the team!`
+    } else {
+      response = `Hey ${alias}! 👋\n\nI can help you:\n• "mint an NFT" - Create digital art\n• "create tokens" - Launch project currency\n• "find projects" - Discover collaborations\n\nWhat would you like to do?`
+    }
+    
+    res.json({ response, timestamp: new Date().toISOString() })
+  } catch (error) {
+    res.json({ response: 'AI temporarily unavailable. Try again!', timestamp: new Date().toISOString() })
+  }
 })
 
 // Socket.io for real-time chat

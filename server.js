@@ -146,10 +146,12 @@ app.post('/api/ai-chat', async (req, res) => {
     
     if (lowerMessage.includes('nft') || lowerMessage.includes('mint')) {
       intent = 'NFT_MINT'
-    } else if (lowerMessage.includes('token') || lowerMessage.includes('create')) {
+    } else if (lowerMessage.includes('token') && (lowerMessage.includes('create') || lowerMessage.includes('launch'))) {
       intent = 'TOKEN_CREATE'
     } else if (lowerMessage.includes('project') || lowerMessage.includes('find')) {
       intent = 'PROJECT_FIND'
+    } else if (lowerMessage.includes('whitepaper') || lowerMessage.includes('document')) {
+      intent = 'WHITEPAPER'
     }
     
     // Get OpenAI response for general conversation
@@ -195,6 +197,27 @@ app.post('/api/ai-chat', async (req, res) => {
       }
     } else if (intent === 'PROJECT_FIND') {
       response = `🎯 AI-Matched Projects for ${alias}:\n\n• Mars Colony DAO - Terraform Mars with blockchain\n• Ocean Cleanup Protocol - DeFi for environmental impact\n• Neural Network DAO - Decentralized AI research\n• Quantum Computing Collective - Future tech development\n\nClick any project to join the team!`
+    } else if (intent === 'WHITEPAPER') {
+      // Generate whitepaper content
+      try {
+        const completion = await openai.chat.completions.create({
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "system",
+              content: "You are a blockchain whitepaper writer. Create a concise whitepaper section for the user's project."
+            },
+            {
+              role: "user",
+              content: message
+            }
+          ],
+          max_tokens: 300
+        })
+        response = `📄 CONSILIENCE Whitepaper Draft:\n\n${completion.choices[0].message.content}\n\n💡 This is AI-generated. Refine as needed!`
+      } catch (error) {
+        response = `📄 CONSILIENCE Whitepaper Outline:\n\n**Executive Summary**\nConsilience is a blockchain-powered project management platform targeting younger men who want to build and collaborate on meaningful projects.\n\n**Problem Statement**\nTraditional project management lacks incentivization and community engagement.\n\n**Solution**\nDAO-based collaboration with token rewards and NFT achievements.\n\n**Tokenomics**\nCS tokens reward contributions and unlock platform features.`
+      }
     } else {
       // General AI response
       response = aiResponse

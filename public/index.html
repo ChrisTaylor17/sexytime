@@ -345,7 +345,10 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">CONSILIENCE</div>
-                <button class="theme-toggle" onclick="toggleTheme()">◐</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="theme-toggle" onclick="toggleTheme()">◐</button>
+                    <button class="theme-toggle" id="walletBtn" onclick="connectWallet()">Connect</button>
+                </div>
             </div>
             
             <div class="nav-section">
@@ -435,6 +438,7 @@
         </div>
     </div>
 
+    <script src="wallet.js"></script>
     <script>
         const API_URL = window.location.origin;
         let currentUser = null;
@@ -466,16 +470,11 @@
                 
                 const data = await response.json();
                 currentUser = data;
+                walletManager.userData = data;
+                localStorage.setItem('consilience_user', JSON.stringify(data));
+                walletManager.updateWalletUI();
                 
-                document.getElementById('userStatus').innerHTML = `
-                    <div class="user-card">
-                        <div class="user-name">${data.alias}</div>
-                        <div class="user-status">💰 ${data.cs_balance} CS tokens</div>
-                        <div class="user-status">🔑 ${data.wallet_address.slice(0, 12)}...</div>
-                    </div>
-                `;
-                
-                addMessage('System', `Welcome ${data.alias}! You've joined the DAO.`, 'SYS');
+                addMessage('System', `Welcome ${data.alias}! You've joined the DAO. Connect your wallet to start earning!`, 'SYS');
             } catch (error) {
                 addMessage('System', 'Signup failed. Try again.', 'ERR');
             }
@@ -499,6 +498,21 @@
                 
                 const data = await response.json();
                 addMessage('AI Assistant', data.response, 'AI');
+                
+                // Track achievements for blockchain operations
+                if (data.response.includes('REAL NFT Created')) {
+                    const mintMatch = data.response.match(/Mint: ([A-Za-z0-9]+)/);
+                    const idMatch = data.response.match(/#(\d+)/);
+                    if (mintMatch && idMatch) {
+                        walletManager.recordNFT(mintMatch[1], idMatch[1]);
+                    }
+                } else if (data.response.includes('REAL Token Created')) {
+                    const mintMatch = data.response.match(/Mint: ([A-Za-z0-9]+)/);
+                    const symbolMatch = data.response.match(/Symbol: ([A-Z0-9]+)/);
+                    if (mintMatch && symbolMatch) {
+                        walletManager.recordToken(mintMatch[1], symbolMatch[1]);
+                    }
+                }
             } catch (error) {
                 addMessage('System', 'AI temporarily unavailable.', 'ERR');
             }
@@ -533,6 +547,19 @@
             document.getElementById('messageInput').value = 'mint an NFT';
             sendMessage();
         }
+        
+        // Wallet connection
+        async function connectWallet() {
+            const wallet = await walletManager.connectWallet();
+            if (wallet) {
+                addMessage('System', `Wallet connected: ${wallet}`, 'SYS');
+            }
+        }
+        
+        // Initialize wallet on page load
+        window.addEventListener('load', () => {
+            walletManager.updateWalletUI();
+        });
         
         // Enter key support
         document.getElementById('messageInput').addEventListener('keypress', (e) => {

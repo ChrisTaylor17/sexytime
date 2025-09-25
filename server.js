@@ -23,6 +23,15 @@ const pool = new Pool({
 app.use(cors())
 app.use(express.json())
 
+// Health check endpoint
+app.get('/', (req, res) => {
+  res.json({ status: 'OK', message: 'Consilience DAO API is running' })
+})
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', timestamp: new Date().toISOString() })
+})
+
 // Routes
 app.use('/api', require('./routes/auth'))
 app.use('/api', require('./routes/projects'))
@@ -53,7 +62,7 @@ io.on('connection', (socket) => {
   })
 })
 
-const PORT = process.env.PORT || 5000
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
+const PORT = process.env.PORT || 8080
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Consilience DAO API running on port ${PORT}`)
 })

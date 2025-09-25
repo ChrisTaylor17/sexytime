@@ -140,26 +140,44 @@ app.post('/api/ai-chat', async (req, res) => {
   const { message, alias } = req.body
   
   try {
-    // Use OpenAI to understand intent
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: "You are a DAO AI assistant. Analyze user messages and respond with one of: NFT_MINT, TOKEN_CREATE, PROJECT_FIND, or GENERAL. For NFT_MINT, include a creative description. For TOKEN_CREATE, include a project name."
-        },
-        {
-          role: "user",
-          content: message
-        }
-      ],
-      max_tokens: 150
-    })
+    // Determine intent from user message
+    const lowerMessage = message.toLowerCase()
+    let intent = 'GENERAL'
     
-    const aiResponse = completion.choices[0].message.content
+    if (lowerMessage.includes('nft') || lowerMessage.includes('mint')) {
+      intent = 'NFT_MINT'
+    } else if (lowerMessage.includes('token') || lowerMessage.includes('create')) {
+      intent = 'TOKEN_CREATE'
+    } else if (lowerMessage.includes('project') || lowerMessage.includes('find')) {
+      intent = 'PROJECT_FIND'
+    }
+    
+    // Get OpenAI response for general conversation
+    let aiResponse = ''
+    if (intent === 'GENERAL') {
+      try {
+        const completion = await openai.chat.completions.create({
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "system",
+              content: "You are a helpful DAO AI assistant for Consilience DAO. Be friendly and helpful. Mention that you can help create tokens, mint NFTs, and find projects. Keep responses concise."
+            },
+            {
+              role: "user",
+              content: message
+            }
+          ],
+          max_tokens: 100
+        })
+        aiResponse = completion.choices[0].message.content
+      } catch (error) {
+        aiResponse = `Hey ${alias}! 👋 I'm your DAO AI assistant. I can help you create tokens, mint NFTs, and find projects!`
+      }
+    }
     let response = ''
     
-    if (aiResponse.includes('NFT_MINT') || message.toLowerCase().includes('nft')) {
+    if (intent === 'NFT_MINT') {
       // Create real NFT on Solana
       const nft = await createRealNFT(message)
       if (nft) {
@@ -167,7 +185,7 @@ app.post('/api/ai-chat', async (req, res) => {
       } else {
         response = '❌ NFT creation failed. Solana devnet may be busy. Try again!'
       }
-    } else if (aiResponse.includes('TOKEN_CREATE') || message.toLowerCase().includes('token')) {
+    } else if (intent === 'TOKEN_CREATE') {
       // Create real token on Solana
       const token = await createRealToken(message)
       if (token) {
@@ -175,11 +193,11 @@ app.post('/api/ai-chat', async (req, res) => {
       } else {
         response = '❌ Token creation failed. Solana devnet may be busy. Try again!'
       }
-    } else if (aiResponse.includes('PROJECT_FIND') || message.toLowerCase().includes('project')) {
+    } else if (intent === 'PROJECT_FIND') {
       response = `🎯 AI-Matched Projects for ${alias}:\n\n• Mars Colony DAO - Terraform Mars with blockchain\n• Ocean Cleanup Protocol - DeFi for environmental impact\n• Neural Network DAO - Decentralized AI research\n• Quantum Computing Collective - Future tech development\n\nClick any project to join the team!`
     } else {
       // General AI response
-      response = aiResponse || `Hey ${alias}! 👋\n\nI can help you:\n• "mint an NFT" - Create real digital art on Solana\n• "create tokens" - Launch real project currency\n• "find projects" - AI-powered project matching\n\nWhat would you like to build?`
+      response = aiResponse
     }
     
     res.json({ response, timestamp: new Date().toISOString() })

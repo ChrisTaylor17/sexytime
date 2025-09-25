@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consilience DAO</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f23; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .title { font-size: 3rem; background: linear-gradient(45deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card { background: #1a1a2e; border: 1px solid #333; border-radius: 12px; padding: 20px; margin: 20px 0; }
+        .btn { background: #6366f1; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        .btn:hover { background: #5855eb; }
+        .input { background: #2a2a3e; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; width: 100%; margin: 10px 0; }
+        .chat { height: 300px; overflow-y: auto; background: #16213e; border-radius: 8px; padding: 15px; margin: 10px 0; }
+        .message { margin: 10px 0; padding: 8px; background: #1e293b; border-radius: 6px; }
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .feature { text-align: center; padding: 20px; }
+        .emoji { font-size: 2rem; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Consilience DAO</h1>
+            <p>AI-powered blockchain collaboration platform</p>
+        </div>
+
+        <div class="features">
+            <div class="card feature">
+                <div class="emoji">🪙</div>
+                <h3>Create Tokens</h3>
+                <p>Launch platform and project tokens on Solana</p>
+            </div>
+            <div class="card feature">
+                <div class="emoji">🎨</div>
+                <h3>Mint NFTs</h3>
+                <p>Create unique digital collectibles with AI</p>
+            </div>
+            <div class="card feature">
+                <div class="emoji">💬</div>
+                <h3>Real-time Chat</h3>
+                <p>Collaborate with your DAO team instantly</p>
+            </div>
+            <div class="card feature">
+                <div class="emoji">🤖</div>
+                <h3>AI Assistant</h3>
+                <p>Get help with projects and blockchain tasks</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🚀 Get Started</h3>
+            <input type="text" id="alias" class="input" placeholder="Enter your alias (e.g., alice.builder)">
+            <input type="text" id="interests" class="input" placeholder="Your interests (e.g., AI, DeFi, Gaming)">
+            <button class="btn" onclick="signup()">Join DAO</button>
+            <div id="result" style="margin-top: 15px;"></div>
+        </div>
+
+        <div class="card">
+            <h3>🤖 AI Chat</h3>
+            <div id="chat" class="chat"></div>
+            <input type="text" id="message" class="input" placeholder="Ask AI to create tokens, NFTs, or find projects...">
+            <button class="btn" onclick="sendMessage()">Send</button>
+        </div>
+
+        <div class="card">
+            <h3>📊 DAO Projects</h3>
+            <div id="projects"></div>
+            <button class="btn" onclick="loadProjects()">Load Projects</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        
+        async function signup() {
+            const alias = document.getElementById('alias').value;
+            const interests = document.getElementById('interests').value;
+            
+            if (!alias || !interests) {
+                alert('Please fill in both fields');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/api/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ alias, interests })
+                });
+                
+                const data = await response.json();
+                document.getElementById('result').innerHTML = `
+                    <div style="background: #065f46; padding: 15px; border-radius: 8px; margin-top: 10px;">
+                        <strong>✅ Welcome ${data.alias}!</strong><br>
+                        💰 CS Balance: ${data.cs_balance}<br>
+                        🔑 Wallet: ${data.wallet_address}<br>
+                        <small>${data.message}</small>
+                    </div>
+                `;
+            } catch (error) {
+                alert('Signup failed: ' + error.message);
+            }
+        }
+        
+        async function sendMessage() {
+            const message = document.getElementById('message').value;
+            const alias = document.getElementById('alias').value || 'anonymous';
+            
+            if (!message) return;
+            
+            // Add user message
+            addMessage(`You: ${message}`, 'user');
+            document.getElementById('message').value = '';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/ai-chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, alias })
+                });
+                
+                const data = await response.json();
+                addMessage(`🤖 AI: ${data.response}`, 'ai');
+            } catch (error) {
+                addMessage('❌ AI Error: ' + error.message, 'error');
+            }
+        }
+        
+        function addMessage(text, type) {
+            const chat = document.getElementById('chat');
+            const div = document.createElement('div');
+            div.className = 'message';
+            div.style.background = type === 'user' ? '#1e40af' : type === 'ai' ? '#059669' : '#dc2626';
+            div.textContent = text;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+        
+        async function loadProjects() {
+            try {
+                const response = await fetch(`${API_URL}/api/projects`);
+                const projects = await response.json();
+                
+                document.getElementById('projects').innerHTML = projects.map(p => `
+                    <div style="background: #1e293b; padding: 15px; margin: 10px 0; border-radius: 8px;">
+                        <strong>${p.name}</strong><br>
+                        <small>${p.description}</small><br>
+                        <em>Owner: ${p.owner_alias}</em>
+                    </div>
+                `).join('');
+            } catch (error) {
+                alert('Failed to load projects: ' + error.message);
+            }
+        }
+        
+        // Enter key support
+        document.getElementById('message').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>

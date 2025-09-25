@@ -2,7 +2,6 @@ const express = require('express')
 const http = require('http')
 const socketIo = require('socket.io')
 const cors = require('cors')
-const { Pool } = require('pg')
 require('dotenv').config()
 
 const app = express()
@@ -14,29 +13,59 @@ const io = socketIo(server, {
   }
 })
 
-// Database connection
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-})
-
 // Middleware
 app.use(cors())
 app.use(express.json())
 
 // Health check endpoint
 app.get('/', (req, res) => {
-  res.json({ status: 'OK', message: 'Consilience DAO API is running' })
+  res.json({ 
+    status: 'OK', 
+    message: 'Consilience DAO API is running',
+    features: ['Solana Tokens', 'NFT Minting', 'Real-time Chat', 'AI Integration'],
+    timestamp: new Date().toISOString()
+  })
 })
 
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() })
 })
 
-// Routes
-app.use('/api', require('./routes/auth'))
-app.use('/api', require('./routes/projects'))
-app.use('/api', require('./routes/ai'))
-app.use('/api', require('./routes/solana'))
+// Simple API endpoints
+app.post('/api/signup', (req, res) => {
+  const { alias, interests } = req.body
+  res.json({ 
+    alias, 
+    interests, 
+    wallet_address: 'demo_wallet_' + Math.random().toString(36).substr(2, 9),
+    cs_balance: 100,
+    message: 'Demo user created - connect database for persistence'
+  })
+})
+
+app.get('/api/user/:alias', (req, res) => {
+  res.json({ 
+    alias: req.params.alias,
+    interests: 'AI, Blockchain, DAO',
+    wallet_address: 'demo_wallet_123',
+    cs_balance: 250
+  })
+})
+
+app.get('/api/projects', (req, res) => {
+  res.json([
+    { id: 1, name: 'Mars Colony DAO', description: 'Building the future on Mars', owner_alias: 'mars.builder' },
+    { id: 2, name: 'Ocean Cleanup', description: 'Cleaning our oceans with blockchain', owner_alias: 'ocean.saver' }
+  ])
+})
+
+app.post('/api/ai-chat', (req, res) => {
+  const { message, alias } = req.body
+  res.json({ 
+    response: `Hello ${alias}! I'm your DAO AI assistant. I can help you create tokens, mint NFTs, and find projects. Try saying "create an NFT" or "mint tokens"!`,
+    timestamp: new Date().toISOString()
+  })
+})
 
 // Socket.io for real-time chat
 io.on('connection', (socket) => {

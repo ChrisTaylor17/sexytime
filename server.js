@@ -89,6 +89,45 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() })
 })
 
+// Task completion endpoint
+app.post('/api/complete-task', async (req, res) => {
+  const { taskId, alias, proof, reward } = req.body
+  
+  try {
+    // In a real app, verify the proof and award tokens
+    console.log(`✅ Task completed by ${alias}: ${taskId} (${reward} CS)`)
+    
+    res.json({ 
+      success: true, 
+      message: `Task verified! ${reward} CS tokens awarded.`,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    res.status(500).json({ error: 'Task verification failed' })
+  }
+})
+
+// Project creation endpoint
+app.post('/api/create-project', async (req, res) => {
+  const { name, description, alias } = req.body
+  
+  try {
+    const project = {
+      id: Date.now(),
+      name,
+      description,
+      owner: alias,
+      status: 'active',
+      members: 1,
+      created: new Date().toISOString()
+    }
+    
+    res.json({ success: true, project })
+  } catch (error) {
+    res.status(500).json({ error: 'Project creation failed' })
+  }
+})
+
 // Simple API endpoints
 app.post('/api/signup', (req, res) => {
   const { alias, interests } = req.body

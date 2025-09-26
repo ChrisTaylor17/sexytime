@@ -15,41 +15,53 @@ const openai = new OpenAI({
 // Initialize Solana with devnet
 const connection = new Connection(process.env.SOLANA_RPC_URL || clusterApiUrl('devnet'), 'confirmed')
 
-// Use a pre-funded wallet for reliable operations
+// Load funded wallet from environment
 let payer
+console.log('🔑 Loading wallet...')
+console.log('🔑 SOLANA_PRIVATE_KEY exists:', !!process.env.SOLANA_PRIVATE_KEY)
+
 if (process.env.SOLANA_PRIVATE_KEY) {
   try {
+    console.log('🔑 Parsing private key...')
     const secretKey = JSON.parse(process.env.SOLANA_PRIVATE_KEY)
-    payer = Keypair.fromSecretKey(new Uint8Array(secretKey))
-    console.log('✅ Using persistent wallet:', payer.publicKey.toString())
-  } catch {
-    // Fallback to a known funded wallet for demo
-    const demoWallet = [174,47,154,16,202,193,206,113,199,190,53,133,169,175,31,56,222,53,138,189,224,216,117,173,10,149,53,45,73,251,237,246,15,185,191,17,119,305,235,097,201,178,234,117,37,191,103,143,223,8,79,108,177,78,109,84,179,130,252,229,202,78,87,87]
-    try {
-      payer = Keypair.fromSecretKey(new Uint8Array(demoWallet.slice(0, 64)))
-      console.log('🎯 Using demo wallet:', payer.publicKey.toString())
-    } catch {
-      payer = Keypair.generate()
-      console.log('⚠️ Generated new wallet:', payer.publicKey.toString())
+    console.log('🔑 Secret key length:', secretKey.length)
+    
+    if (secretKey.length !== 64) {
+      throw new Error(`Invalid key length: ${secretKey.length}, expected 64`)
     }
+    
+    payer = Keypair.fromSecretKey(new Uint8Array(secretKey))
+    console.log('✅ Using funded wallet:', payer.publicKey.toString())
+  } catch (error) {
+    console.error('❌ Wallet loading failed:', error.message)
+    payer = Keypair.generate()
+    console.log('⚠️ Generated new unfunded wallet:', payer.publicKey.toString())
   }
 } else {
   payer = Keypair.generate()
-  console.log('🔑 Generated wallet:', payer.publicKey.toString())
-  console.log('🔑 Private key (save this):', JSON.stringify(Array.from(payer.secretKey)))
+  console.log('⚠️ No SOLANA_PRIVATE_KEY found, generated wallet:', payer.publicKey.toString())
+  console.log('🔑 To use funded wallet, set SOLANA_PRIVATE_KEY=[your,64,byte,array]')
 }
 
-// Check wallet balance (mainnet - no airdrops)
+// Check wallet balance with detailed logging
 async function checkBalance() {
   try {
+    console.log('🔍 Checking balance for:', payer.publicKey.toString())
     const balance = await connection.getBalance(payer.publicKey)
-    console.log(`💰 Devnet balance: ${balance / 1000000000} SOL`)
+    console.log(`💰 Devnet balance: ${balance / 1000000000} SOL (${balance} lamports)`)
     
     if (balance < 10000000) { // Less than 0.01 SOL
       console.log('⚠️ Low balance - wallet needs more devnet SOL')
+      console.log('💲 Fund this wallet at: https://faucet.solana.com')
+      console.log('🔗 Or use: solana airdrop 1 ' + payer.publicKey.toString() + ' --url devnet')
+    } else {
+      console.log('✅ Wallet has sufficient balance for transactions')
     }
+    
+    return balance
   } catch (error) {
     console.log('⚠️ Balance check failed:', error.message)
+    return 0
   }
 }
 

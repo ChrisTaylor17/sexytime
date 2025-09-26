@@ -280,9 +280,9 @@
         <div class="header">
             <div class="logo">CONSILIENCE DAO</div>
             <div class="nav">
-                <div class="nav-item active" onclick="showPage('dashboard')">Dashboard</div>
+                <div class="nav-item active" onclick="showPage('ai-chat')">🤖 AI Chat</div>
                 <div class="nav-item" onclick="showPage('matching')">Find Partners</div>
-                <div class="nav-item" onclick="showPage('projects')">Projects</div>
+                <div class="nav-item" onclick="showPage('dashboard')">Dashboard</div>
                 <div class="nav-item" onclick="showPage('create')">Create</div>
                 <div class="nav-item" onclick="showPage('profile')">Profile</div>
             </div>
@@ -389,14 +389,14 @@
             const content = document.getElementById('content');
             
             switch(page) {
-                case 'dashboard':
-                    content.innerHTML = renderDashboard();
+                case 'ai-chat':
+                    content.innerHTML = renderAIChat();
                     break;
                 case 'matching':
                     content.innerHTML = renderMatching();
                     break;
-                case 'projects':
-                    content.innerHTML = renderProjects();
+                case 'dashboard':
+                    content.innerHTML = renderDashboard();
                     break;
                 case 'create':
                     content.innerHTML = renderCreate();
@@ -407,6 +407,57 @@
             }
         }
 
+        function renderAIChat() {
+            return `
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <h2>🤖 AI-Guided Collaboration</h2>
+                    
+                    ${!currentUser ? `
+                        <div class="card">
+                            <h3>Create Profile First</h3>
+                            <p>Set up your profile to start AI-guided collaboration</p>
+                            <button class="btn" onclick="showPage('profile')">Create Profile</button>
+                        </div>
+                    ` : `
+                        <div class="card">
+                            <h3>Welcome, ${currentUser.alias}!</h3>
+                            <p>Find collaborators and let AI guide your project conversations</p>
+                            <button class="btn btn-green" onclick="showPage('matching')">🎯 Find Partners</button>
+                        </div>
+                        
+                        ${currentCollaboration ? `
+                            <div class="card" style="background: #065f46; margin-top: 20px;">
+                                <h3>🤝 Active Collaboration with ${currentCollaboration.partner}</h3>
+                                <p><strong>AI Suggestion:</strong> ${currentCollaboration.suggestedProject}</p>
+                                
+                                <div style="margin: 20px 0; display: flex; gap: 12px;">
+                                    <input type="text" id="projectName" placeholder="Project name..." style="flex: 1; padding: 8px; background: #0a0a0a; border: 1px solid #333; color: #fff; border-radius: 4px;">
+                                    <button class="btn btn-purple" onclick="createCollabProject()">🚀 Create Project</button>
+                                </div>
+                                
+                                <div class="chat-container" style="height: 500px; margin-top: 20px;">
+                                    <div class="chat-messages" id="chatMessages" style="height: 350px;"></div>
+                                    <div id="aiGuidance" class="ai-guidance" style="display: block; margin: 10px 0; min-height: 40px; background: #581c87; border: 1px solid #7c3aed; padding: 12px; border-radius: 8px; font-size: 14px;">
+                                        🤖 AI Guide: Start chatting to get personalized guidance!
+                                    </div>
+                                    <div style="display: flex; gap: 12px;">
+                                        <input type="text" id="chatInput" placeholder="Type your message..." style="flex: 1; padding: 12px; background: #0a0a0a; border: 1px solid #333; color: #fff; border-radius: 8px;">
+                                        <button class="btn" onclick="sendMessage()">Send</button>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="card">
+                                <h3>💬 No Active Collaboration</h3>
+                                <p>Find a partner to start AI-guided project building</p>
+                                <button class="btn" onclick="showPage('matching')">Find Collaborator</button>
+                            </div>
+                        `}
+                    `}
+                </div>
+            `;
+        }
+        
         function renderDashboard() {
             return `
                 <div class="stats">
@@ -772,13 +823,16 @@
             const guidanceDiv = document.getElementById('aiGuidance');
             if (!guidanceDiv) return;
             
-            guidanceDiv.classList.remove('hidden');
-            guidanceDiv.textContent = guidance.message;
+            guidanceDiv.style.display = 'block';
+            guidanceDiv.innerHTML = `🤖 AI Guide: ${guidance.message}`;
+            guidanceDiv.style.background = '#7c3aed';
+            guidanceDiv.style.border = '2px solid #a855f7';
             
-            // Hide after 15 seconds
+            // Fade back to default after 10 seconds
             setTimeout(() => {
-                guidanceDiv.classList.add('hidden');
-            }, 15000);
+                guidanceDiv.style.background = '#581c87';
+                guidanceDiv.style.border = '1px solid #7c3aed';
+            }, 10000);
         }
         
         // Get AI guidance for user messages
@@ -799,8 +853,13 @@
                 
                 // Extract guidance from AI response
                 let guidanceText = data.response;
-                if (guidanceText.length > 100) {
-                    guidanceText = guidanceText.substring(0, 100) + '...';
+                if (guidanceText.length > 120) {
+                    guidanceText = guidanceText.substring(0, 120) + '...';
+                }
+                
+                // Clean up the response to be more guidance-focused
+                if (guidanceText.includes('suggest') || guidanceText.includes('recommend')) {
+                    guidanceText = guidanceText.replace(/^.*?(suggest|recommend)/i, 'I suggest');
                 }
                 
                 showAIGuidance({ message: guidanceText });
@@ -946,7 +1005,7 @@
         });
 
         // Initialize
-        showPage('dashboard');
+        showPage('ai-chat');
         if (walletManager.wallet) {
             document.getElementById('walletBtn').textContent = walletManager.wallet.slice(0, 8) + '...';
         }

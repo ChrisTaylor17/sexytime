@@ -74,12 +74,6 @@ if (process.env.SOLANA_PRIVATE_KEY) {
     
     payer = Keypair.fromSecretKey(new Uint8Array(secretKey))
     console.log('✅ SUCCESS! Using funded wallet:', payer.publicKey.toString())
-    
-    // Initialize Metaplex with the loaded wallet
-    metaplex = Metaplex.make(connection)
-      .use(keypairIdentity(payer))
-      .use(bundlrStorage())
-    console.log('✅ Metaplex initialized for NFT creation')
   } catch (error) {
     console.error('❌ Wallet loading failed:', error.message)
     console.error('❌ Full error:', error)
@@ -94,12 +88,7 @@ if (process.env.SOLANA_PRIVATE_KEY) {
   payer = Keypair.generate()
   console.log('⚠️ No SOLANA_PRIVATE_KEY found, generated wallet:', payer.publicKey.toString())
   console.log('🔑 To use funded wallet, set SOLANA_PRIVATE_KEY=[your,64,byte,array]')
-  
-  // Initialize Metaplex even for generated wallet
-  metaplex = Metaplex.make(connection)
-    .use(keypairIdentity(payer))
-    .use(bundlrStorage())
-  console.log('✅ Metaplex initialized (unfunded wallet)')
+}
 
 // Check wallet balance with detailed logging
 async function checkBalance() {

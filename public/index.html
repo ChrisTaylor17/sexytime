@@ -228,17 +228,15 @@
             margin-bottom: 4px;
         }
         
-        .ai-guidance {
+        .ai-message {
             background: #581c87;
             border: 1px solid #7c3aed;
-            padding: 12px;
             border-radius: 8px;
-            margin: 12px 0;
-            font-size: 14px;
+            max-width: 90%;
         }
         
-        .ai-guidance::before {
-            content: "🤖 AI Guide: ";
+        .ai-message .message-author {
+            color: #a855f7;
             font-weight: 600;
         }
         
@@ -437,9 +435,7 @@
                                 
                                 <div class="chat-container" style="height: 500px; margin-top: 20px;">
                                     <div class="chat-messages" id="chatMessages" style="height: 350px;"></div>
-                                    <div id="aiGuidance" class="ai-guidance" style="display: block; margin: 10px 0; min-height: 40px; background: #581c87; border: 1px solid #7c3aed; padding: 12px; border-radius: 8px; font-size: 14px;">
-                                        🤖 AI Guide: Start chatting to get personalized guidance!
-                                    </div>
+
                                     <div style="display: flex; gap: 12px;">
                                         <input type="text" id="chatInput" placeholder="Type your message..." style="flex: 1; padding: 12px; background: #0a0a0a; border: 1px solid #333; color: #fff; border-radius: 8px;">
                                         <button class="btn" onclick="sendMessage()">Send</button>
@@ -762,7 +758,7 @@
                 </div>
             `;
             
-            // Initialize chat
+            // Initialize chat with AI welcome
             const chatMessages = document.getElementById('chatMessages');
             if (chatMessages) {
                 chatMessages.innerHTML = `
@@ -770,6 +766,15 @@
                         💬 Collaboration chat started with ${data.partner}
                     </div>
                 `;
+                
+                // AI joins the conversation
+                setTimeout(() => {
+                    displayChatMessage({
+                        from: '🤖 AI Assistant',
+                        message: `Hi ${currentUser.alias} and ${data.partner}! I'm your AI collaborator. I can help guide your project, create tokens, mint NFTs, and suggest next steps. Let's build something amazing together! 🚀`,
+                        timestamp: Date.now()
+                    }, false);
+                }, 1000);
             }
         }
 
@@ -798,8 +803,8 @@
                 timestamp: Date.now()
             }, true);
             
-            // Get AI guidance for this message
-            getAIGuidanceForMessage(message);
+            // Get AI response as chat participant
+            getAIResponse(message);
             
             input.value = '';
         }
@@ -808,11 +813,21 @@
             const chatMessages = document.getElementById('chatMessages');
             if (!chatMessages) return;
             
+            const isAI = messageData.from.includes('AI Assistant');
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
+            
+            if (isAI) {
+                messageDiv.className = 'message ai-message';
+                messageDiv.style.background = '#581c87';
+                messageDiv.style.border = '1px solid #7c3aed';
+                messageDiv.style.maxWidth = '90%';
+            } else {
+                messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
+            }
+            
             messageDiv.innerHTML = `
-                <div class="message-author">${messageData.from}</div>
-                <div>${messageData.message}</div>
+                <div class="message-author" style="${isAI ? 'color: #a855f7;' : ''}">${messageData.from}</div>
+                <div style="white-space: pre-line;">${messageData.message}</div>
             `;
             
             chatMessages.appendChild(messageDiv);
@@ -835,59 +850,139 @@
             }, 10000);
         }
         
-        // Get AI guidance for user messages
-        async function getAIGuidanceForMessage(message) {
+        // AI as chat participant
+        async function getAIResponse(userMessage) {
             if (!currentCollaboration) return;
+            
+            // Show AI is typing
+            displayChatMessage({
+                from: '🤖 AI Assistant',
+                message: '💭 Analyzing and preparing response...',
+                timestamp: Date.now()
+            }, false);
             
             try {
                 const response = await fetch('/api/ai-chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        message: `Guide this collaboration: User said "${message}" to their partner. Provide brief guidance to move toward building a concrete project.`,
-                        alias: currentUser?.alias || 'user'
+                        message: `You are an AI assistant helping ${currentUser.alias} and ${currentCollaboration.partner} collaborate on: ${currentCollaboration.suggestedProject}. User just said: "${userMessage}". Respond as a helpful team member. If they mention tokens/NFTs, offer to create them. Be conversational and actionable.`,
+                        alias: 'AI_Assistant'
                     })
                 });
                 
                 const data = await response.json();
                 
-                // Extract guidance from AI response
-                let guidanceText = data.response;
-                if (guidanceText.length > 120) {
-                    guidanceText = guidanceText.substring(0, 120) + '...';
+                // Remove the typing message
+                const chatMessages = document.getElementById('chatMessages');
+                if (chatMessages && chatMessages.lastChild) {
+                    chatMessages.removeChild(chatMessages.lastChild);
                 }
                 
-                // Clean up the response to be more guidance-focused
-                if (guidanceText.includes('suggest') || guidanceText.includes('recommend')) {
-                    guidanceText = guidanceText.replace(/^.*?(suggest|recommend)/i, 'I suggest');
+                // Check if AI should take action
+                const lowerMessage = userMessage.toLowerCase();
+                const lowerResponse = data.response.toLowerCase();
+                
+                let aiResponse = data.response;
+                
+                // AI offers to create tokens/NFTs
+                if (lowerMessage.includes('token') && (lowerMessage.includes('create') || lowerMessage.includes('make'))) {
+                    aiResponse += '\n\n🪙 I can create a real token for your project right now! What should we call it?';
+                    
+                    // Auto-create token
+                    setTimeout(async () => {
+                        try {
+                            const tokenResponse = await fetch('/api/ai-chat', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ 
+                                    message: `create token: ${currentCollaboration.suggestedProject}`,
+                                    alias: 'AI_Assistant'
+                                })
+                            });
+                            const tokenData = await tokenResponse.json();
+                            
+                            displayChatMessage({
+                                from: '🤖 AI Assistant',
+                                message: `🎉 Token created!\n${tokenData.response}`,
+                                timestamp: Date.now()
+                            }, false);
+                        } catch (error) {
+                            displayChatMessage({
+                                from: '🤖 AI Assistant', 
+                                message: '⚠️ Token creation failed, but I\'m here to help with other tasks!',
+                                timestamp: Date.now()
+                            }, false);
+                        }
+                    }, 2000);
                 }
                 
-                showAIGuidance({ message: guidanceText });
+                if (lowerMessage.includes('nft') && (lowerMessage.includes('create') || lowerMessage.includes('mint'))) {
+                    aiResponse += '\n\n🎨 I can mint an NFT for your project! Describe what it should represent.';
+                    
+                    // Auto-create NFT
+                    setTimeout(async () => {
+                        try {
+                            const nftResponse = await fetch('/api/ai-chat', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ 
+                                    message: `mint an NFT: ${currentCollaboration.suggestedProject}`,
+                                    alias: 'AI_Assistant'
+                                })
+                            });
+                            const nftData = await nftResponse.json();
+                            
+                            displayChatMessage({
+                                from: '🤖 AI Assistant',
+                                message: `🎨 NFT minted!\n${nftData.response}`,
+                                timestamp: Date.now()
+                            }, false);
+                        } catch (error) {
+                            displayChatMessage({
+                                from: '🤖 AI Assistant',
+                                message: '⚠️ NFT minting failed, but I can help with planning and guidance!',
+                                timestamp: Date.now()
+                            }, false);
+                        }
+                    }, 2000);
+                }
+                
+                // Display AI response
+                displayChatMessage({
+                    from: '🤖 AI Assistant',
+                    message: aiResponse,
+                    timestamp: Date.now()
+                }, false);
                 
             } catch (error) {
-                // Fallback guidance based on keywords
-                const lowerMessage = message.toLowerCase();
-                let guidance = '';
+                // Remove typing message
+                const chatMessages = document.getElementById('chatMessages');
+                if (chatMessages && chatMessages.lastChild) {
+                    chatMessages.removeChild(chatMessages.lastChild);
+                }
                 
-                if (lowerMessage.includes('idea') || lowerMessage.includes('think')) {
-                    guidance = '💡 Great! Now define the specific problem you want to solve together.';
-                } else if (lowerMessage.includes('project') || lowerMessage.includes('build')) {
-                    guidance = '🚀 Awesome! What features should your project have? Start with an MVP.';
-                } else if (lowerMessage.includes('skill') || lowerMessage.includes('experience')) {
-                    guidance = '🤝 Perfect match! How can you divide tasks based on your strengths?';
-                } else if (lowerMessage.includes('token') || lowerMessage.includes('nft')) {
-                    guidance = '🪙 Consider the tokenomics - how will your project create value?';
-                } else if (lowerMessage.includes('dao') || lowerMessage.includes('governance')) {
-                    guidance = '🗳️ Think about governance structure - how will decisions be made?';
-                } else if (lowerMessage.includes('user') || lowerMessage.includes('people')) {
-                    guidance = '👥 Focus on user needs - what problem are you solving for them?';
+                // Fallback AI responses
+                const lowerMessage = userMessage.toLowerCase();
+                let aiResponse = '';
+                
+                if (lowerMessage.includes('ai') || lowerMessage.includes('help')) {
+                    aiResponse = '🤖 Yes, I\'m here! I can help guide your collaboration, create tokens/NFTs, and suggest next steps. What would you like to work on?';
+                } else if (lowerMessage.includes('token')) {
+                    aiResponse = '🪙 I can create real tokens on Solana! Just tell me the name and I\'ll mint it for your project.';
+                } else if (lowerMessage.includes('nft')) {
+                    aiResponse = '🎨 I can mint NFTs on the blockchain! Describe what your NFT should represent and I\'ll create it.';
+                } else if (lowerMessage.includes('project')) {
+                    aiResponse = '🚀 Great! Let\'s break down your project into actionable steps. What\'s the first feature you want to build?';
                 } else {
-                    guidance = '🎯 Great conversation! Consider turning this into actionable project steps.';
+                    aiResponse = '🤖 I\'m your AI collaborator! I can create tokens, mint NFTs, and help guide your project. What should we build together?';
                 }
                 
-                if (guidance) {
-                    showAIGuidance({ message: guidance });
-                }
+                displayChatMessage({
+                    from: '🤖 AI Assistant',
+                    message: aiResponse,
+                    timestamp: Date.now()
+                }, false);
             }
         }
 

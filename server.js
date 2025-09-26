@@ -23,7 +23,23 @@ console.log('🔑 SOLANA_PRIVATE_KEY exists:', !!process.env.SOLANA_PRIVATE_KEY)
 if (process.env.SOLANA_PRIVATE_KEY) {
   try {
     console.log('🔑 Parsing private key...')
-    const secretKey = JSON.parse(process.env.SOLANA_PRIVATE_KEY)
+    console.log('🔑 Raw key (first 20 chars):', process.env.SOLANA_PRIVATE_KEY.substring(0, 20))
+    
+    let secretKey
+    
+    // Try different formats
+    if (process.env.SOLANA_PRIVATE_KEY.startsWith('[')) {
+      // JSON array format: [1,2,3,...]
+      secretKey = JSON.parse(process.env.SOLANA_PRIVATE_KEY)
+    } else if (process.env.SOLANA_PRIVATE_KEY.includes(',')) {
+      // Comma-separated format: 1,2,3,...
+      secretKey = process.env.SOLANA_PRIVATE_KEY.split(',').map(n => parseInt(n.trim()))
+    } else {
+      // Base58 string format
+      const bs58 = require('bs58')
+      secretKey = Array.from(bs58.decode(process.env.SOLANA_PRIVATE_KEY))
+    }
+    
     console.log('🔑 Secret key length:', secretKey.length)
     
     if (secretKey.length !== 64) {
@@ -34,6 +50,10 @@ if (process.env.SOLANA_PRIVATE_KEY) {
     console.log('✅ Using funded wallet:', payer.publicKey.toString())
   } catch (error) {
     console.error('❌ Wallet loading failed:', error.message)
+    console.log('🔑 Expected formats:')
+    console.log('  - JSON array: [1,2,3,4,...]')
+    console.log('  - Comma-separated: 1,2,3,4,...')
+    console.log('  - Base58 string: 5Ke7...')
     payer = Keypair.generate()
     console.log('⚠️ Generated new unfunded wallet:', payer.publicKey.toString())
   }

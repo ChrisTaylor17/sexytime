@@ -866,7 +866,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        message: `You are an AI assistant helping ${currentUser.alias} and ${currentCollaboration.partner} collaborate on: ${currentCollaboration.suggestedProject}. User just said: "${userMessage}". Respond as a helpful team member. If they mention tokens/NFTs, offer to create them. Be conversational and actionable.`,
+                        message: `You are an AI assistant helping ${currentUser.alias} and ${currentCollaboration.partner} collaborate. User said: "${userMessage}". Respond briefly and helpfully as a team member. Keep responses under 50 words.`,
                         alias: 'AI_Assistant'
                     })
                 });
@@ -879,17 +879,12 @@
                     chatMessages.removeChild(chatMessages.lastChild);
                 }
                 
-                // Check if AI should take action
+                // Check if AI should take action - only on explicit requests
                 const lowerMessage = userMessage.toLowerCase();
-                const lowerResponse = data.response.toLowerCase();
-                
                 let aiResponse = data.response;
                 
-                // AI offers to create tokens/NFTs
-                if (lowerMessage.includes('token') && (lowerMessage.includes('create') || lowerMessage.includes('make'))) {
-                    aiResponse += '\n\n🪙 I can create a real token for your project right now! What should we call it?';
-                    
-                    // Auto-create token
+                // Only create tokens/NFTs when explicitly requested
+                if ((lowerMessage.includes('create token') || lowerMessage.includes('make token')) && lowerMessage.length < 50) {
                     setTimeout(async () => {
                         try {
                             const tokenResponse = await fetch('/api/ai-chat', {
@@ -904,23 +899,20 @@
                             
                             displayChatMessage({
                                 from: '🤖 AI Assistant',
-                                message: `🎉 Token created!\n${tokenData.response}`,
+                                message: `🪙 Token Created!\n${tokenData.response}`,
                                 timestamp: Date.now()
                             }, false);
                         } catch (error) {
                             displayChatMessage({
                                 from: '🤖 AI Assistant', 
-                                message: '⚠️ Token creation failed, but I\'m here to help with other tasks!',
+                                message: '⚠️ Token creation failed, but I can help with other tasks!',
                                 timestamp: Date.now()
                             }, false);
                         }
-                    }, 2000);
+                    }, 1500);
                 }
                 
-                if (lowerMessage.includes('nft') && (lowerMessage.includes('create') || lowerMessage.includes('mint'))) {
-                    aiResponse += '\n\n🎨 I can mint an NFT for your project! Describe what it should represent.';
-                    
-                    // Auto-create NFT
+                if ((lowerMessage.includes('create nft') || lowerMessage.includes('mint nft')) && lowerMessage.length < 50) {
                     setTimeout(async () => {
                         try {
                             const nftResponse = await fetch('/api/ai-chat', {
@@ -935,18 +927,17 @@
                             
                             displayChatMessage({
                                 from: '🤖 AI Assistant',
-                                message: `🎨 NFT minted!\n${nftData.response}`,
+                                message: `🎨 NFT Created!\n${nftData.response}`,
                                 timestamp: Date.now()
                             }, false);
                         } catch (error) {
                             displayChatMessage({
                                 from: '🤖 AI Assistant',
-                                message: '⚠️ NFT minting failed, but I can help with planning and guidance!',
+                                message: '⚠️ NFT creation failed, but I can help with planning!',
                                 timestamp: Date.now()
                             }, false);
                         }
-                    }, 2000);
-                }
+                    }, 1500);
                 
                 // Display AI response
                 displayChatMessage({

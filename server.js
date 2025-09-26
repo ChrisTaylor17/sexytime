@@ -580,23 +580,170 @@ app.post('/api/ai-chat', async (req, res) => {
   }
 })
 
-// Socket.io for real-time chat
+// Advanced matchmaking endpoint
+app.post('/api/find-matches', async (req, res) => {
+  const { userId, skills, interests, projectTypes } = req.body
+  
+  try {
+    // Simulate AI-powered matching algorithm
+    const mockUsers = [
+      {
+        alias: 'alice.builder',
+        skills: ['JavaScript', 'Solana', 'React'],
+        interests: 'DeFi, NFTs, Web3',
+        projectTypes: ['defi', 'nft'],
+        currentProject: 'Mars Colony DAO',
+        reputation: 95,
+        compatibility: Math.floor(Math.random() * 30) + 70
+      },
+      {
+        alias: 'bob.creator',
+        skills: ['Design', 'Marketing', 'Community'],
+        interests: 'Gaming, Social, DAOs',
+        projectTypes: ['gaming', 'social'],
+        currentProject: 'Ocean Cleanup Protocol',
+        reputation: 88,
+        compatibility: Math.floor(Math.random() * 30) + 70
+      },
+      {
+        alias: 'charlie.dev',
+        skills: ['Rust', 'Blockchain', 'Smart Contracts'],
+        interests: 'Infrastructure, Security',
+        projectTypes: ['defi', 'dao'],
+        currentProject: null,
+        reputation: 92,
+        compatibility: Math.floor(Math.random() * 30) + 70
+      }
+    ]
+    
+    // Filter out current user and sort by compatibility
+    const matches = mockUsers
+      .filter(user => user.alias !== userId)
+      .sort((a, b) => b.compatibility - a.compatibility)
+    
+    res.json(matches)
+  } catch (error) {
+    res.status(500).json({ error: 'Matchmaking failed' })
+  }
+})
+
+// Enhanced project endpoints
+app.get('/api/projects/featured', (req, res) => {
+  const featuredProjects = [
+    {
+      id: 1,
+      name: 'Mars Colony DAO',
+      description: 'Building sustainable habitats on Mars using blockchain governance and tokenized resources',
+      category: 'Infrastructure',
+      funding: '250,000 CS',
+      members: 24,
+      progress: 65,
+      featured: true,
+      tags: ['Space', 'Governance', 'Sustainability']
+    },
+    {
+      id: 2,
+      name: 'Ocean Cleanup Protocol',
+      description: 'DeFi-powered ocean cleanup with environmental impact tracking and carbon credits',
+      category: 'Environmental',
+      funding: '180,000 CS',
+      members: 18,
+      progress: 40,
+      featured: true,
+      tags: ['Environment', 'DeFi', 'Impact']
+    },
+    {
+      id: 3,
+      name: 'Neural Network DAO',
+      description: 'Decentralized AI research and development with community-owned models',
+      category: 'AI/ML',
+      funding: '320,000 CS',
+      members: 31,
+      progress: 78,
+      featured: true,
+      tags: ['AI', 'Research', 'Open Source']
+    }
+  ]
+  
+  res.json(featuredProjects)
+})
+
+// Marketplace endpoints
+app.get('/api/marketplace', (req, res) => {
+  const { category, priceRange } = req.query
+  
+  const marketplaceItems = [
+    {
+      id: 1,
+      type: 'nft',
+      name: 'Mars Habitat #001',
+      description: 'First habitat design for Mars Colony DAO',
+      price: 150,
+      creator: 'alice.builder',
+      image: '🏠',
+      rarity: 'Legendary'
+    },
+    {
+      id: 2,
+      type: 'token',
+      name: 'OCEAN Token',
+      description: 'Governance token for Ocean Cleanup Protocol',
+      price: 25,
+      creator: 'bob.creator',
+      image: '🌊',
+      supply: 1000000
+    },
+    {
+      id: 3,
+      type: 'project',
+      name: 'AI Research Hub',
+      description: 'Complete project template for AI research DAOs',
+      price: 500,
+      creator: 'charlie.dev',
+      image: '🧠',
+      downloads: 45
+    }
+  ]
+  
+  res.json(marketplaceItems)
+})
+
+// Socket.io for real-time features
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id)
-
-  socket.on('join-room', ({ alias, projectId }) => {
-    socket.join(`project-${projectId}`)
-    console.log(`${alias} joined project ${projectId}`)
+  
+  // Join user to their personal room
+  socket.on('join-user', (userId) => {
+    socket.join(`user-${userId}`)
+    socket.userId = userId
+    console.log(`${userId} joined their room`)
   })
 
-  socket.on('send-message', ({ alias, projectId, message }) => {
+  // Handle direct messages
+  socket.on('send-message', ({ to, from, message, timestamp }) => {
     const messageData = {
-      alias,
+      from,
       message,
-      timestamp: new Date()
+      timestamp
     }
     
-    io.to(`project-${projectId}`).emit('message', messageData)
+    // Send to recipient
+    io.to(`user-${to}`).emit('message', messageData)
+    
+    // Send back to sender for confirmation
+    socket.emit('message-sent', messageData)
+    
+    console.log(`Message from ${from} to ${to}: ${message}`)
+  })
+  
+  // Handle match notifications
+  socket.on('match-found', ({ userId, matchData }) => {
+    io.to(`user-${userId}`).emit('match_found', matchData)
+  })
+  
+  // Handle typing indicators
+  socket.on('typing', ({ to, from, isTyping }) => {
+    io.to(`user-${to}`).emit('user-typing', { from, isTyping })
   })
 
   socket.on('disconnect', () => {

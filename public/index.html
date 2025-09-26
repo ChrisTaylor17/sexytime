@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consilience DAO</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>Consilience DAO - The Future of Collaboration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
     <style>
         :root {
             --bg-primary: #000000;
@@ -413,240 +414,93 @@
             </div>
             
             <div class="nav-section">
-                <div class="nav-title">Pages</div>
-                <div class="nav-item active" data-page="chat" onclick="pageManager.showPage('chat')">
-                    <span class="nav-icon">🤖</span>
-                    ai-assistant
+                <div class="nav-title">Main</div>
+                <div class="nav-item active" data-page="dashboard" onclick="app.showPage('dashboard')">
+                    <span class="nav-icon">🏠</span>
+                    Dashboard
                 </div>
-                <div class="nav-item" data-page="tasks" onclick="pageManager.showPage('tasks')">
-                    <span class="nav-icon">📋</span>
-                    tasks
+                <div class="nav-item" data-page="matches" onclick="app.showPage('matches')">
+                    <span class="nav-icon">🎯</span>
+                    Matches
                 </div>
-                <div class="nav-item" data-page="projects" onclick="pageManager.showPage('projects')">
-                    <span class="nav-icon">📊</span>
-                    projects
+                <div class="nav-item" data-page="chat" onclick="app.showPage('chat')">
+                    <span class="nav-icon">💬</span>
+                    Chat
                 </div>
-                <div class="nav-item" data-page="achievements" onclick="pageManager.showPage('achievements')">
-                    <span class="nav-icon">🏆</span>
-                    achievements
-                </div>
-                <div class="nav-item" data-page="leaderboard" onclick="pageManager.showPage('leaderboard')">
-                    <span class="nav-icon">📈</span>
-                    leaderboard
+                <div class="nav-item" data-page="projects" onclick="app.showPage('projects')">
+                    <span class="nav-icon">🚀</span>
+                    Projects
                 </div>
             </div>
             
             <div class="nav-section">
-                <div class="nav-title">Quick Actions</div>
-                <div class="nav-item" onclick="createToken()">
-                    <span class="nav-icon">🪙</span>
-                    create-token
+                <div class="nav-title">Marketplace</div>
+                <div class="nav-item" data-page="marketplace" onclick="app.showPage('marketplace')">
+                    <span class="nav-icon">🏪</span>
+                    Browse
                 </div>
-                <div class="nav-item" onclick="mintNFT()">
+                <div class="nav-item" onclick="app.mintNFT()">
                     <span class="nav-icon">🎨</span>
-                    mint-nft
+                    Create NFT
+                </div>
+                <div class="nav-item" onclick="app.createToken()">
+                    <span class="nav-icon">🪙</span>
+                    Launch Token
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-title">Account</div>
+                <div class="nav-item" data-page="profile" onclick="app.showPage('profile')">
+                    <span class="nav-icon">👤</span>
+                    Profile
+                </div>
+                <div class="nav-item" onclick="app.showWallet()">
+                    <span class="nav-icon">💼</span>
+                    Wallet
                 </div>
             </div>
         </div>
         
         <div class="main-content">
-            <div class="header">
-                <div class="header-title"># ai-assistant</div>
-                <div class="status-indicator"></div>
-            </div>
-            
-            <div class="content">
-                <div class="chat-area">
-                    <div class="messages" id="messages">
-                        <div class="message">
-                            <div class="message-avatar">AI</div>
-                            <div class="message-content">
-                                <div class="message-header">
-                                    <div class="message-author">AI Assistant</div>
-                                    <div class="message-time">now</div>
-                                </div>
-                                <div class="message-text">Welcome to Consilience DAO! I can help you create tokens, mint NFTs, and manage projects. Try typing "mint an NFT" or "create tokens".</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="input-area">
-                        <div class="input-container">
-                            <input type="text" class="message-input" id="messageInput" placeholder="Message #ai-assistant">
-                            <button class="send-button" onclick="sendMessage()">Send</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="right-panel">
-                    <div class="panel-section">
-                        <div class="panel-title">Join DAO</div>
-                        <div class="signup-form">
-                            <input type="text" class="form-input" id="alias" placeholder="alias (e.g. alice.builder)">
-                            <input type="text" class="form-input" id="interests" placeholder="interests">
-                            <button class="form-button" onclick="signup()">Join</button>
-                        </div>
-                        <div id="userStatus"></div>
-                    </div>
-                    
-                    <div class="panel-section">
-                        <div class="panel-title">Active Projects</div>
-                        <div id="projects">
-                            <div class="project-item">
-                                <div class="project-name">Mars Colony DAO</div>
-                                <div class="project-desc">Building the future on Mars</div>
-                            </div>
-                            <div class="project-item">
-                                <div class="project-name">Ocean Cleanup</div>
-                                <div class="project-desc">Blockchain for environmental good</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Content will be dynamically loaded here by app.js -->
         </div>
     </div>
 
+    <script src="/socket.io/socket.io.js"></script>
     <script src="wallet.js"></script>
-    <script src="pages.js"></script>
-    <script src="tasks.js"></script>
+    <script src="app.js"></script>
     <script>
+        // Global configuration
         const API_URL = window.location.origin;
-        let currentUser = null;
         
+        // Theme toggle
         function toggleTheme() {
             const body = document.body;
             const currentTheme = body.getAttribute('data-theme');
             body.setAttribute('data-theme', currentTheme === 'light' ? 'dark' : 'light');
+            localStorage.setItem('consilience_theme', currentTheme === 'light' ? 'dark' : 'light');
         }
         
-        function setActiveChannel(channel) {
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            event.target.classList.add('active');
-            document.querySelector('.header-title').textContent = `# ${channel}`;
-        }
-        
-        async function signup() {
-            const alias = document.getElementById('alias').value;
-            const interests = document.getElementById('interests').value;
-            
-            if (!alias || !interests) return;
-            
-            try {
-                const response = await fetch(`${API_URL}/api/signup`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        alias, 
-                        interests,
-                        walletAddress: walletManager.wallet // Send connected wallet
-                    })
-                });
-                
-                const data = await response.json();
-                currentUser = data;
-                walletManager.userData = data;
-                localStorage.setItem('consilience_user', JSON.stringify(data));
-                walletManager.updateWalletUI();
-                
-                const message = data.real_tokens ? 
-                    `Welcome ${data.alias}! 100 CS tokens sent to your wallet! 🪙` :
-                    `Welcome ${data.alias}! Connect your wallet to receive real CS tokens.`;
-                    
-                addMessage('System', message, 'SYS');
-                
-                if (data.cs_token_mint) {
-                    addMessage('System', `CS Token: ${data.cs_token_mint}`, 'SYS');
-                }
-            } catch (error) {
-                addMessage('System', 'Signup failed. Try again.', 'ERR');
-            }
-        }
-        
-        async function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-            if (!message) return;
-            
-            const alias = currentUser?.alias || 'anonymous';
-            addMessage(alias, message, alias.charAt(0).toUpperCase());
-            input.value = '';
-            
-            try {
-                const response = await fetch(`${API_URL}/api/ai-chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message, alias })
-                });
-                
-                const data = await response.json();
-                addMessage('AI Assistant', data.response, 'AI');
-                
-                // Track achievements for blockchain operations
-                if (data.response.includes('REAL NFT Created')) {
-                    const mintMatch = data.response.match(/Mint: ([A-Za-z0-9]+)/);
-                    const idMatch = data.response.match(/#(\d+)/);
-                    if (mintMatch && idMatch) {
-                        walletManager.recordNFT(mintMatch[1], idMatch[1]);
-                    }
-                } else if (data.response.includes('REAL Token Created')) {
-                    const mintMatch = data.response.match(/Mint: ([A-Za-z0-9]+)/);
-                    const symbolMatch = data.response.match(/Symbol: ([A-Z0-9]+)/);
-                    if (mintMatch && symbolMatch) {
-                        walletManager.recordToken(mintMatch[1], symbolMatch[1]);
-                    }
-                }
-            } catch (error) {
-                addMessage('System', 'AI temporarily unavailable.', 'ERR');
-            }
-        }
-        
-        function addMessage(author, text, avatar) {
-            const messages = document.getElementById('messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message';
-            
-            messageDiv.innerHTML = `
-                <div class="message-avatar">${avatar}</div>
-                <div class="message-content">
-                    <div class="message-header">
-                        <div class="message-author">${author}</div>
-                        <div class="message-time">${new Date().toLocaleTimeString()}</div>
-                    </div>
-                    <div class="message-text">${text}</div>
-                </div>
-            `;
-            
-            messages.appendChild(messageDiv);
-            messages.scrollTop = messages.scrollHeight;
-        }
-        
-        function createToken() {
-            document.getElementById('messageInput').value = 'create a project token';
-            sendMessage();
-        }
-        
-        function mintNFT() {
-            document.getElementById('messageInput').value = 'mint an NFT';
-            sendMessage();
+        // Load saved theme
+        const savedTheme = localStorage.getItem('consilience_theme');
+        if (savedTheme) {
+            document.body.setAttribute('data-theme', savedTheme);
         }
         
         // Wallet connection
         async function connectWallet() {
             const wallet = await walletManager.connectWallet();
-            if (wallet) {
-                addMessage('System', `Wallet connected: ${wallet}`, 'SYS');
+            if (wallet && app) {
+                // Refresh current page to show updated wallet info
+                app.showPage(app.currentPage);
             }
         }
         
-        // Initialize wallet on page load
+        // Initialize on page load
         window.addEventListener('load', () => {
             walletManager.updateWalletUI();
-        });
-        
-        // Enter key support
-        document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
+            // App is initialized in app.js
         });
     </script>
 </body>

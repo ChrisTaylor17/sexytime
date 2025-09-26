@@ -5,6 +5,7 @@ const cors = require('cors')
 const OpenAI = require('openai')
 const { Keypair, Connection, clusterApiUrl } = require('@solana/web3.js')
 const { createMint, getOrCreateAssociatedTokenAccount, mintTo } = require('@solana/spl-token')
+const { Metaplex, keypairIdentity, bundlrStorage } = require('@metaplex-foundation/js')
 require('dotenv').config()
 
 // Import bs58 with fallback
@@ -24,6 +25,9 @@ const openai = new OpenAI({
 
 // Initialize Solana with devnet
 const connection = new Connection(process.env.SOLANA_RPC_URL || clusterApiUrl('devnet'), 'confirmed')
+
+// Initialize Metaplex (will be set after wallet loads)
+let metaplex = null
 
 // Load funded wallet from environment
 let payer
@@ -74,6 +78,12 @@ if (process.env.SOLANA_PRIVATE_KEY) {
     
     payer = Keypair.fromSecretKey(new Uint8Array(secretKey))
     console.log('✅ SUCCESS! Using funded wallet:', payer.publicKey.toString())
+    
+    // Initialize Metaplex with the loaded wallet
+    metaplex = Metaplex.make(connection)
+      .use(keypairIdentity(payer))
+      .use(bundlrStorage())
+    console.log('✅ Metaplex initialized for NFT creation')
   } catch (error) {
     console.error('❌ Wallet loading failed:', error.message)
     console.error('❌ Full error:', error)
@@ -88,7 +98,12 @@ if (process.env.SOLANA_PRIVATE_KEY) {
   payer = Keypair.generate()
   console.log('⚠️ No SOLANA_PRIVATE_KEY found, generated wallet:', payer.publicKey.toString())
   console.log('🔑 To use funded wallet, set SOLANA_PRIVATE_KEY=[your,64,byte,array]')
-}
+  
+  // Initialize Metaplex even for generated wallet
+  metaplex = Metaplex.make(connection)
+    .use(keypairIdentity(payer))
+    .use(bundlrStorage())
+  console.log('✅ Metaplex initialized (unfunded wallet)')
 
 // Check wallet balance with detailed logging
 async function checkBalance() {
@@ -394,41 +409,56 @@ async function createRealToken(projectName) {
   }
 }
 
-// Real Solana NFT creation with immediate fallback
+// Real Metaplex NFT creation with metadata
 async function createRealNFT(description) {
   try {
-    console.log('🎨 Creating real NFT on Solana...')
+    console.log('🎨 Creating real Metaplex NFT...')
+    
+    if (!metaplex) {
+      throw new Error('Metaplex not initialized')
+    }
     
     // Quick balance check
     const balance = await connection.getBalance(payer.publicKey)
     console.log(`💰 Balance: ${balance / 1000000000} SOL`)
     
-    if (balance < 1000000) { // Less than 0.001 SOL
-      throw new Error('Insufficient devnet SOL - fund wallet')
+    if (balance < 10000000) { // Less than 0.01 SOL (NFTs need more for metadata)
+      throw new Error('Insufficient devnet SOL - need at least 0.01 SOL for NFT')
     }
     
-    // Create mint with timeout
-    const mintPromise = createMint(
-      connection,
-      payer,
-      payer.publicKey,
-      payer.publicKey,
-      0, // NFT has 0 decimals
-      undefined,
-      { commitment: 'processed' } // Faster commitment
-    )
+    // Generate NFT metadata
+    const tokenId = Math.floor(Math.random() * 10000)
+    const nftName = `Consilience NFT #${tokenId}`
+    const nftDescription = description || 'A unique NFT created on the Consilience DAO platform'
     
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Transaction timeout')), 10000)
-    )
+    console.log('📝 Creating NFT metadata...')
     
-    const mint = await Promise.race([mintPromise, timeoutPromise])
-    console.log('✅ Real NFT created:', mint.toString())
+    // Create NFT with Metaplex
+    const { nft } = await metaplex.nfts().create({
+      uri: '', // We'll use on-chain metadata for now
+      name: nftName,
+      description: nftDescription,
+      sellerFeeBasisPoints: 500, // 5% royalty
+      symbol: 'CNFT',
+      creators: [
+        {
+          address: payer.publicKey,
+          verified: true,
+          share: 100,
+        },
+      ],
+      isMutable: true,
+    })
+    
+    console.log('✅ Real Metaplex NFT created:', nft.address.toString())
     
     return {
-      mintAddress: mint.toString(),
-      tokenId: Math.floor(Math.random() * 10000),
-      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
+      mintAddress: nft.address.toString(),
+      tokenId: tokenId,
+      name: nftName,
+      description: nftDescription,
+      explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`,
+      metaplexUrl: `https://www.solaneyes.com/address/${nft.address.toString()}?cluster=devnet`,
       isReal: true
     }
   } catch (error) {
@@ -436,8 +466,10 @@ async function createRealNFT(description) {
     
     // Immediate fallback to simulation
     return {
-      mintAddress: 'REAL' + Math.random().toString(36).substr(2, 32).toUpperCase(),
+      mintAddress: 'SIM' + Math.random().toString(36).substr(2, 32).toUpperCase(),
       tokenId: Math.floor(Math.random() * 10000),
+      name: 'Simulated NFT',
+      description: 'Simulation - fund wallet for real NFTs',
       explorerUrl: `https://explorer.solana.com/address/simulation?cluster=devnet`,
       isReal: false,
       error: error.message
@@ -498,7 +530,7 @@ app.post('/api/ai-chat', async (req, res) => {
         let tokenReward = 'Tracked locally'
         // Note: In production, you'd get user's wallet from session/auth
         
-        response = `🎨 NFT Created!\n\n${status}\n🔗 Mint: ${nft.mintAddress}\n🏷️ ID: #${nft.tokenId}\n🔍 Explorer: ${nft.explorerUrl}\n💰 +25 CS tokens (${tokenReward})\n\n✨ Your NFT is ready!`
+        response = `🎨 NFT Created!\n\n${status}\n🏷️ Name: ${nft.name || 'Consilience NFT #' + nft.tokenId}\n🔗 Mint: ${nft.mintAddress}\n📝 Description: ${nft.description || 'DAO NFT'}\n🔍 Explorer: ${nft.explorerUrl}\n${nft.metaplexUrl ? '🔎 Metaplex: ' + nft.metaplexUrl + '\n' : ''}💰 +25 CS tokens (${tokenReward})\n\n✨ Your real NFT with metadata is ready!`
       } else {
         response = '❌ NFT creation failed completely. Try again!'
       }

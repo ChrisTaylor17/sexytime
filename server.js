@@ -271,6 +271,43 @@ app.get('/api/cs-token-info', (req, res) => {
   })
 })
 
+// Get wallet balance
+app.get('/api/wallet-balance/:address', async (req, res) => {
+  const { address } = req.params
+  
+  try {
+    const { PublicKey } = require('@solana/web3.js')
+    const publicKey = new PublicKey(address)
+    const balance = await connection.getBalance(publicKey)
+    
+    res.json({
+      address,
+      balance: balance / 1000000000, // Convert lamports to SOL
+      lamports: balance,
+      network: 'devnet',
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    res.status(400).json({ error: 'Invalid wallet address or network error' })
+  }
+})
+
+// Get user balance
+app.get('/api/user-balance/:alias', (req, res) => {
+  const { alias } = req.params
+  
+  // In a real app, this would query the database
+  // For now, return mock data
+  res.json({
+    alias,
+    cs_balance: Math.floor(Math.random() * 1000) + 100,
+    sol_balance: Math.random() * 5,
+    nfts: Math.floor(Math.random() * 10),
+    tokens: Math.floor(Math.random() * 5),
+    updated: new Date().toISOString()
+  })
+})
+
 // Simple API endpoints
 app.post('/api/signup', async (req, res) => {
   const { alias, interests, walletAddress } = req.body

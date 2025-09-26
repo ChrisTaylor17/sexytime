@@ -484,8 +484,24 @@
                     ${currentUser ? `
                         <div class="wallet-info">
                             <h3>Welcome, ${currentUser.alias}!</h3>
-                            <p>CS Balance: ${currentUser.cs_balance || 0} tokens</p>
-                            <p>Wallet: ${currentUser.wallet_address || 'Not connected'}</p>
+                            <p><strong>CS Balance:</strong> ${currentUser.cs_balance || 0} tokens</p>
+                            <p><strong>Wallet:</strong> ${currentUser.wallet_address || 'Not connected'}</p>
+                            <p><strong>NFTs Created:</strong> ${currentUser.nfts || 0}</p>
+                            <p><strong>Tokens Created:</strong> ${currentUser.tokens || 0}</p>
+                            <p><strong>Reputation:</strong> ${currentUser.reputation || 0}/100</p>
+                        </div>
+                        
+                        <div class="wallet-info">
+                            <h3>🔗 Blockchain Data</h3>
+                            <button class="btn" onclick="showWalletData()">View Raw Wallet Data</button>
+                            <button class="btn-secondary" onclick="refreshBalance()">Refresh Balance</button>
+                            <div id="walletData" class="hidden" style="margin-top: 20px; padding: 20px; background: var(--bg); border-radius: 8px; font-family: monospace; font-size: 12px; overflow-x: auto;"></div>
+                        </div>
+                        
+                        <div class="wallet-info">
+                            <h3>⚙️ Settings</h3>
+                            <button class="btn-secondary" onclick="exportData()">Export Profile Data</button>
+                            <button class="btn-secondary" onclick="clearData()" style="background: #ff4444;">Clear Local Data</button>
                         </div>
                     ` : `
                         <div class="form-group">
@@ -705,6 +721,97 @@
             }
         }
 
+        // Wallet data functions
+        async function showWalletData() {
+            const walletDataDiv = document.getElementById('walletData');
+            
+            if (walletDataDiv.classList.contains('hidden')) {
+                walletDataDiv.classList.remove('hidden');
+                
+                const walletData = {
+                    address: walletManager.wallet || 'Not connected',
+                    balance: await getWalletBalance(),
+                    userData: currentUser,
+                    localStorage: {
+                        consilience_user: localStorage.getItem('consilience_user'),
+                        consilience_theme: localStorage.getItem('consilience_theme')
+                    },
+                    blockchain: {
+                        network: 'Solana Devnet',
+                        rpc: 'https://api.devnet.solana.com',
+                        explorer: 'https://explorer.solana.com'
+                    },
+                    timestamp: new Date().toISOString()
+                };
+                
+                walletDataDiv.innerHTML = `<pre>${JSON.stringify(walletData, null, 2)}</pre>`;
+            } else {
+                walletDataDiv.classList.add('hidden');
+            }
+        }
+        
+        async function getWalletBalance() {
+            if (!walletManager.wallet) return 'No wallet connected';
+            
+            try {
+                const response = await fetch(`/api/wallet-balance/${walletManager.wallet}`);
+                const data = await response.json();
+                return data.balance || 'Unable to fetch';
+            } catch (error) {
+                return 'Error fetching balance';
+            }
+        }
+        
+        async function refreshBalance() {
+            if (!currentUser || !walletManager.wallet) {
+                alert('Please connect wallet first');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/user-balance/${currentUser.alias}`);
+                const data = await response.json();
+                
+                currentUser.cs_balance = data.cs_balance || currentUser.cs_balance;
+                localStorage.setItem('consilience_user', JSON.stringify(currentUser));
+                
+                showPage('profile'); // Refresh the page
+                alert(`Balance updated: ${currentUser.cs_balance} CS tokens`);
+            } catch (error) {
+                alert('Failed to refresh balance');
+            }
+        }
+        
+        function exportData() {
+            const exportData = {
+                user: currentUser,
+                wallet: walletManager.wallet,
+                localStorage: {
+                    consilience_user: localStorage.getItem('consilience_user'),
+                    consilience_theme: localStorage.getItem('consilience_theme')
+                },
+                exported: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `consilience-data-${currentUser?.alias || 'user'}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function clearData() {
+            if (confirm('Are you sure? This will clear all local data and log you out.')) {
+                localStorage.clear();
+                currentUser = null;
+                walletManager.wallet = null;
+                showPage('profile');
+                alert('All data cleared. Please reconnect your wallet and rejoin the DAO.');
+            }
+        }
+        
         // Initialize
         showPage('dashboard');
         walletManager.updateWalletUI();

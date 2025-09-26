@@ -627,6 +627,43 @@ app.post('/api/find-matches', async (req, res) => {
   }
 })
 
+// Chat response endpoint
+app.post('/api/chat-response', async (req, res) => {
+  const { message, chatUser, userAlias } = req.body
+  
+  try {
+    // Create context-aware chat response
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: `You are ${chatUser}, a DAO collaborator chatting with ${userAlias}. You're interested in blockchain projects, collaboration, and building cool things together. Be friendly, engaging, and ask follow-up questions. Keep responses conversational and under 50 words. Show genuine interest in their projects and ideas.`
+        },
+        {
+          role: "user",
+          content: message
+        }
+      ],
+      max_tokens: 80,
+      temperature: 0.8
+    })
+    
+    res.json({ response: completion.choices[0].message.content })
+  } catch (error) {
+    // Fallback responses if OpenAI fails
+    const fallbacks = [
+      "That's fascinating! Tell me more about your approach.",
+      "I'm really excited about this collaboration. What's your next step?",
+      "Great idea! How do you see us working together on this?",
+      "That aligns perfectly with what I'm thinking. Should we dive deeper?",
+      "Love the direction you're going. What resources do you need?"
+    ]
+    
+    res.json({ response: fallbacks[Math.floor(Math.random() * fallbacks.length)] })
+  }
+})
+
 // Enhanced project endpoints
 app.get('/api/projects/featured', (req, res) => {
   const featuredProjects = [

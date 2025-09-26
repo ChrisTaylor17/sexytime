@@ -596,16 +596,23 @@
         function openChat(username) {
             currentChatUser = username;
             document.getElementById('chatHeader').textContent = `Chat with ${username}`;
+            
+            const initialMessages = {
+                'alice.builder': "Hey! I'm working on the Mars Colony DAO and saw your profile. Your skills in blockchain development could be perfect for our habitat governance system. Want to collaborate?",
+                'bob.creator': "Hi there! I'm leading the Ocean Cleanup Protocol and we need someone with your expertise. We're building DeFi mechanisms for environmental impact. Interested in making a real difference?",
+                'charlie.dev': "What's up! I'm a Rust developer looking for interesting DAO projects to contribute to. I saw your profile and think we could build something amazing together. What are you working on?"
+            };
+            
             document.getElementById('chatMessages').innerHTML = `
                 <div class="message">
                     <div class="message-author">${username}</div>
-                    <div>Hey! I saw we're a great match for collaboration. What projects are you working on?</div>
+                    <div>${initialMessages[username] || "Hey! I saw we're a great match for collaboration. What projects are you working on?"}</div>
                 </div>
             `;
             document.getElementById('chatInput').style.display = 'flex';
         }
 
-        function sendMessage() {
+        async function sendMessage() {
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
             if (!message || !currentChatUser) return;
@@ -621,16 +628,49 @@
             input.value = '';
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
             
-            // Simulate response
-            setTimeout(() => {
-                messagesDiv.innerHTML += `
-                    <div class="message">
-                        <div class="message-author">${currentChatUser}</div>
-                        <div>That sounds interesting! Let's discuss this further.</div>
-                    </div>
-                `;
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }, 1000);
+            // Get AI response
+            try {
+                const response = await fetch('/api/chat-response', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message,
+                        chatUser: currentChatUser,
+                        userAlias: currentUser?.alias || 'anonymous'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                setTimeout(() => {
+                    messagesDiv.innerHTML += `
+                        <div class="message">
+                            <div class="message-author">${currentChatUser}</div>
+                            <div>${data.response}</div>
+                        </div>
+                    `;
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                }, 800);
+            } catch (error) {
+                // Fallback responses
+                const responses = [
+                    "That's a great point! What do you think about implementing that?",
+                    "I'm really interested in collaborating on this. Do you have any specific ideas?",
+                    "Sounds like we're aligned on the vision. Should we start planning?",
+                    "I love that approach! How do you see us moving forward?",
+                    "That could work really well. What's your timeline looking like?"
+                ];
+                
+                setTimeout(() => {
+                    messagesDiv.innerHTML += `
+                        <div class="message">
+                            <div class="message-author">${currentChatUser}</div>
+                            <div>${responses[Math.floor(Math.random() * responses.length)]}</div>
+                        </div>
+                    `;
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                }, 800);
+            }
         }
 
         function loadProjects() {

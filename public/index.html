@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consilience DAO</title>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -68,6 +69,21 @@
             background: #00cc6a;
         }
         
+        .btn-red {
+            background: #ff4444;
+            color: #fff;
+        }
+        
+        .btn-purple {
+            background: #8b5cf6;
+            color: #fff;
+        }
+        
+        .btn-green {
+            background: #10b981;
+            color: #fff;
+        }
+        
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -117,89 +133,6 @@
             font-size: 14px;
         }
         
-        .chat-container {
-            display: grid;
-            grid-template-columns: 300px 1fr;
-            gap: 20px;
-            height: 600px;
-        }
-        
-        .chat-sidebar {
-            background: #1a1a1a;
-            border-radius: 12px;
-            padding: 20px;
-        }
-        
-        .chat-main {
-            background: #1a1a1a;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .chat-header {
-            padding: 20px;
-            border-bottom: 1px solid #333;
-            font-weight: 600;
-        }
-        
-        .chat-messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-        }
-        
-        .chat-input {
-            padding: 20px;
-            border-top: 1px solid #333;
-            display: flex;
-            gap: 12px;
-        }
-        
-        .chat-input input {
-            flex: 1;
-            background: #0a0a0a;
-            border: 1px solid #333;
-            color: #fff;
-            padding: 12px 16px;
-            border-radius: 8px;
-        }
-        
-        .message {
-            margin-bottom: 16px;
-            padding: 12px;
-            background: #0a0a0a;
-            border-radius: 8px;
-        }
-        
-        .message-author {
-            font-weight: 600;
-            color: #00ff88;
-            margin-bottom: 4px;
-        }
-        
-        .user-card {
-            padding: 12px;
-            margin-bottom: 8px;
-            background: #0a0a0a;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        
-        .user-card:hover {
-            background: #333;
-        }
-        
-        .user-name {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-        
-        .user-status {
-            font-size: 12px;
-            color: #888;
-        }
-        
         .form {
             max-width: 500px;
             margin: 0 auto;
@@ -216,7 +149,8 @@
         }
         
         .form-group input,
-        .form-group textarea {
+        .form-group textarea,
+        .form-group select {
             width: 100%;
             background: #1a1a1a;
             border: 1px solid #333;
@@ -225,15 +159,119 @@
             border-radius: 8px;
         }
         
-        .wallet-info {
+        .match-card {
             background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
             padding: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .compatibility {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        .project-suggestion {
+            background: #1e3a8a;
+            padding: 12px;
             border-radius: 8px;
-            margin: 20px 0;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+        
+        .chat-container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #0a0a0a;
+            border-radius: 8px;
+        }
+        
+        .message {
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        
+        .message.own {
+            background: #1e40af;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .message.other {
+            background: #374151;
+        }
+        
+        .message-author {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .ai-guidance {
+            background: #581c87;
+            border: 1px solid #7c3aed;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+            font-size: 14px;
+        }
+        
+        .ai-guidance::before {
+            content: "🤖 AI Guide: ";
+            font-weight: 600;
+        }
+        
+        .online-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            margin-right: 8px;
         }
         
         .hidden {
             display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
+        
+        .loading::before {
+            content: "🔄";
+            display: block;
+            font-size: 24px;
+            margin-bottom: 8px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -243,7 +281,7 @@
             <div class="logo">CONSILIENCE DAO</div>
             <div class="nav">
                 <div class="nav-item active" onclick="showPage('dashboard')">Dashboard</div>
-                <div class="nav-item" onclick="showPage('chat')">Chat</div>
+                <div class="nav-item" onclick="showPage('matching')">Find Partners</div>
                 <div class="nav-item" onclick="showPage('projects')">Projects</div>
                 <div class="nav-item" onclick="showPage('create')">Create</div>
                 <div class="nav-item" onclick="showPage('profile')">Profile</div>
@@ -257,11 +295,41 @@
     </div>
 
     <script>
+        // Initialize Socket.io for real-time matching
+        const socket = io();
         let currentUser = JSON.parse(localStorage.getItem('consilience_user')) || null;
         let currentPage = 'dashboard';
-        let currentChatUser = null;
+        let activeMatches = [];
+        let currentCollaboration = null;
 
-        // Initialize wallet manager
+        // Socket event handlers
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('potential-matches', (matches) => {
+            activeMatches = matches;
+            showMatches(matches);
+        });
+
+        socket.on('collaboration-started', (data) => {
+            currentCollaboration = data;
+            showCollaborationInterface(data);
+        });
+
+        socket.on('ai-guidance', (guidance) => {
+            showAIGuidance(guidance);
+        });
+
+        socket.on('chat-message', (message) => {
+            displayChatMessage(message, false);
+        });
+
+        socket.on('project-created', (project) => {
+            alert(`🚀 Project "${project.name}" created successfully!`);
+        });
+
+        // Wallet manager
         const walletManager = {
             wallet: localStorage.getItem('wallet_address'),
             async connectWallet() {
@@ -295,8 +363,8 @@
                 case 'dashboard':
                     content.innerHTML = renderDashboard();
                     break;
-                case 'chat':
-                    content.innerHTML = renderChat();
+                case 'matching':
+                    content.innerHTML = renderMatching();
                     break;
                 case 'projects':
                     content.innerHTML = renderProjects();
@@ -329,15 +397,15 @@
                 
                 <div class="grid">
                     <div class="card">
-                        <h3>🎯 Find Collaborators</h3>
-                        <p>Connect with builders who share your vision</p>
-                        <button class="btn" onclick="findMatches()">Find Matches</button>
+                        <h3>🎯 Find Real Collaborators</h3>
+                        <p>Connect with live users who share your vision</p>
+                        <button class="btn" onclick="showPage('matching')">Find Partners</button>
                     </div>
                     
                     <div class="card">
-                        <h3>💬 Chat</h3>
-                        <p>Talk with your collaborators</p>
-                        <button class="btn" onclick="showPage('chat')">Open Chat</button>
+                        <h3>🤖 AI-Guided Projects</h3>
+                        <p>Get AI suggestions for building together</p>
+                        <button class="btn" onclick="showPage('matching')">Start Collaborating</button>
                     </div>
                     
                     <div class="card">
@@ -355,40 +423,45 @@
             `;
         }
 
-        function renderChat() {
+        function renderMatching() {
             return `
-                <div class="chat-container">
-                    <div class="chat-sidebar">
-                        <h3>Conversations</h3>
-                        <div class="user-card" onclick="openChat('alice.builder')">
-                            <div class="user-name">alice.builder</div>
-                            <div class="user-status">🟢 Mars Colony DAO</div>
-                        </div>
-                        <div class="user-card" onclick="openChat('bob.creator')">
-                            <div class="user-name">bob.creator</div>
-                            <div class="user-status">🟡 Ocean Cleanup</div>
-                        </div>
-                        <div class="user-card" onclick="openChat('charlie.dev')">
-                            <div class="user-name">charlie.dev</div>
-                            <div class="user-status">🟢 Available</div>
-                        </div>
+                <h2>🎯 Find Real Collaborators</h2>
+                
+                ${!currentUser ? `
+                    <div class="card">
+                        <h3>Join DAO First</h3>
+                        <p>Create your profile to find matches</p>
+                        <button class="btn" onclick="showPage('profile')">Create Profile</button>
+                    </div>
+                ` : `
+                    <div class="card">
+                        <h3>Your Profile</h3>
+                        <p><strong>Alias:</strong> ${currentUser.alias}</p>
+                        <p><strong>Skills:</strong> ${currentUser.skills || 'Not set'}</p>
+                        <p><strong>Interests:</strong> ${currentUser.interests}</p>
+                        <p><strong>Looking for:</strong> ${currentUser.lookingFor || 'Collaborator'}</p>
+                        <button class="btn btn-green" onclick="goOnline()">🟢 Go Online & Find Matches</button>
+                        <div id="onlineStatus" class="loading hidden">Finding compatible collaborators...</div>
                     </div>
                     
-                    <div class="chat-main">
-                        <div class="chat-header" id="chatHeader">
-                            Select a conversation
-                        </div>
-                        <div class="chat-messages" id="chatMessages">
-                            <div style="text-align: center; padding: 40px; color: #888;">
-                                Choose someone to chat with
+                    <div id="matchesSection" class="hidden">
+                        <h3>🎯 Live Matches</h3>
+                        <div id="matchesList"></div>
+                    </div>
+                    
+                    <div id="collaborationSection" class="hidden">
+                        <h3>🤝 Active Collaboration</h3>
+                        <div id="collaborationContent"></div>
+                        <div class="chat-container">
+                            <div class="chat-messages" id="chatMessages"></div>
+                            <div style="display: flex; gap: 12px;">
+                                <input type="text" id="chatInput" placeholder="Type your message..." style="flex: 1; padding: 12px; background: #0a0a0a; border: 1px solid #333; color: #fff; border-radius: 8px;">
+                                <button class="btn" onclick="sendMessage()">Send</button>
                             </div>
-                        </div>
-                        <div class="chat-input" id="chatInput" style="display: none;">
-                            <input type="text" id="messageInput" placeholder="Type message..." onkeypress="if(event.key==='Enter') sendMessage()">
-                            <button class="btn" onclick="sendMessage()">Send</button>
+                            <div id="aiGuidance" class="ai-guidance hidden"></div>
                         </div>
                     </div>
-                </div>
+                `}
             `;
         }
 
@@ -446,23 +519,12 @@
                     <h2>Your Profile</h2>
                     
                     ${currentUser ? `
-                        <div class="wallet-info">
+                        <div class="card">
                             <h3>Welcome, ${currentUser.alias}!</h3>
                             <p><strong>CS Balance:</strong> ${currentUser.cs_balance || 0}</p>
                             <p><strong>NFTs:</strong> ${currentUser.nfts || 0}</p>
                             <p><strong>Wallet:</strong> ${walletManager.wallet || 'Not connected'}</p>
-                        </div>
-                        
-                        <div class="wallet-info">
-                            <h3>🔗 Wallet Data</h3>
-                            <button class="btn" onclick="showWalletData()">View Data</button>
-                            <button class="btn" onclick="refreshBalance()">Refresh</button>
-                            <div id="walletData" class="hidden" style="margin-top: 20px; padding: 20px; background: #0a0a0a; border-radius: 8px; font-family: monospace; font-size: 12px;"></div>
-                        </div>
-                        
-                        <div class="wallet-info">
-                            <button class="btn" onclick="exportData()">Export Data</button>
-                            <button class="btn" onclick="clearData()" style="background: #ff4444;">Clear Data</button>
+                            <button class="btn btn-red" onclick="clearData()">Clear Data</button>
                         </div>
                     ` : `
                         <div class="form-group">
@@ -470,8 +532,23 @@
                             <input type="text" id="alias" placeholder="your.alias">
                         </div>
                         <div class="form-group">
+                            <label>Skills</label>
+                            <input type="text" id="skills" placeholder="JavaScript, Design, Marketing...">
+                        </div>
+                        <div class="form-group">
                             <label>Interests</label>
-                            <textarea id="interests" placeholder="What are you passionate about?"></textarea>
+                            <textarea id="interests" placeholder="DeFi, NFTs, Gaming, Social Impact..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Looking For</label>
+                            <select id="lookingFor">
+                                <option value="collaborator">Project Collaborator</option>
+                                <option value="mentor">Mentor</option>
+                                <option value="team">Join a Team</option>
+                                <option value="founder">Co-founder</option>
+                                <option value="developer">Developer Partner</option>
+                                <option value="designer">Design Partner</option>
+                            </select>
                         </div>
                         <button class="btn" onclick="signup()">Join DAO</button>
                     `}
@@ -479,19 +556,23 @@
             `;
         }
 
-        // Functions
+        // Core functions
         async function signup() {
             const alias = document.getElementById('alias').value;
+            const skills = document.getElementById('skills').value;
             const interests = document.getElementById('interests').value;
+            const lookingFor = document.getElementById('lookingFor').value;
             
-            if (!alias || !interests) {
+            if (!alias || !skills || !interests) {
                 alert('Please fill in all fields');
                 return;
             }
             
             currentUser = {
                 alias,
+                skills,
                 interests,
+                lookingFor,
                 cs_balance: 100,
                 nfts: 0,
                 projects: 0,
@@ -503,6 +584,166 @@
             showPage('dashboard');
         }
 
+        function goOnline() {
+            if (!currentUser) {
+                alert('Please create profile first');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('onlineStatus').classList.remove('hidden');
+            
+            // Announce user is online
+            socket.emit('user-online', currentUser);
+            
+            // Show matches section
+            setTimeout(() => {
+                document.getElementById('matchesSection').classList.remove('hidden');
+            }, 1000);
+        }
+
+        function showMatches(matches) {
+            const section = document.getElementById('matchesSection');
+            const list = document.getElementById('matchesList');
+            
+            if (!section || !list) return;
+            
+            document.getElementById('onlineStatus').classList.add('hidden');
+            section.classList.remove('hidden');
+            
+            if (matches.length === 0) {
+                list.innerHTML = `
+                    <div class="card">
+                        <p>No matches found yet. More users coming online...</p>
+                        <p style="font-size: 14px; color: #888;">Try updating your skills or interests!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = matches.map(match => `
+                <div class="match-card">
+                    <div class="match-header">
+                        <div>
+                            <h4>${match.alias}</h4>
+                            <div class="compatibility">${match.compatibility}% compatibility</div>
+                        </div>
+                        <button class="btn btn-green" onclick="acceptMatch('${match.alias}')">
+                            🤝 Collaborate
+                        </button>
+                    </div>
+                    <p><strong>Skills:</strong> ${match.skills}</p>
+                    <p><strong>Interests:</strong> ${match.interests}</p>
+                    <div class="project-suggestion">
+                        <strong>💡 AI Suggestion:</strong> ${match.suggestedProject}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function acceptMatch(matchedUser) {
+            socket.emit('accept-match', { matchedUser });
+        }
+
+        function showCollaborationInterface(data) {
+            const section = document.getElementById('collaborationSection');
+            const content = document.getElementById('collaborationContent');
+            
+            if (!section || !content) return;
+            
+            section.classList.remove('hidden');
+            
+            content.innerHTML = `
+                <div class="card" style="background: #065f46;">
+                    <h4>🎉 Collaboration Started!</h4>
+                    <p><strong>Partner:</strong> ${data.partner}</p>
+                    <p><strong>AI Suggestion:</strong> ${data.suggestedProject}</p>
+                    <div style="margin-top: 16px; display: flex; gap: 12px;">
+                        <input type="text" id="projectName" placeholder="Project name..." style="flex: 1; padding: 8px; background: #0a0a0a; border: 1px solid #333; color: #fff; border-radius: 4px;">
+                        <button class="btn btn-purple" onclick="createCollabProject()">🚀 Create Project</button>
+                    </div>
+                </div>
+            `;
+            
+            // Initialize chat
+            const chatMessages = document.getElementById('chatMessages');
+            if (chatMessages) {
+                chatMessages.innerHTML = `
+                    <div style="text-align: center; color: #888; font-size: 14px; margin-bottom: 16px;">
+                        💬 Collaboration chat started with ${data.partner}
+                    </div>
+                `;
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message || !currentCollaboration) return;
+            
+            // Send message via socket
+            socket.emit('chat-message', {
+                to: currentCollaboration.partner,
+                message,
+                roomId: currentCollaboration.roomId
+            });
+            
+            // Display locally
+            displayChatMessage({
+                from: currentUser.alias,
+                message,
+                timestamp: Date.now()
+            }, true);
+            
+            input.value = '';
+        }
+
+        function displayChatMessage(messageData, isOwn) {
+            const chatMessages = document.getElementById('chatMessages');
+            if (!chatMessages) return;
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
+            messageDiv.innerHTML = `
+                <div class="message-author">${messageData.from}</div>
+                <div>${messageData.message}</div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showAIGuidance(guidance) {
+            const guidanceDiv = document.getElementById('aiGuidance');
+            if (!guidanceDiv) return;
+            
+            guidanceDiv.classList.remove('hidden');
+            guidanceDiv.textContent = guidance.message;
+            
+            // Hide after 10 seconds
+            setTimeout(() => {
+                guidanceDiv.classList.add('hidden');
+            }, 10000);
+        }
+
+        function createCollabProject() {
+            const projectName = document.getElementById('projectName').value.trim();
+            
+            if (!projectName || !currentCollaboration) {
+                alert('Please enter a project name');
+                return;
+            }
+            
+            socket.emit('create-project', {
+                name: projectName,
+                description: `Collaborative project between ${currentUser.alias} and ${currentCollaboration.partner}`,
+                roomId: currentCollaboration.roomId,
+                partner: currentCollaboration.partner
+            });
+        }
+
+        // Existing functions
         async function mintNFT() {
             const description = prompt('Describe your NFT:') || 'Consilience NFT';
             
@@ -565,73 +806,8 @@
             }
         }
 
-        function findMatches() {
-            alert('🎯 Perfect matches found:\\n\\n• alice.builder (95% match)\\n• bob.creator (87% match)\\n• charlie.dev (82% match)');
-        }
-
         function joinProject(project) {
             alert(`Joined ${project} project! Welcome to the team!`);
-        }
-
-        function openChat(username) {
-            currentChatUser = username;
-            document.getElementById('chatHeader').textContent = `Chat with ${username}`;
-            
-            const messages = {
-                'alice.builder': "Hey! I'm working on Mars Colony DAO. Want to collaborate on habitat governance?",
-                'bob.creator': "Hi! Leading Ocean Cleanup Protocol. Need help with DeFi mechanisms. Interested?",
-                'charlie.dev': "What's up! Rust developer here. Looking for cool DAO projects. What are you building?"
-            };
-            
-            document.getElementById('chatMessages').innerHTML = `
-                <div class="message">
-                    <div class="message-author">${username}</div>
-                    <div>${messages[username]}</div>
-                </div>
-            `;
-            document.getElementById('chatInput').style.display = 'flex';
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-            if (!message || !currentChatUser) return;
-            
-            const messagesDiv = document.getElementById('chatMessages');
-            messagesDiv.innerHTML += `
-                <div class="message">
-                    <div class="message-author">You</div>
-                    <div>${message}</div>
-                </div>
-            `;
-            
-            input.value = '';
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            
-            // Smart responses
-            const responses = {
-                'hi': "Great to connect! I'm excited about collaboration opportunities.",
-                'hello': "Hello! I think we could work well together.",
-                'ok': "Perfect! What kind of project interests you most?",
-                'yes': "Awesome! Let's dive into the details.",
-                'project': "I'm working on exciting DAO initiatives. Interested in governance or DeFi?",
-                'token': "Token economics is fascinating! I'm exploring sustainable funding models.",
-                'nft': "NFTs are powerful for community building. Have you created collections?",
-                'dao': "DAOs are the future! What aspects interest you most?",
-                'solana': "Solana is amazing for fast, low-cost apps. Know Rust development?"
-            };
-            
-            let response = responses[message.toLowerCase()] || "That's interesting! Tell me more about your thoughts.";
-            
-            setTimeout(() => {
-                messagesDiv.innerHTML += `
-                    <div class="message">
-                        <div class="message-author">${currentChatUser}</div>
-                        <div>${response}</div>
-                    </div>
-                `;
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }, 1000);
         }
 
         async function connectWallet() {
@@ -640,58 +816,6 @@
                 document.getElementById('walletBtn').textContent = wallet.slice(0, 8) + '...';
                 alert('Wallet connected: ' + wallet);
             }
-        }
-
-        function showWalletData() {
-            const div = document.getElementById('walletData');
-            if (!div) return;
-            
-            if (div.classList.contains('hidden')) {
-                div.classList.remove('hidden');
-                div.innerHTML = `<pre>${JSON.stringify({
-                    user: currentUser,
-                    wallet: walletManager.wallet,
-                    timestamp: new Date().toISOString()
-                }, null, 2)}</pre>`;
-            } else {
-                div.classList.add('hidden');
-            }
-        }
-
-        function refreshBalance() {
-            if (!currentUser) {
-                alert('Please join DAO first');
-                return;
-            }
-            
-            currentUser.cs_balance = Math.floor(Math.random() * 500) + 100;
-            currentUser.nfts = Math.floor(Math.random() * 10);
-            localStorage.setItem('consilience_user', JSON.stringify(currentUser));
-            
-            showPage('profile');
-            alert(`Balance updated! CS: ${currentUser.cs_balance}, NFTs: ${currentUser.nfts}`);
-        }
-
-        function exportData() {
-            if (!currentUser) {
-                alert('No data to export');
-                return;
-            }
-            
-            const data = {
-                user: currentUser,
-                wallet: walletManager.wallet,
-                exported: new Date().toISOString()
-            };
-            
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `consilience-${currentUser.alias}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            alert('Data exported!');
         }
 
         function clearData() {
@@ -704,6 +828,13 @@
                 alert('All data cleared!');
             }
         }
+
+        // Handle Enter key in chat
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && e.target.id === 'chatInput') {
+                sendMessage();
+            }
+        });
 
         // Initialize
         showPage('dashboard');

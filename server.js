@@ -292,6 +292,19 @@ app.get('/api/wallet-balance/:address', async (req, res) => {
   }
 })
 
+// Get active users for matching
+app.get('/api/active-users', (req, res) => {
+  const users = Array.from(activeUsers.values()).map(user => ({
+    alias: user.alias,
+    interests: user.interests,
+    skills: user.skills,
+    lookingFor: user.lookingFor,
+    onlineFor: Date.now() - user.joinedAt
+  }))
+  
+  res.json({ count: users.length, users })
+})
+
 // Get user balance
 app.get('/api/user-balance/:alias', (req, res) => {
   const { alias } = req.params
@@ -782,48 +795,256 @@ app.get('/api/marketplace', (req, res) => {
   res.json(marketplaceItems)
 })
 
-// Socket.io for real-time features
+// Store active users and their data
+const activeUsers = new Map()
+const userSockets = new Map()
+const activeMatches = new Map()
+
+// Socket.io for real-time matching and collaboration
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id)
   
-  // Join user to their personal room
-  socket.on('join-user', (userId) => {
-    socket.join(`user-${userId}`)
-    socket.userId = userId
-    console.log(`${userId} joined their room`)
+  // User comes online with their profile
+  socket.on('user-online', async (userData) => {
+    const { alias, interests, skills, lookingFor } = userData
+    
+    // Store user data
+    activeUsers.set(socket.id, {
+      alias,
+      interests,
+      skills,
+      lookingFor,
+      socketId: socket.id,
+      joinedAt: Date.now()
+    })
+    userSockets.set(alias, socket.id)
+    
+    console.log(`${alias} is online and looking for: ${lookingFor}`)
+    
+    // Find immediate matches
+    const matches = await findMatches(socket.id)
+    if (matches.length > 0) {
+      socket.emit('potential-matches', matches)
+    }
+    
+    // Notify others about new user
+    socket.broadcast.emit('user-joined', { alias, interests, skills })
   })
-
-  // Handle direct messages
-  socket.on('send-message', ({ to, from, message, timestamp }) => {
+  
+  // Handle chat messages with AI guidance
+  socket.on('chat-message', async (data) => {
+    const { to, message, roomId } = data
+    const user = activeUsers.get(socket.id)
+    
+    if (!user) return
+    
     const messageData = {
-      from,
+      from: user.alias,
       message,
-      timestamp
+      timestamp: Date.now()
     }
     
     // Send to recipient
-    io.to(`user-${to}`).emit('message', messageData)
+    if (to) {
+      const recipientSocket = userSockets.get(to)
+      if (recipientSocket) {
+        io.to(recipientSocket).emit('chat-message', messageData)
+      }
+    } else if (roomId) {
+      socket.to(roomId).emit('chat-message', messageData)
+    }
     
-    // Send back to sender for confirmation
-    socket.emit('message-sent', messageData)
-    
-    console.log(`Message from ${from} to ${to}: ${message}`)
+    // Get AI guidance for the conversation
+    const guidance = await getAIGuidance(message, user, to)
+    if (guidance) {
+      // Send guidance to both users
+      socket.emit('ai-guidance', guidance)
+      if (to) {
+        const recipientSocket = userSockets.get(to)
+        if (recipientSocket) {
+          io.to(recipientSocket).emit('ai-guidance', guidance)
+        }
+      }
+    }
   })
   
-  // Handle match notifications
-  socket.on('match-found', ({ userId, matchData }) => {
-    io.to(`user-${userId}`).emit('match_found', matchData)
+  // Accept a match and start collaboration
+  socket.on('accept-match', async (matchData) => {
+    const user = activeUsers.get(socket.id)
+    const { matchedUser } = matchData
+    
+    const roomId = `collab-${user.alias}-${matchedUser}`
+    
+    // Join both users to collaboration room
+    socket.join(roomId)
+    const matchedSocket = userSockets.get(matchedUser)
+    if (matchedSocket) {
+      io.sockets.sockets.get(matchedSocket)?.join(roomId)
+      
+      // Notify both users
+      const collaborationData = {
+        roomId,
+        partner: matchedUser,
+        suggestedProject: await suggestProject(user, activeUsers.get(matchedSocket))
+      }
+      
+      socket.emit('collaboration-started', collaborationData)
+      io.to(matchedSocket).emit('collaboration-started', {
+        ...collaborationData,
+        partner: user.alias
+      })
+      
+      // Store active collaboration
+      activeMatches.set(roomId, {
+        users: [user.alias, matchedUser],
+        startedAt: Date.now(),
+        project: collaborationData.suggestedProject
+      })
+    }
   })
   
-  // Handle typing indicators
-  socket.on('typing', ({ to, from, isTyping }) => {
-    io.to(`user-${to}`).emit('user-typing', { from, isTyping })
+  // Handle project creation from collaboration
+  socket.on('create-project', async (projectData) => {
+    const user = activeUsers.get(socket.id)
+    const { name, description, roomId, partner } = projectData
+    
+    // Create project with both collaborators
+    const project = {
+      id: Date.now(),
+      name,
+      description,
+      creators: [user.alias, partner],
+      created: Date.now(),
+      status: 'active'
+    }
+    
+    // Notify both users
+    socket.emit('project-created', project)
+    if (roomId) {
+      socket.to(roomId).emit('project-created', project)
+    }
+    
+    console.log(`Project '${name}' created by ${user.alias} and ${partner}`)
   })
-
+  
   socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id)
+    const user = activeUsers.get(socket.id)
+    if (user) {
+      userSockets.delete(user.alias)
+      console.log(`${user.alias} went offline`)
+    }
+    activeUsers.delete(socket.id)
   })
 })
+
+// Find compatible users for collaboration
+async function findMatches(socketId) {
+  const user = activeUsers.get(socketId)
+  if (!user) return []
+  
+  const matches = []
+  
+  for (const [otherId, otherUser] of activeUsers) {
+    if (otherId === socketId) continue
+    
+    // Calculate compatibility
+    const compatibility = await calculateCompatibility(user, otherUser)
+    
+    if (compatibility > 0.6) {
+      matches.push({
+        alias: otherUser.alias,
+        interests: otherUser.interests,
+        skills: otherUser.skills,
+        compatibility: Math.round(compatibility * 100),
+        suggestedProject: await suggestProject(user, otherUser)
+      })
+    }
+  }
+  
+  return matches.sort((a, b) => b.compatibility - a.compatibility)
+}
+
+// AI-powered compatibility calculation
+async function calculateCompatibility(user1, user2) {
+  try {
+    const prompt = `Analyze collaboration compatibility between:
+User 1: Interests: ${user1.interests}, Skills: ${user1.skills}, Looking for: ${user1.lookingFor}
+User 2: Interests: ${user2.interests}, Skills: ${user2.skills}, Looking for: ${user2.lookingFor}
+
+Return only a number between 0.0 and 1.0 representing compatibility.`
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 10
+    })
+    
+    const score = parseFloat(response.choices[0].message.content.match(/\d+\.\d+/)?.[0] || '0.5')
+    return Math.min(Math.max(score, 0), 1)
+  } catch (error) {
+    // Fallback: simple keyword matching
+    const user1Keywords = (user1.interests + ' ' + user1.skills).toLowerCase().split(/[\s,]+/)
+    const user2Keywords = (user2.interests + ' ' + user2.skills).toLowerCase().split(/[\s,]+/)
+    
+    const commonKeywords = user1Keywords.filter(word => user2Keywords.includes(word))
+    return Math.min(commonKeywords.length / Math.max(user1Keywords.length, user2Keywords.length), 1)
+  }
+}
+
+// AI project suggestion
+async function suggestProject(user1, user2) {
+  try {
+    const prompt = `Suggest a specific DAO project for collaboration between:
+User 1: ${user1.interests}, Skills: ${user1.skills}
+User 2: ${user2.interests}, Skills: ${user2.skills}
+
+Provide a brief project name and 2-sentence description that uses both users' strengths.`
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 100
+    })
+    
+    return response.choices[0].message.content.trim()
+  } catch (error) {
+    return `Collaborative project combining ${user1.skills} and ${user2.skills} for the DAO ecosystem`
+  }
+}
+
+// AI guidance for conversations
+async function getAIGuidance(message, user, partner) {
+  try {
+    const prompt = `${user.alias} said to ${partner}: "${message}"
+
+As a DAO collaboration facilitator, provide a brief suggestion to help them move toward building a concrete project together. Keep it under 30 words.`
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 50
+    })
+    
+    return {
+      type: 'guidance',
+      message: response.choices[0].message.content.trim(),
+      timestamp: Date.now()
+    }
+  } catch (error) {
+    // Fallback guidance based on keywords
+    const lowerMessage = message.toLowerCase()
+    
+    if (lowerMessage.includes('idea') || lowerMessage.includes('think')) {
+      return { type: 'guidance', message: '💡 Great! Now define the problem you want to solve together.', timestamp: Date.now() }
+    } else if (lowerMessage.includes('project') || lowerMessage.includes('build')) {
+      return { type: 'guidance', message: '🚀 Awesome! What specific features should your project have?', timestamp: Date.now() }
+    } else if (lowerMessage.includes('skill') || lowerMessage.includes('experience')) {
+      return { type: 'guidance', message: '🤝 Perfect match! How can you combine your skills effectively?', timestamp: Date.now() }
+    }
+    
+    return null
+  }
+}
 
 const PORT = process.env.PORT || 8080
 server.listen(PORT, '0.0.0.0', () => {

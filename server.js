@@ -24,32 +24,42 @@ console.log('🔑 SOLANA_PRIVATE_KEY exists:', !!process.env.SOLANA_PRIVATE_KEY)
 if (process.env.SOLANA_PRIVATE_KEY) {
   try {
     console.log('🔑 Parsing private key...')
-    console.log('🔑 Raw key (first 20 chars):', process.env.SOLANA_PRIVATE_KEY.substring(0, 20))
+    console.log('🔑 Key length:', process.env.SOLANA_PRIVATE_KEY.length)
+    console.log('🔑 First 20 chars:', process.env.SOLANA_PRIVATE_KEY.substring(0, 20))
+    console.log('🔑 Last 20 chars:', process.env.SOLANA_PRIVATE_KEY.substring(process.env.SOLANA_PRIVATE_KEY.length - 20))
     
     let secretKey
+    let format = 'unknown'
     
     // Try different formats
     if (process.env.SOLANA_PRIVATE_KEY.startsWith('[')) {
       // JSON array format: [1,2,3,...]
+      format = 'JSON array'
       secretKey = JSON.parse(process.env.SOLANA_PRIVATE_KEY)
     } else if (process.env.SOLANA_PRIVATE_KEY.includes(',')) {
       // Comma-separated format: 1,2,3,...
+      format = 'comma-separated'
       secretKey = process.env.SOLANA_PRIVATE_KEY.split(',').map(n => parseInt(n.trim()))
     } else {
       // Base58 string format
+      format = 'base58'
+      console.log('🔑 Attempting base58 decode...')
       secretKey = Array.from(bs58.decode(process.env.SOLANA_PRIVATE_KEY))
     }
     
+    console.log('🔑 Detected format:', format)
     console.log('🔑 Secret key length:', secretKey.length)
+    console.log('🔑 First 8 bytes:', secretKey.slice(0, 8))
     
     if (secretKey.length !== 64) {
       throw new Error(`Invalid key length: ${secretKey.length}, expected 64`)
     }
     
     payer = Keypair.fromSecretKey(new Uint8Array(secretKey))
-    console.log('✅ Using funded wallet:', payer.publicKey.toString())
+    console.log('✅ SUCCESS! Using funded wallet:', payer.publicKey.toString())
   } catch (error) {
     console.error('❌ Wallet loading failed:', error.message)
+    console.error('❌ Full error:', error)
     console.log('🔑 Expected formats:')
     console.log('  - JSON array: [1,2,3,4,...]')
     console.log('  - Comma-separated: 1,2,3,4,...')

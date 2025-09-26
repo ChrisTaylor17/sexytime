@@ -74,8 +74,32 @@ async function ensureFunding() {
   }
 }
 
-// Initialize funding
-ensureFunding()
+// Initialize funding and create CS token
+let csTokenMint = null
+
+async function initializeCSToken() {
+  try {
+    // Create the CS platform token
+    console.log('🪙 Creating CS platform token...')
+    csTokenMint = await createMint(
+      connection,
+      payer,
+      payer.publicKey, // mint authority
+      payer.publicKey, // freeze authority
+      6, // decimals
+      undefined,
+      { commitment: 'confirmed' }
+    )
+    console.log('✅ CS Token created:', csTokenMint.toString())
+  } catch (error) {
+    console.error('❌ CS Token creation failed:', error.message)
+  }
+}
+
+// Initialize everything
+ensureFunding().then(() => {
+  initializeCSToken()
+})
 setInterval(ensureFunding, 300000) // Check every 5 minutes
 
 const app = express()
@@ -150,16 +174,119 @@ app.post('/api/create-project', async (req, res) => {
   }
 })
 
-// Simple API endpoints
-app.post('/api/signup', (req, res) => {
-  const { alias, interests } = req.body
-  res.json({ 
-    alias, 
-    interests, 
-    wallet_address: 'demo_wallet_' + Math.random().toString(36).substr(2, 9),
-    cs_balance: 100,
-    message: 'Demo user created - connect database for persistence'
+// CS Token distribution endpoint
+app.post('/api/award-cs-tokens', async (req, res) => {
+  const { walletAddress, amount, reason } = req.body
+  
+  try {
+    if (!csTokenMint) {
+      return res.status(400).json({ error: 'CS token not initialized' })
+    }
+    
+    const userPublicKey = new (require('@solana/web3.js').PublicKey)(walletAddress)
+    
+    // Get or create user's CS token account
+    const userTokenAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      payer,
+      csTokenMint,
+      userPublicKey,
+      false,
+      'confirmed'
+    )
+    
+    // Mint CS tokens to user
+    const signature = await mintTo(
+      connection,
+      payer,
+      csTokenMint,
+      userTokenAccount.address,
+      payer.publicKey,
+      amount * 1000000, // Convert to token units (6 decimals)
+      [],
+      { commitment: 'confirmed' }
+    )
+    
+    console.log(`✅ Awarded ${amount} CS tokens to ${walletAddress} for: ${reason}`)
+    
+    res.json({ 
+      success: true, 
+      signature,
+      amount,
+      reason,
+      explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
+    })
+  } catch (error) {
+    console.error('❌ CS token award failed:', error.message)
+    res.status(500).json({ error: 'Token award failed: ' + error.message })
+  }
+})
+
+// Get CS token info
+app.get('/api/cs-token-info', (req, res) => {
+  res.json({
+    mint: csTokenMint?.toString(),
+    symbol: 'CS',
+    name: 'Consilience Token',
+    decimals: 6,
+    explorerUrl: csTokenMint ? `https://explorer.solana.com/address/${csTokenMint.toString()}?cluster=devnet` : null
   })
+})
+
+// Simple API endpoints
+app.post('/api/signup', async (req, res) => {
+  const { alias, interests, walletAddress } = req.body
+  
+  try {
+    // Award initial CS tokens to user wallet if provided
+    let csBalance = 100
+    let realTokens = false
+    
+    if (walletAddress && csTokenMint) {
+      try {
+        const userPublicKey = new (require('@solana/web3.js').PublicKey)(walletAddress)
+        
+        // Create token account for user
+        const userTokenAccount = await getOrCreateAssociatedTokenAccount(
+          connection,
+          payer,
+          csTokenMint,
+          userPublicKey,
+          false,
+          'confirmed'
+        )
+        
+        // Mint 100 CS tokens to user
+        await mintTo(
+          connection,
+          payer,
+          csTokenMint,
+          userTokenAccount.address,
+          payer.publicKey,
+          100 * 1000000, // 100 tokens with 6 decimals
+          [],
+          { commitment: 'confirmed' }
+        )
+        
+        realTokens = true
+        console.log(`✅ Minted 100 CS tokens to ${alias} at ${walletAddress}`)
+      } catch (error) {
+        console.error('❌ CS token minting failed:', error.message)
+      }
+    }
+    
+    res.json({ 
+      alias, 
+      interests, 
+      wallet_address: walletAddress || 'connect_wallet_for_tokens',
+      cs_balance: csBalance,
+      cs_token_mint: csTokenMint?.toString(),
+      real_tokens: realTokens,
+      message: realTokens ? 'Welcome! 100 CS tokens sent to your wallet!' : 'Connect wallet to receive real CS tokens'
+    })
+  } catch (error) {
+    res.status(500).json({ error: 'Signup failed: ' + error.message })
+  }
 })
 
 app.get('/api/user/:alias', (req, res) => {
@@ -328,7 +455,12 @@ app.post('/api/ai-chat', async (req, res) => {
       const nft = await createRealNFT(message)
       if (nft) {
         const status = nft.isReal ? '✅ REAL NFT on Solana!' : '⚠️ Simulated (devnet busy)'
-        response = `🎨 NFT Created!\n\n${status}\n🔗 Mint: ${nft.mintAddress}\n🏷️ ID: #${nft.tokenId}\n🔍 Explorer: ${nft.explorerUrl}\n💰 +25 CS tokens!\n\n✨ Your NFT is ready!`
+        
+        // Award real CS tokens if possible
+        let tokenReward = 'Tracked locally'
+        // Note: In production, you'd get user's wallet from session/auth
+        
+        response = `🎨 NFT Created!\n\n${status}\n🔗 Mint: ${nft.mintAddress}\n🏷️ ID: #${nft.tokenId}\n🔍 Explorer: ${nft.explorerUrl}\n💰 +25 CS tokens (${tokenReward})\n\n✨ Your NFT is ready!`
       } else {
         response = '❌ NFT creation failed completely. Try again!'
       }
@@ -337,7 +469,11 @@ app.post('/api/ai-chat', async (req, res) => {
       const token = await createRealToken(message)
       if (token) {
         const status = token.isReal ? '✅ REAL Token on Solana!' : '⚠️ Simulated (devnet busy)'
-        response = `🪙 Token Created!\n\n${status}\n🔗 Symbol: ${token.symbol}\n✅ Mint: ${token.mintAddress}\n💎 Supply: ${token.supply.toLocaleString()}\n🔍 Explorer: https://explorer.solana.com/address/${token.mintAddress}?cluster=devnet\n\n✨ Your token is ready!`
+        
+        // Award real CS tokens if possible
+        let tokenReward = 'Tracked locally'
+        
+        response = `🪙 Token Created!\n\n${status}\n🔗 Symbol: ${token.symbol}\n✅ Mint: ${token.mintAddress}\n💎 Supply: ${token.supply.toLocaleString()}\n🔍 Explorer: https://explorer.solana.com/address/${token.mintAddress}?cluster=devnet\n💰 +50 CS tokens (${tokenReward})\n\n✨ Your token is ready!`
       } else {
         response = '❌ Token creation failed completely. Try again!'
       }

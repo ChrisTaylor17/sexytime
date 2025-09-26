@@ -536,7 +536,11 @@
                 const response = await fetch(`${API_URL}/api/signup`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ alias, interests })
+                    body: JSON.stringify({ 
+                        alias, 
+                        interests,
+                        walletAddress: walletManager.wallet // Send connected wallet
+                    })
                 });
                 
                 const data = await response.json();
@@ -545,7 +549,15 @@
                 localStorage.setItem('consilience_user', JSON.stringify(data));
                 walletManager.updateWalletUI();
                 
-                addMessage('System', `Welcome ${data.alias}! You've joined the DAO. Connect your wallet to start earning!`, 'SYS');
+                const message = data.real_tokens ? 
+                    `Welcome ${data.alias}! 100 CS tokens sent to your wallet! 🪙` :
+                    `Welcome ${data.alias}! Connect your wallet to receive real CS tokens.`;
+                    
+                addMessage('System', message, 'SYS');
+                
+                if (data.cs_token_mint) {
+                    addMessage('System', `CS Token: ${data.cs_token_mint}`, 'SYS');
+                }
             } catch (error) {
                 addMessage('System', 'Signup failed. Try again.', 'ERR');
             }

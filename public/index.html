@@ -4,24 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consilience DAO</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #0a0a0a;
-            --card: #1a1a1a;
-            --border: #333;
-            --text: #fff;
-            --text-dim: #888;
-            --accent: #00ff88;
-            --accent-dim: #00cc6a;
-        }
-        
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
             line-height: 1.6;
         }
         
@@ -36,43 +25,47 @@
             justify-content: space-between;
             align-items: center;
             padding: 20px 0;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid #333;
             margin-bottom: 30px;
         }
         
         .logo {
             font-size: 24px;
             font-weight: 700;
-            color: var(--accent);
+            color: #00ff88;
         }
         
         .nav {
             display: flex;
-            gap: 30px;
+            gap: 20px;
         }
         
         .nav-item {
             padding: 10px 20px;
-            background: var(--card);
-            border: 1px solid var(--border);
+            background: #1a1a1a;
+            border: 1px solid #333;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
-            font-weight: 500;
         }
         
-        .nav-item:hover {
-            background: var(--accent);
-            color: var(--bg);
+        .nav-item:hover, .nav-item.active {
+            background: #00ff88;
+            color: #000;
         }
         
-        .nav-item.active {
-            background: var(--accent);
-            color: var(--bg);
+        .btn {
+            background: #00ff88;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
         }
         
-        .content {
-            min-height: 70vh;
+        .btn:hover {
+            background: #00cc6a;
         }
         
         .grid {
@@ -83,52 +76,20 @@
         }
         
         .card {
-            background: var(--card);
-            border: 1px solid var(--border);
+            background: #1a1a1a;
+            border: 1px solid #333;
             border-radius: 12px;
             padding: 24px;
-            transition: all 0.2s;
-        }
-        
-        .card:hover {
-            transform: translateY(-2px);
-            border-color: var(--accent);
         }
         
         .card h3 {
+            color: #00ff88;
             margin-bottom: 12px;
-            color: var(--accent);
         }
         
         .card p {
-            color: var(--text-dim);
+            color: #888;
             margin-bottom: 16px;
-        }
-        
-        .btn {
-            background: var(--accent);
-            color: var(--bg);
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .btn:hover {
-            background: var(--accent-dim);
-            transform: translateY(-1px);
-        }
-        
-        .btn-secondary {
-            background: var(--card);
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-        
-        .btn-secondary:hover {
-            background: var(--border);
         }
         
         .stats {
@@ -138,7 +99,7 @@
         }
         
         .stat {
-            background: var(--card);
+            background: #1a1a1a;
             padding: 20px;
             border-radius: 8px;
             text-align: center;
@@ -148,11 +109,11 @@
         .stat-number {
             font-size: 32px;
             font-weight: 700;
-            color: var(--accent);
+            color: #00ff88;
         }
         
         .stat-label {
-            color: var(--text-dim);
+            color: #888;
             font-size: 14px;
         }
         
@@ -164,14 +125,13 @@
         }
         
         .chat-sidebar {
-            background: var(--card);
+            background: #1a1a1a;
             border-radius: 12px;
             padding: 20px;
-            overflow-y: auto;
         }
         
         .chat-main {
-            background: var(--card);
+            background: #1a1a1a;
             border-radius: 12px;
             display: flex;
             flex-direction: column;
@@ -179,7 +139,7 @@
         
         .chat-header {
             padding: 20px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid #333;
             font-weight: 600;
         }
         
@@ -191,16 +151,16 @@
         
         .chat-input {
             padding: 20px;
-            border-top: 1px solid var(--border);
+            border-top: 1px solid #333;
             display: flex;
             gap: 12px;
         }
         
         .chat-input input {
             flex: 1;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            color: var(--text);
+            background: #0a0a0a;
+            border: 1px solid #333;
+            color: #fff;
             padding: 12px 16px;
             border-radius: 8px;
         }
@@ -208,27 +168,26 @@
         .message {
             margin-bottom: 16px;
             padding: 12px;
-            background: var(--bg);
+            background: #0a0a0a;
             border-radius: 8px;
         }
         
         .message-author {
             font-weight: 600;
-            color: var(--accent);
+            color: #00ff88;
             margin-bottom: 4px;
         }
         
         .user-card {
             padding: 12px;
             margin-bottom: 8px;
-            background: var(--bg);
+            background: #0a0a0a;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s;
         }
         
         .user-card:hover {
-            background: var(--border);
+            background: #333;
         }
         
         .user-name {
@@ -238,7 +197,7 @@
         
         .user-status {
             font-size: 12px;
-            color: var(--text-dim);
+            color: #888;
         }
         
         .form {
@@ -259,20 +218,15 @@
         .form-group input,
         .form-group textarea {
             width: 100%;
-            background: var(--card);
-            border: 1px solid var(--border);
-            color: var(--text);
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #fff;
             padding: 12px 16px;
             border-radius: 8px;
         }
         
-        .form-group textarea {
-            height: 100px;
-            resize: vertical;
-        }
-        
         .wallet-info {
-            background: var(--card);
+            background: #1a1a1a;
             padding: 20px;
             border-radius: 8px;
             margin: 20px 0;
@@ -280,22 +234,6 @@
         
         .hidden {
             display: none;
-        }
-        
-        @media (max-width: 768px) {
-            .nav {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .chat-container {
-                grid-template-columns: 1fr;
-                height: auto;
-            }
-            
-            .stats {
-                flex-direction: column;
-            }
         }
     </style>
 </head>
@@ -313,19 +251,37 @@
             <button class="btn" id="walletBtn" onclick="connectWallet()">Connect Wallet</button>
         </div>
         
-        <div class="content" id="content">
+        <div id="content">
             <!-- Content loads here -->
         </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="wallet.js"></script>
     <script>
         let currentUser = JSON.parse(localStorage.getItem('consilience_user')) || null;
-        let socket = io();
         let currentPage = 'dashboard';
+        let currentChatUser = null;
 
-        // Page management
+        // Initialize wallet manager
+        const walletManager = {
+            wallet: localStorage.getItem('wallet_address'),
+            async connectWallet() {
+                if (window.solana && window.solana.isPhantom) {
+                    try {
+                        const response = await window.solana.connect();
+                        this.wallet = response.publicKey.toString();
+                        localStorage.setItem('wallet_address', this.wallet);
+                        return this.wallet;
+                    } catch (error) {
+                        console.error('Wallet connection failed:', error);
+                        return null;
+                    }
+                } else {
+                    alert('Please install Phantom wallet');
+                    return null;
+                }
+            }
+        };
+
         function showPage(page) {
             currentPage = page;
             
@@ -333,7 +289,6 @@
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             event.target.classList.add('active');
             
-            // Load page content
             const content = document.getElementById('content');
             
             switch(page) {
@@ -342,11 +297,9 @@
                     break;
                 case 'chat':
                     content.innerHTML = renderChat();
-                    initChat();
                     break;
                 case 'projects':
                     content.innerHTML = renderProjects();
-                    loadProjects();
                     break;
                 case 'create':
                     content.innerHTML = renderCreate();
@@ -366,7 +319,7 @@
                     </div>
                     <div class="stat">
                         <div class="stat-number">${currentUser?.nfts || 0}</div>
-                        <div class="stat-label">NFTs Created</div>
+                        <div class="stat-label">NFTs</div>
                     </div>
                     <div class="stat">
                         <div class="stat-number">${currentUser?.projects || 0}</div>
@@ -377,26 +330,26 @@
                 <div class="grid">
                     <div class="card">
                         <h3>🎯 Find Collaborators</h3>
-                        <p>Connect with builders who share your vision and skills</p>
+                        <p>Connect with builders who share your vision</p>
                         <button class="btn" onclick="findMatches()">Find Matches</button>
                     </div>
                     
                     <div class="card">
-                        <h3>🚀 Launch Project</h3>
-                        <p>Start a new DAO project and gather your team</p>
-                        <button class="btn" onclick="showPage('create')">Create Project</button>
-                    </div>
-                    
-                    <div class="card">
-                        <h3>💬 Active Chats</h3>
-                        <p>Continue conversations with your collaborators</p>
+                        <h3>💬 Chat</h3>
+                        <p>Talk with your collaborators</p>
                         <button class="btn" onclick="showPage('chat')">Open Chat</button>
                     </div>
                     
                     <div class="card">
                         <h3>🎨 Create NFT</h3>
-                        <p>Mint unique digital assets on Solana blockchain</p>
+                        <p>Mint on Solana blockchain</p>
                         <button class="btn" onclick="mintNFT()">Mint NFT</button>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>🪙 Create Token</h3>
+                        <p>Launch your own token</p>
+                        <button class="btn" onclick="createToken()">Create Token</button>
                     </div>
                 </div>
             `;
@@ -409,29 +362,29 @@
                         <h3>Conversations</h3>
                         <div class="user-card" onclick="openChat('alice.builder')">
                             <div class="user-name">alice.builder</div>
-                            <div class="user-status">🟢 Online - Mars Colony DAO</div>
+                            <div class="user-status">🟢 Mars Colony DAO</div>
                         </div>
                         <div class="user-card" onclick="openChat('bob.creator')">
                             <div class="user-name">bob.creator</div>
-                            <div class="user-status">🟡 Away - Ocean Cleanup</div>
+                            <div class="user-status">🟡 Ocean Cleanup</div>
                         </div>
                         <div class="user-card" onclick="openChat('charlie.dev')">
                             <div class="user-name">charlie.dev</div>
-                            <div class="user-status">🟢 Online - Available</div>
+                            <div class="user-status">🟢 Available</div>
                         </div>
                     </div>
                     
                     <div class="chat-main">
                         <div class="chat-header" id="chatHeader">
-                            Select a conversation to start chatting
+                            Select a conversation
                         </div>
                         <div class="chat-messages" id="chatMessages">
-                            <div style="text-align: center; padding: 40px; color: var(--text-dim);">
-                                Choose someone to chat with from the sidebar
+                            <div style="text-align: center; padding: 40px; color: #888;">
+                                Choose someone to chat with
                             </div>
                         </div>
                         <div class="chat-input" id="chatInput" style="display: none;">
-                            <input type="text" id="messageInput" placeholder="Type your message...">
+                            <input type="text" id="messageInput" placeholder="Type message..." onkeypress="if(event.key==='Enter') sendMessage()">
                             <button class="btn" onclick="sendMessage()">Send</button>
                         </div>
                     </div>
@@ -442,8 +395,22 @@
         function renderProjects() {
             return `
                 <h2>DAO Projects</h2>
-                <div class="grid" id="projectsGrid">
-                    <!-- Projects load here -->
+                <div class="grid">
+                    <div class="card">
+                        <h3>Mars Colony DAO</h3>
+                        <p>Building sustainable habitats on Mars</p>
+                        <button class="btn" onclick="joinProject('mars')">Join Project</button>
+                    </div>
+                    <div class="card">
+                        <h3>Ocean Cleanup Protocol</h3>
+                        <p>DeFi-powered ocean cleanup</p>
+                        <button class="btn" onclick="joinProject('ocean')">Join Project</button>
+                    </div>
+                    <div class="card">
+                        <h3>Neural Network DAO</h3>
+                        <p>Decentralized AI research</p>
+                        <button class="btn" onclick="joinProject('ai')">Join Project</button>
+                    </div>
                 </div>
             `;
         }
@@ -452,23 +419,20 @@
             return `
                 <div class="form">
                     <h2>Create Something Amazing</h2>
-                    
                     <div class="grid">
                         <div class="card">
                             <h3>🎨 Mint NFT</h3>
-                            <p>Create a unique digital asset on Solana</p>
+                            <p>Create unique digital asset</p>
                             <button class="btn" onclick="mintNFT()">Create NFT</button>
                         </div>
-                        
                         <div class="card">
                             <h3>🪙 Launch Token</h3>
-                            <p>Create your own cryptocurrency token</p>
+                            <p>Create cryptocurrency token</p>
                             <button class="btn" onclick="createToken()">Create Token</button>
                         </div>
-                        
                         <div class="card">
                             <h3>🚀 Start Project</h3>
-                            <p>Launch a new DAO project</p>
+                            <p>Launch new DAO project</p>
                             <button class="btn" onclick="createProject()">New Project</button>
                         </div>
                     </div>
@@ -484,24 +448,21 @@
                     ${currentUser ? `
                         <div class="wallet-info">
                             <h3>Welcome, ${currentUser.alias}!</h3>
-                            <p><strong>CS Balance:</strong> ${currentUser.cs_balance || 0} tokens</p>
-                            <p><strong>Wallet:</strong> ${currentUser.wallet_address || 'Not connected'}</p>
-                            <p><strong>NFTs Created:</strong> ${currentUser.nfts || 0}</p>
-                            <p><strong>Tokens Created:</strong> ${currentUser.tokens || 0}</p>
-                            <p><strong>Reputation:</strong> ${currentUser.reputation || 0}/100</p>
+                            <p><strong>CS Balance:</strong> ${currentUser.cs_balance || 0}</p>
+                            <p><strong>NFTs:</strong> ${currentUser.nfts || 0}</p>
+                            <p><strong>Wallet:</strong> ${walletManager.wallet || 'Not connected'}</p>
                         </div>
                         
                         <div class="wallet-info">
-                            <h3>🔗 Blockchain Data</h3>
-                            <button class="btn" onclick="showWalletData()">View Raw Wallet Data</button>
-                            <button class="btn-secondary" onclick="refreshBalance()">Refresh Balance</button>
-                            <div id="walletData" class="hidden" style="margin-top: 20px; padding: 20px; background: var(--bg); border-radius: 8px; font-family: monospace; font-size: 12px; overflow-x: auto;"></div>
+                            <h3>🔗 Wallet Data</h3>
+                            <button class="btn" onclick="showWalletData()">View Data</button>
+                            <button class="btn" onclick="refreshBalance()">Refresh</button>
+                            <div id="walletData" class="hidden" style="margin-top: 20px; padding: 20px; background: #0a0a0a; border-radius: 8px; font-family: monospace; font-size: 12px;"></div>
                         </div>
                         
                         <div class="wallet-info">
-                            <h3>⚙️ Settings</h3>
-                            <button class="btn-secondary" onclick="exportData()">Export Profile Data</button>
-                            <button class="btn-secondary" onclick="clearData()" style="background: #ff4444;">Clear Local Data</button>
+                            <button class="btn" onclick="exportData()">Export Data</button>
+                            <button class="btn" onclick="clearData()" style="background: #ff4444;">Clear Data</button>
                         </div>
                     ` : `
                         <div class="form-group">
@@ -518,35 +479,32 @@
             `;
         }
 
-        // Core functions
+        // Functions
         async function signup() {
             const alias = document.getElementById('alias').value;
             const interests = document.getElementById('interests').value;
             
-            if (!alias || !interests) return;
-            
-            try {
-                const response = await fetch('/api/signup', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        alias, 
-                        interests,
-                        walletAddress: walletManager.wallet
-                    })
-                });
-                
-                const data = await response.json();
-                currentUser = data;
-                localStorage.setItem('consilience_user', JSON.stringify(data));
-                showPage('dashboard');
-            } catch (error) {
-                alert('Signup failed. Try again.');
+            if (!alias || !interests) {
+                alert('Please fill in all fields');
+                return;
             }
+            
+            currentUser = {
+                alias,
+                interests,
+                cs_balance: 100,
+                nfts: 0,
+                projects: 0,
+                wallet_address: walletManager.wallet
+            };
+            
+            localStorage.setItem('consilience_user', JSON.stringify(currentUser));
+            alert(`Welcome ${alias}! You've joined the DAO with 100 CS tokens!`);
+            showPage('dashboard');
         }
 
         async function mintNFT() {
-            const description = prompt('Describe your NFT:') || 'Consilience DAO NFT';
+            const description = prompt('Describe your NFT:') || 'Consilience NFT';
             
             try {
                 const response = await fetch('/api/ai-chat', {
@@ -561,13 +519,10 @@
                 const data = await response.json();
                 alert(data.response);
                 
-                // Update user data
-                if (data.response.includes('✅ REAL NFT')) {
-                    if (currentUser) {
-                        currentUser.nfts = (currentUser.nfts || 0) + 1;
-                        currentUser.cs_balance = (currentUser.cs_balance || 0) + 25;
-                        localStorage.setItem('consilience_user', JSON.stringify(currentUser));
-                    }
+                if (currentUser && data.response.includes('✅')) {
+                    currentUser.nfts = (currentUser.nfts || 0) + 1;
+                    currentUser.cs_balance = (currentUser.cs_balance || 0) + 25;
+                    localStorage.setItem('consilience_user', JSON.stringify(currentUser));
                 }
             } catch (error) {
                 alert('NFT creation failed');
@@ -589,6 +544,11 @@
                 
                 const data = await response.json();
                 alert(data.response);
+                
+                if (currentUser && data.response.includes('✅')) {
+                    currentUser.cs_balance = (currentUser.cs_balance || 0) + 50;
+                    localStorage.setItem('consilience_user', JSON.stringify(currentUser));
+                }
             } catch (error) {
                 alert('Token creation failed');
             }
@@ -596,39 +556,43 @@
 
         function createProject() {
             const name = prompt('Project name:');
-            const description = prompt('Project description:');
-            
-            if (name && description) {
-                alert(`Project "${name}" created! Start inviting collaborators.`);
+            if (name) {
+                alert(`Project "${name}" created!`);
+                if (currentUser) {
+                    currentUser.projects = (currentUser.projects || 0) + 1;
+                    localStorage.setItem('consilience_user', JSON.stringify(currentUser));
+                }
             }
         }
 
         function findMatches() {
-            alert('🎯 Finding perfect matches based on your skills and interests...\n\nMatches found:\n• alice.builder (95% match)\n• bob.creator (87% match)\n• charlie.dev (82% match)');
+            alert('🎯 Perfect matches found:\\n\\n• alice.builder (95% match)\\n• bob.creator (87% match)\\n• charlie.dev (82% match)');
         }
 
-        let currentChatUser = null;
+        function joinProject(project) {
+            alert(`Joined ${project} project! Welcome to the team!`);
+        }
 
         function openChat(username) {
             currentChatUser = username;
             document.getElementById('chatHeader').textContent = `Chat with ${username}`;
             
-            const initialMessages = {
-                'alice.builder': "Hey! I'm working on the Mars Colony DAO and saw your profile. Your skills in blockchain development could be perfect for our habitat governance system. Want to collaborate?",
-                'bob.creator': "Hi there! I'm leading the Ocean Cleanup Protocol and we need someone with your expertise. We're building DeFi mechanisms for environmental impact. Interested in making a real difference?",
-                'charlie.dev': "What's up! I'm a Rust developer looking for interesting DAO projects to contribute to. I saw your profile and think we could build something amazing together. What are you working on?"
+            const messages = {
+                'alice.builder': "Hey! I'm working on Mars Colony DAO. Want to collaborate on habitat governance?",
+                'bob.creator': "Hi! Leading Ocean Cleanup Protocol. Need help with DeFi mechanisms. Interested?",
+                'charlie.dev': "What's up! Rust developer here. Looking for cool DAO projects. What are you building?"
             };
             
             document.getElementById('chatMessages').innerHTML = `
                 <div class="message">
                     <div class="message-author">${username}</div>
-                    <div>${initialMessages[username] || "Hey! I saw we're a great match for collaboration. What projects are you working on?"}</div>
+                    <div>${messages[username]}</div>
                 </div>
             `;
             document.getElementById('chatInput').style.display = 'flex';
         }
 
-        async function sendMessage() {
+        function sendMessage() {
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
             if (!message || !currentChatUser) return;
@@ -644,32 +608,20 @@
             input.value = '';
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
             
-            // Smart responses based on message content
+            // Smart responses
             const responses = {
-                'hi': "Hey! Great to connect with you. I'm really excited about potential collaboration opportunities.",
-                'hello': "Hello! I've been looking at your profile and think we could work well together.",
-                'ok': "Perfect! So what kind of project are you most interested in working on right now?",
-                'yes': "Awesome! Let's dive into the details. What's your experience with blockchain development?",
-                'no': "No worries! Maybe we can find another way to collaborate. What are your main interests?",
-                'project': "I'm currently working on some really exciting DAO initiatives. Are you interested in governance, DeFi, or NFTs?",
-                'token': "Token economics is fascinating! I've been exploring different models for sustainable DAO funding.",
-                'nft': "NFTs are such a powerful tool for community building. Have you created any collections before?",
-                'dao': "DAOs are the future of collaboration! What aspects of decentralized governance interest you most?",
-                'solana': "Solana is amazing for building fast, low-cost applications. Are you familiar with Rust development?"
+                'hi': "Great to connect! I'm excited about collaboration opportunities.",
+                'hello': "Hello! I think we could work well together.",
+                'ok': "Perfect! What kind of project interests you most?",
+                'yes': "Awesome! Let's dive into the details.",
+                'project': "I'm working on exciting DAO initiatives. Interested in governance or DeFi?",
+                'token': "Token economics is fascinating! I'm exploring sustainable funding models.",
+                'nft': "NFTs are powerful for community building. Have you created collections?",
+                'dao': "DAOs are the future! What aspects interest you most?",
+                'solana': "Solana is amazing for fast, low-cost apps. Know Rust development?"
             };
             
-            let response = responses[message.toLowerCase()];
-            
-            if (!response) {
-                const genericResponses = [
-                    "That's really interesting! Tell me more about your thoughts on that.",
-                    "I love that perspective! How do you see that fitting into a DAO structure?",
-                    "Great point! I've been thinking about similar ideas lately.",
-                    "That could be a game-changer! What would be the first step to implement it?",
-                    "Fascinating approach! Have you seen any successful examples of that?"
-                ];
-                response = genericResponses[Math.floor(Math.random() * genericResponses.length)];
-            }
+            let response = responses[message.toLowerCase()] || "That's interesting! Tell me more about your thoughts.";
             
             setTimeout(() => {
                 messagesDiv.innerHTML += `
@@ -682,191 +634,82 @@
             }, 1000);
         }
 
-        function loadProjects() {
-            document.getElementById('projectsGrid').innerHTML = `
-                <div class="card">
-                    <h3>Mars Colony DAO</h3>
-                    <p>Building sustainable habitats on Mars using blockchain governance</p>
-                    <button class="btn">Join Project</button>
-                </div>
-                <div class="card">
-                    <h3>Ocean Cleanup Protocol</h3>
-                    <p>DeFi-powered ocean cleanup with environmental impact tracking</p>
-                    <button class="btn">Join Project</button>
-                </div>
-                <div class="card">
-                    <h3>Neural Network DAO</h3>
-                    <p>Decentralized AI research and development</p>
-                    <button class="btn">Join Project</button>
-                </div>
-            `;
-        }
-
-        function initChat() {
-            // Chat initialization
-        }
-
         async function connectWallet() {
             const wallet = await walletManager.connectWallet();
             if (wallet) {
                 document.getElementById('walletBtn').textContent = wallet.slice(0, 8) + '...';
-                if (currentPage === 'profile') showPage('profile');
+                alert('Wallet connected: ' + wallet);
             }
         }
 
-        // Wallet data functions
-        async function showWalletData() {
-            const walletDataDiv = document.getElementById('walletData');
+        function showWalletData() {
+            const div = document.getElementById('walletData');
+            if (!div) return;
             
-            if (!walletDataDiv) {
-                alert('Please go to Profile page to view wallet data');
-                return;
-            }
-            
-            if (walletDataDiv.classList.contains('hidden')) {
-                walletDataDiv.classList.remove('hidden');
-                walletDataDiv.innerHTML = 'Loading wallet data...';
-                
-                try {
-                    const balance = await getWalletBalance();
-                    const walletData = {
-                        user: {
-                            alias: currentUser?.alias || 'Not logged in',
-                            cs_balance: currentUser?.cs_balance || 0,
-                            nfts_created: currentUser?.nfts || 0,
-                            tokens_created: currentUser?.tokens || 0
-                        },
-                        wallet: {
-                            address: walletManager?.wallet || 'Not connected',
-                            sol_balance: balance,
-                            network: 'Solana Devnet',
-                            explorer: walletManager?.wallet ? `https://explorer.solana.com/address/${walletManager.wallet}?cluster=devnet` : null
-                        },
-                        platform: {
-                            cs_token_mint: 'Loading...',
-                            total_users: 1247,
-                            total_projects: 89
-                        },
-                        session: {
-                            login_time: new Date().toISOString(),
-                            page_views: Math.floor(Math.random() * 50) + 10,
-                            last_activity: new Date().toISOString()
-                        }
-                    };
-                    
-                    walletDataDiv.innerHTML = `<pre style="white-space: pre-wrap; word-wrap: break-word;">${JSON.stringify(walletData, null, 2)}</pre>`;
-                } catch (error) {
-                    walletDataDiv.innerHTML = `<pre>Error loading wallet data: ${error.message}</pre>`;
-                }
+            if (div.classList.contains('hidden')) {
+                div.classList.remove('hidden');
+                div.innerHTML = `<pre>${JSON.stringify({
+                    user: currentUser,
+                    wallet: walletManager.wallet,
+                    timestamp: new Date().toISOString()
+                }, null, 2)}</pre>`;
             } else {
-                walletDataDiv.classList.add('hidden');
+                div.classList.add('hidden');
             }
         }
-        
-        async function getWalletBalance() {
-            if (!walletManager?.wallet) return 'No wallet connected';
-            
-            try {
-                const response = await fetch(`/api/wallet-balance/${walletManager.wallet}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    return `${data.balance} SOL (${data.lamports} lamports)`;
-                } else {
-                    return 'Unable to fetch balance';
-                }
-            } catch (error) {
-                return `Error: ${error.message}`;
-            }
-        }
-        
-        async function refreshBalance() {
+
+        function refreshBalance() {
             if (!currentUser) {
-                alert('Please join the DAO first');
+                alert('Please join DAO first');
                 return;
             }
             
-            try {
-                // Simulate balance update
-                const newBalance = Math.floor(Math.random() * 500) + 100;
-                const newNFTs = Math.floor(Math.random() * 10);
-                
-                currentUser.cs_balance = newBalance;
-                currentUser.nfts = newNFTs;
-                currentUser.tokens = Math.floor(Math.random() * 5);
-                currentUser.reputation = Math.min(100, (currentUser.reputation || 0) + Math.floor(Math.random() * 10));
-                
-                localStorage.setItem('consilience_user', JSON.stringify(currentUser));
-                
-                showPage('profile'); // Refresh the page
-                alert(`✅ Balance Updated!\n\nCS Tokens: ${newBalance}\nNFTs: ${newNFTs}\nReputation: ${currentUser.reputation}/100`);
-            } catch (error) {
-                alert('Failed to refresh balance: ' + error.message);
-            }
+            currentUser.cs_balance = Math.floor(Math.random() * 500) + 100;
+            currentUser.nfts = Math.floor(Math.random() * 10);
+            localStorage.setItem('consilience_user', JSON.stringify(currentUser));
+            
+            showPage('profile');
+            alert(`Balance updated! CS: ${currentUser.cs_balance}, NFTs: ${currentUser.nfts}`);
         }
-        
+
         function exportData() {
             if (!currentUser) {
-                alert('No user data to export. Please join the DAO first.');
+                alert('No data to export');
                 return;
             }
             
-            const exportData = {
-                user_profile: currentUser,
-                wallet_info: {
-                    address: walletManager?.wallet || 'Not connected',
-                    connected: !!walletManager?.wallet
-                },
-                platform_data: {
-                    cs_balance: currentUser.cs_balance || 0,
-                    nfts_created: currentUser.nfts || 0,
-                    tokens_created: currentUser.tokens || 0,
-                    reputation: currentUser.reputation || 0
-                },
-                export_info: {
-                    exported_at: new Date().toISOString(),
-                    version: '1.0',
-                    platform: 'Consilience DAO'
-                }
+            const data = {
+                user: currentUser,
+                wallet: walletManager.wallet,
+                exported: new Date().toISOString()
             };
             
-            try {
-                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `consilience-${currentUser.alias}-${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                alert('✅ Data exported successfully!');
-            } catch (error) {
-                alert('Export failed: ' + error.message);
-            }
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `consilience-${currentUser.alias}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            alert('Data exported!');
         }
-        
+
         function clearData() {
-            if (confirm('⚠️ WARNING: This will permanently delete all your local data including:\n\n• User profile\n• Wallet connection\n• Chat history\n• Settings\n\nAre you absolutely sure?')) {
-                try {
-                    localStorage.clear();
-                    currentUser = null;
-                    if (walletManager) walletManager.wallet = null;
-                    
-                    // Reset UI
-                    document.getElementById('walletBtn').textContent = 'Connect Wallet';
-                    showPage('profile');
-                    
-                    alert('✅ All data cleared successfully!\n\nYou can now:\n• Reconnect your wallet\n• Create a new profile\n• Start fresh');
-                } catch (error) {
-                    alert('Error clearing data: ' + error.message);
-                }
+            if (confirm('Clear all data? This cannot be undone.')) {
+                localStorage.clear();
+                currentUser = null;
+                walletManager.wallet = null;
+                document.getElementById('walletBtn').textContent = 'Connect Wallet';
+                showPage('profile');
+                alert('All data cleared!');
             }
         }
-        
+
         // Initialize
         showPage('dashboard');
-        walletManager.updateWalletUI();
+        if (walletManager.wallet) {
+            document.getElementById('walletBtn').textContent = walletManager.wallet.slice(0, 8) + '...';
+        }
     </script>
 </body>
 </html>

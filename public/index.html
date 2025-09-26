@@ -747,6 +747,9 @@
                 timestamp: Date.now()
             }, true);
             
+            // Get AI guidance for this message
+            getAIGuidanceForMessage(message);
+            
             input.value = '';
         }
 
@@ -772,10 +775,61 @@
             guidanceDiv.classList.remove('hidden');
             guidanceDiv.textContent = guidance.message;
             
-            // Hide after 10 seconds
+            // Hide after 15 seconds
             setTimeout(() => {
                 guidanceDiv.classList.add('hidden');
-            }, 10000);
+            }, 15000);
+        }
+        
+        // Get AI guidance for user messages
+        async function getAIGuidanceForMessage(message) {
+            if (!currentCollaboration) return;
+            
+            try {
+                const response = await fetch('/api/ai-chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: `Guide this collaboration: User said "${message}" to their partner. Provide brief guidance to move toward building a concrete project.`,
+                        alias: currentUser?.alias || 'user'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Extract guidance from AI response
+                let guidanceText = data.response;
+                if (guidanceText.length > 100) {
+                    guidanceText = guidanceText.substring(0, 100) + '...';
+                }
+                
+                showAIGuidance({ message: guidanceText });
+                
+            } catch (error) {
+                // Fallback guidance based on keywords
+                const lowerMessage = message.toLowerCase();
+                let guidance = '';
+                
+                if (lowerMessage.includes('idea') || lowerMessage.includes('think')) {
+                    guidance = '💡 Great! Now define the specific problem you want to solve together.';
+                } else if (lowerMessage.includes('project') || lowerMessage.includes('build')) {
+                    guidance = '🚀 Awesome! What features should your project have? Start with an MVP.';
+                } else if (lowerMessage.includes('skill') || lowerMessage.includes('experience')) {
+                    guidance = '🤝 Perfect match! How can you divide tasks based on your strengths?';
+                } else if (lowerMessage.includes('token') || lowerMessage.includes('nft')) {
+                    guidance = '🪙 Consider the tokenomics - how will your project create value?';
+                } else if (lowerMessage.includes('dao') || lowerMessage.includes('governance')) {
+                    guidance = '🗳️ Think about governance structure - how will decisions be made?';
+                } else if (lowerMessage.includes('user') || lowerMessage.includes('people')) {
+                    guidance = '👥 Focus on user needs - what problem are you solving for them?';
+                } else {
+                    guidance = '🎯 Great conversation! Consider turning this into actionable project steps.';
+                }
+                
+                if (guidance) {
+                    showAIGuidance({ message: guidance });
+                }
+            }
         }
 
         function createCollabProject() {

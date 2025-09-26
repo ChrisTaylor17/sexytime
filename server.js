@@ -12,8 +12,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-// Initialize Solana with persistent funded wallet
-const connection = new Connection(process.env.SOLANA_RPC_URL || clusterApiUrl('devnet'), 'confirmed')
+// Initialize Solana with mainnet for reliability
+const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com', 'confirmed')
 
 // Use a pre-funded wallet for reliable operations
 let payer
@@ -39,38 +39,17 @@ if (process.env.SOLANA_PRIVATE_KEY) {
   console.log('🔑 Private key (save this):', JSON.stringify(Array.from(payer.secretKey)))
 }
 
-// Fund wallet if needed with multiple attempts
-async function ensureFunding() {
+// Check wallet balance (mainnet - no airdrops)
+async function checkBalance() {
   try {
     const balance = await connection.getBalance(payer.publicKey)
-    console.log(`💰 Current balance: ${balance / 1000000000} SOL`)
+    console.log(`💰 Mainnet balance: ${balance / 1000000000} SOL`)
     
-    if (balance < 50000000) { // Less than 0.05 SOL
-      console.log('🚨 Low balance, requesting multiple airdrops...')
-      
-      // Try multiple smaller airdrops
-      for (let i = 0; i < 3; i++) {
-        try {
-          const airdropSignature = await connection.requestAirdrop(
-            payer.publicKey,
-            1000000000 // 1 SOL per attempt
-          )
-          await connection.confirmTransaction(airdropSignature, 'confirmed')
-          console.log(`✅ Airdrop ${i + 1}/3 successful!`)
-          
-          // Wait between airdrops
-          await new Promise(resolve => setTimeout(resolve, 1000))
-        } catch (error) {
-          console.log(`⚠️ Airdrop ${i + 1} failed:`, error.message)
-        }
-      }
-      
-      // Check final balance
-      const newBalance = await connection.getBalance(payer.publicKey)
-      console.log(`💰 Final balance: ${newBalance / 1000000000} SOL`)
+    if (balance < 10000000) { // Less than 0.01 SOL
+      console.log('⚠️ Low balance - need to fund wallet manually on mainnet')
     }
   } catch (error) {
-    console.log('⚠️ Funding check failed:', error.message)
+    console.log('⚠️ Balance check failed:', error.message)
   }
 }
 
@@ -97,10 +76,10 @@ async function initializeCSToken() {
 }
 
 // Initialize everything
-ensureFunding().then(() => {
+checkBalance().then(() => {
   initializeCSToken()
 })
-setInterval(ensureFunding, 300000) // Check every 5 minutes
+setInterval(checkBalance, 300000) // Check every 5 minutes
 
 const app = express()
 const server = http.createServer(app)
@@ -214,7 +193,7 @@ app.post('/api/award-cs-tokens', async (req, res) => {
       signature,
       amount,
       reason,
-      explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
+      explorerUrl: `https://explorer.solana.com/tx/${signature}`
     })
   } catch (error) {
     console.error('❌ CS token award failed:', error.message)
@@ -229,7 +208,7 @@ app.get('/api/cs-token-info', (req, res) => {
     symbol: 'CS',
     name: 'Consilience Token',
     decimals: 6,
-    explorerUrl: csTokenMint ? `https://explorer.solana.com/address/${csTokenMint.toString()}?cluster=devnet` : null
+    explorerUrl: csTokenMint ? `https://explorer.solana.com/address/${csTokenMint.toString()}` : null
   })
 })
 
@@ -314,8 +293,8 @@ async function createRealToken(projectName) {
     const balance = await connection.getBalance(payer.publicKey)
     console.log(`💰 Balance: ${balance / 1000000000} SOL`)
     
-    if (balance < 5000000) { // Less than 0.005 SOL
-      throw new Error('Insufficient balance for transaction')
+    if (balance < 1000000) { // Less than 0.001 SOL
+      throw new Error('Insufficient SOL - fund wallet on mainnet')
     }
     
     // Create mint with timeout
@@ -365,8 +344,8 @@ async function createRealNFT(description) {
     const balance = await connection.getBalance(payer.publicKey)
     console.log(`💰 Balance: ${balance / 1000000000} SOL`)
     
-    if (balance < 5000000) { // Less than 0.005 SOL
-      throw new Error('Insufficient balance for transaction')
+    if (balance < 1000000) { // Less than 0.001 SOL
+      throw new Error('Insufficient SOL - fund wallet on mainnet')
     }
     
     // Create mint with timeout
@@ -390,7 +369,7 @@ async function createRealNFT(description) {
     return {
       mintAddress: mint.toString(),
       tokenId: Math.floor(Math.random() * 10000),
-      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
+      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}`,
       isReal: true
     }
   } catch (error) {
@@ -400,7 +379,7 @@ async function createRealNFT(description) {
     return {
       mintAddress: 'REAL' + Math.random().toString(36).substr(2, 32).toUpperCase(),
       tokenId: Math.floor(Math.random() * 10000),
-      explorerUrl: `https://explorer.solana.com/address/simulation?cluster=devnet`,
+      explorerUrl: `https://explorer.solana.com/address/simulation`,
       isReal: false,
       error: error.message
     }
@@ -473,7 +452,7 @@ app.post('/api/ai-chat', async (req, res) => {
         // Award real CS tokens if possible
         let tokenReward = 'Tracked locally'
         
-        response = `🪙 Token Created!\n\n${status}\n🔗 Symbol: ${token.symbol}\n✅ Mint: ${token.mintAddress}\n💎 Supply: ${token.supply.toLocaleString()}\n🔍 Explorer: https://explorer.solana.com/address/${token.mintAddress}?cluster=devnet\n💰 +50 CS tokens (${tokenReward})\n\n✨ Your token is ready!`
+        response = `🪙 Token Created!\n\n${status}\n🔗 Symbol: ${token.symbol}\n✅ Mint: ${token.mintAddress}\n💎 Supply: ${token.supply.toLocaleString()}\n🔍 Explorer: https://explorer.solana.com/address/${token.mintAddress}\n💰 +50 CS tokens (${tokenReward})\n\n✨ Your token is ready!`
       } else {
         response = '❌ Token creation failed completely. Try again!'
       }

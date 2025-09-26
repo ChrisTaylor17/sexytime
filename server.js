@@ -5,7 +5,6 @@ const cors = require('cors')
 const OpenAI = require('openai')
 const { Keypair, Connection, clusterApiUrl } = require('@solana/web3.js')
 const { createMint, getOrCreateAssociatedTokenAccount, mintTo } = require('@solana/spl-token')
-const { Metaplex, keypairIdentity, bundlrStorage } = require('@metaplex-foundation/js')
 require('dotenv').config()
 
 // Import bs58 with fallback
@@ -25,9 +24,6 @@ const openai = new OpenAI({
 
 // Initialize Solana with devnet
 const connection = new Connection(process.env.SOLANA_RPC_URL || clusterApiUrl('devnet'), 'confirmed')
-
-// Initialize Metaplex (will be set after wallet loads)
-let metaplex = null
 
 // Load funded wallet from environment
 let payer
@@ -409,21 +405,17 @@ async function createRealToken(projectName) {
   }
 }
 
-// Real Metaplex NFT creation with metadata
+// Real NFT creation with supply of 1 (NFT standard)
 async function createRealNFT(description) {
   try {
-    console.log('🎨 Creating real Metaplex NFT...')
-    
-    if (!metaplex) {
-      throw new Error('Metaplex not initialized')
-    }
+    console.log('🎨 Creating real NFT on Solana...')
     
     // Quick balance check
     const balance = await connection.getBalance(payer.publicKey)
     console.log(`💰 Balance: ${balance / 1000000000} SOL`)
     
-    if (balance < 10000000) { // Less than 0.01 SOL (NFTs need more for metadata)
-      throw new Error('Insufficient devnet SOL - need at least 0.01 SOL for NFT')
+    if (balance < 5000000) { // Less than 0.005 SOL
+      throw new Error('Insufficient devnet SOL - fund wallet')
     }
     
     // Generate NFT metadata
@@ -431,34 +423,48 @@ async function createRealNFT(description) {
     const nftName = `Consilience NFT #${tokenId}`
     const nftDescription = description || 'A unique NFT created on the Consilience DAO platform'
     
-    console.log('📝 Creating NFT metadata...')
+    // Create mint for NFT (0 decimals = NFT)
+    const mint = await createMint(
+      connection,
+      payer,
+      payer.publicKey, // mint authority
+      payer.publicKey, // freeze authority  
+      0, // 0 decimals = NFT
+      undefined,
+      { commitment: 'confirmed' }
+    )
     
-    // Create NFT with Metaplex
-    const { nft } = await metaplex.nfts().create({
-      uri: '', // We'll use on-chain metadata for now
-      name: nftName,
-      description: nftDescription,
-      sellerFeeBasisPoints: 500, // 5% royalty
-      symbol: 'CNFT',
-      creators: [
-        {
-          address: payer.publicKey,
-          verified: true,
-          share: 100,
-        },
-      ],
-      isMutable: true,
-    })
+    // Create token account and mint 1 NFT
+    const tokenAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      payer,
+      mint,
+      payer.publicKey,
+      false,
+      'confirmed'
+    )
     
-    console.log('✅ Real Metaplex NFT created:', nft.address.toString())
+    // Mint exactly 1 token (NFT)
+    await mintTo(
+      connection,
+      payer,
+      mint,
+      tokenAccount.address,
+      payer.publicKey,
+      1, // Mint exactly 1 NFT
+      [],
+      { commitment: 'confirmed' }
+    )
+    
+    console.log('✅ Real NFT created:', mint.toString())
     
     return {
-      mintAddress: nft.address.toString(),
+      mintAddress: mint.toString(),
       tokenId: tokenId,
       name: nftName,
       description: nftDescription,
-      explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`,
-      metaplexUrl: `https://www.solaneyes.com/address/${nft.address.toString()}?cluster=devnet`,
+      supply: 1,
+      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
       isReal: true
     }
   } catch (error) {
@@ -530,7 +536,7 @@ app.post('/api/ai-chat', async (req, res) => {
         let tokenReward = 'Tracked locally'
         // Note: In production, you'd get user's wallet from session/auth
         
-        response = `🎨 NFT Created!\n\n${status}\n🏷️ Name: ${nft.name || 'Consilience NFT #' + nft.tokenId}\n🔗 Mint: ${nft.mintAddress}\n📝 Description: ${nft.description || 'DAO NFT'}\n🔍 Explorer: ${nft.explorerUrl}\n${nft.metaplexUrl ? '🔎 Metaplex: ' + nft.metaplexUrl + '\n' : ''}💰 +25 CS tokens (${tokenReward})\n\n✨ Your real NFT with metadata is ready!`
+        response = `🎨 NFT Created!\n\n${status}\n🏷️ Name: ${nft.name || 'Consilience NFT #' + nft.tokenId}\n🔗 Mint: ${nft.mintAddress}\n📝 Description: ${nft.description || 'DAO NFT'}\n💎 Supply: ${nft.supply || 1} (NFT)\n🔍 Explorer: ${nft.explorerUrl}\n💰 +25 CS tokens (${tokenReward})\n\n✨ Your NFT is ready!`
       } else {
         response = '❌ NFT creation failed completely. Try again!'
       }

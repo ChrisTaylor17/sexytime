@@ -3,6 +3,7 @@ const http = require('http')
 const socketIo = require('socket.io')
 const cors = require('cors')
 const OpenAI = require('openai')
+const bs58 = require('bs58')
 const { Keypair, Connection, clusterApiUrl } = require('@solana/web3.js')
 const { createMint, getOrCreateAssociatedTokenAccount, mintTo } = require('@solana/spl-token')
 require('dotenv').config()
@@ -36,7 +37,6 @@ if (process.env.SOLANA_PRIVATE_KEY) {
       secretKey = process.env.SOLANA_PRIVATE_KEY.split(',').map(n => parseInt(n.trim()))
     } else {
       // Base58 string format
-      const bs58 = require('bs58')
       secretKey = Array.from(bs58.decode(process.env.SOLANA_PRIVATE_KEY))
     }
     

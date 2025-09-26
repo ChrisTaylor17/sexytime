@@ -626,33 +626,16 @@
                 // Announce user is online
                 socket.emit('user-online', currentUser);
             } else {
-                // Fallback: simulate matches
+                // No connection - show error
                 setTimeout(() => {
-                    const mockMatches = [
-                        {
-                            alias: 'alice.builder',
-                            skills: 'React, Solana, Smart Contracts',
-                            interests: 'DeFi, NFTs, Web3',
-                            compatibility: 92,
-                            suggestedProject: 'Mars Colony DAO - Governance system for space habitats'
-                        },
-                        {
-                            alias: 'bob.creator',
-                            skills: 'Design, Marketing, Community',
-                            interests: 'Gaming, Social DAOs, UX',
-                            compatibility: 87,
-                            suggestedProject: 'GameFi Social Platform - Play-to-earn with social features'
-                        },
-                        {
-                            alias: 'charlie.dev',
-                            skills: 'Rust, Backend, Infrastructure',
-                            interests: 'Security, Protocols, DeFi',
-                            compatibility: 84,
-                            suggestedProject: 'Cross-chain Bridge - Secure asset transfers'
-                        }
-                    ];
-                    showMatches(mockMatches);
-                }, 800);
+                    document.getElementById('onlineStatus').innerHTML = `
+                        <div style="color: #ff4444; text-align: center;">
+                            ❌ Connection failed - Cannot find real users
+                            <br><span style="font-size: 12px;">Check server connection</span>
+                        </div>
+                    `;
+                }, 1000);
+                return;
             }
             
             // Show matches section
@@ -704,14 +687,7 @@
             if (socket && isConnected) {
                 socket.emit('accept-match', { matchedUser });
             } else {
-                // Fallback: simulate collaboration
-                const mockCollaboration = {
-                    partner: matchedUser,
-                    roomId: `collab-${currentUser.alias}-${matchedUser}`,
-                    suggestedProject: 'Collaborative DAO project combining your skills'
-                };
-                currentCollaboration = mockCollaboration;
-                showCollaborationInterface(mockCollaboration);
+                alert('❌ Connection required for real collaboration');
             }
         }
 
@@ -760,29 +736,8 @@
                     roomId: currentCollaboration.roomId
                 });
             } else {
-                // Fallback: simulate response
-                setTimeout(() => {
-                    const responses = {
-                        'hi': "Great to connect! I'm excited about collaboration opportunities.",
-                        'hello': "Hello! I think we could work well together.",
-                        'project': "I'm working on exciting DAO initiatives. What interests you?",
-                        'idea': "That's a fantastic idea! How should we implement it?",
-                        'build': "Let's build something amazing together!"
-                    };
-                    
-                    const response = responses[message.toLowerCase()] || "That's interesting! Tell me more about your thoughts.";
-                    
-                    displayChatMessage({
-                        from: currentCollaboration.partner,
-                        message: response,
-                        timestamp: Date.now()
-                    }, false);
-                    
-                    // Show AI guidance
-                    showAIGuidance({
-                        message: "💡 Great conversation! Consider defining specific project goals together."
-                    });
-                }, 1000);
+                alert('❌ Connection required for real chat');
+                return;
             }
             
             // Display locally
@@ -839,13 +794,7 @@
                     partner: currentCollaboration.partner
                 });
             } else {
-                // Fallback: simulate project creation
-                alert(`🚀 Project "${projectName}" created successfully! Both collaborators will be notified.`);
-                
-                if (currentUser) {
-                    currentUser.projects = (currentUser.projects || 0) + 1;
-                    localStorage.setItem('consilience_user', JSON.stringify(currentUser));
-                }
+                alert('❌ Connection required for real project creation');
             }
         }
 

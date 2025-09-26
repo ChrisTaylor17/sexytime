@@ -3,10 +3,19 @@ const http = require('http')
 const socketIo = require('socket.io')
 const cors = require('cors')
 const OpenAI = require('openai')
-const bs58 = require('bs58')
 const { Keypair, Connection, clusterApiUrl } = require('@solana/web3.js')
 const { createMint, getOrCreateAssociatedTokenAccount, mintTo } = require('@solana/spl-token')
 require('dotenv').config()
+
+// Import bs58 with fallback
+let bs58
+try {
+  const bs58Module = require('bs58')
+  bs58 = bs58Module.default || bs58Module
+  console.log('✅ bs58 library loaded, decode available:', typeof bs58.decode)
+} catch (error) {
+  console.log('⚠️ bs58 library not available, using fallback')
+}
 
 // Initialize OpenAI
 const openai = new OpenAI({
@@ -44,7 +53,15 @@ if (process.env.SOLANA_PRIVATE_KEY) {
       // Base58 string format
       format = 'base58'
       console.log('🔑 Attempting base58 decode...')
-      secretKey = Array.from(bs58.decode(process.env.SOLANA_PRIVATE_KEY))
+      
+      if (bs58 && typeof bs58.decode === 'function') {
+        secretKey = Array.from(bs58.decode(process.env.SOLANA_PRIVATE_KEY))
+      } else {
+        // Fallback: try to use Solana's Keypair.fromSecretKey with base58
+        console.log('🔑 Using Solana Keypair for base58...')
+        const tempKeypair = Keypair.fromSecretKey(Buffer.from(process.env.SOLANA_PRIVATE_KEY, 'base64'))
+        throw new Error('Base58 decode not available - please use JSON array format instead')
+      }
     }
     
     console.log('🔑 Detected format:', format)

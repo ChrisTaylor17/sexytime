@@ -12,8 +12,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-// Initialize Solana with mainnet for reliability
-const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com', 'confirmed')
+// Initialize Solana with devnet
+const connection = new Connection(process.env.SOLANA_RPC_URL || clusterApiUrl('devnet'), 'confirmed')
 
 // Use a pre-funded wallet for reliable operations
 let payer
@@ -43,10 +43,10 @@ if (process.env.SOLANA_PRIVATE_KEY) {
 async function checkBalance() {
   try {
     const balance = await connection.getBalance(payer.publicKey)
-    console.log(`💰 Mainnet balance: ${balance / 1000000000} SOL`)
+    console.log(`💰 Devnet balance: ${balance / 1000000000} SOL`)
     
     if (balance < 10000000) { // Less than 0.01 SOL
-      console.log('⚠️ Low balance - need to fund wallet manually on mainnet')
+      console.log('⚠️ Low balance - wallet needs more devnet SOL')
     }
   } catch (error) {
     console.log('⚠️ Balance check failed:', error.message)
@@ -193,7 +193,7 @@ app.post('/api/award-cs-tokens', async (req, res) => {
       signature,
       amount,
       reason,
-      explorerUrl: `https://explorer.solana.com/tx/${signature}`
+      explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
     })
   } catch (error) {
     console.error('❌ CS token award failed:', error.message)
@@ -208,7 +208,7 @@ app.get('/api/cs-token-info', (req, res) => {
     symbol: 'CS',
     name: 'Consilience Token',
     decimals: 6,
-    explorerUrl: csTokenMint ? `https://explorer.solana.com/address/${csTokenMint.toString()}` : null
+    explorerUrl: csTokenMint ? `https://explorer.solana.com/address/${csTokenMint.toString()}?cluster=devnet` : null
   })
 })
 
@@ -294,7 +294,7 @@ async function createRealToken(projectName) {
     console.log(`💰 Balance: ${balance / 1000000000} SOL`)
     
     if (balance < 1000000) { // Less than 0.001 SOL
-      throw new Error('Insufficient SOL - fund wallet on mainnet')
+      throw new Error('Insufficient devnet SOL - fund wallet')
     }
     
     // Create mint with timeout
@@ -345,7 +345,7 @@ async function createRealNFT(description) {
     console.log(`💰 Balance: ${balance / 1000000000} SOL`)
     
     if (balance < 1000000) { // Less than 0.001 SOL
-      throw new Error('Insufficient SOL - fund wallet on mainnet')
+      throw new Error('Insufficient devnet SOL - fund wallet')
     }
     
     // Create mint with timeout
@@ -369,7 +369,7 @@ async function createRealNFT(description) {
     return {
       mintAddress: mint.toString(),
       tokenId: Math.floor(Math.random() * 10000),
-      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}`,
+      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
       isReal: true
     }
   } catch (error) {
@@ -379,7 +379,7 @@ async function createRealNFT(description) {
     return {
       mintAddress: 'REAL' + Math.random().toString(36).substr(2, 32).toUpperCase(),
       tokenId: Math.floor(Math.random() * 10000),
-      explorerUrl: `https://explorer.solana.com/address/simulation`,
+      explorerUrl: `https://explorer.solana.com/address/simulation?cluster=devnet`,
       isReal: false,
       error: error.message
     }
@@ -452,7 +452,7 @@ app.post('/api/ai-chat', async (req, res) => {
         // Award real CS tokens if possible
         let tokenReward = 'Tracked locally'
         
-        response = `🪙 Token Created!\n\n${status}\n🔗 Symbol: ${token.symbol}\n✅ Mint: ${token.mintAddress}\n💎 Supply: ${token.supply.toLocaleString()}\n🔍 Explorer: https://explorer.solana.com/address/${token.mintAddress}\n💰 +50 CS tokens (${tokenReward})\n\n✨ Your token is ready!`
+        response = `🪙 Token Created!\n\n${status}\n🔗 Symbol: ${token.symbol}\n✅ Mint: ${token.mintAddress}\n💎 Supply: ${token.supply.toLocaleString()}\n🔍 Explorer: https://explorer.solana.com/address/${token.mintAddress}?cluster=devnet\n💰 +50 CS tokens (${tokenReward})\n\n✨ Your token is ready!`
       } else {
         response = '❌ Token creation failed completely. Try again!'
       }

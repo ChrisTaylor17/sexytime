@@ -97,7 +97,11 @@ export default function NFTGallery() {
                       className="w-full h-32 object-cover rounded mb-2"
                     />
                     <h4 className="font-medium text-sm">{nft.name}</h4>
-                    <p className="text-xs text-green-600 font-medium">✓ Task Completed</p>
+                    <p className="text-xs text-green-600 font-medium">✓ Achievement NFT</p>
+                    {nft.type === 'metaplex_nft' && (
+                      <p className="text-xs text-blue-600">🎯 Collectible</p>
+                    )}
+                    <p className="text-xs text-gray-400 truncate">{nft.mint}</p>
                   </div>
                 ))}
               </div>

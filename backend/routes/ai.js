@@ -1,6 +1,7 @@
 const express = require('express')
 const OpenAI = require('openai')
 const { mintTokens, createNFT } = require('../utils/solana')
+const { createMetaplexNFT } = require('../utils/metaplex')
 
 const router = express.Router()
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null
@@ -99,8 +100,13 @@ router.post('/verify-task', async (req, res) => {
         const taskName = project?.name || 'DAO Task'
         const userWallet = user.wallet_address
         
-        // AI Asset Manager creates NFT for user's wallet
-        const nftData = await createNFT(alias, taskName, userWallet)
+        // AI Asset Manager creates collectible NFT for user's wallet
+        let nftData = await createMetaplexNFT(userWallet, taskName, alias)
+        
+        // Fallback to regular NFT if Metaplex fails
+        if (!nftData) {
+          nftData = await createNFT(alias, taskName, userWallet)
+        }
         
         if (nftData) {
           // Store NFT metadata

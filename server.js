@@ -234,16 +234,11 @@ try {
         creators: [{
           address: aiWallet.publicKey,
           share: 100
-        }]
+        }],
+        toOwner: userPublicKey // Create directly to user to avoid transfer issues
       })
       
-      console.log('✅ NFT created with AI image URL as metadata URI')
-      
-      // Transfer to user
-      await nftMetaplex.nfts().transfer({
-        nftOrSft: nft,
-        toOwner: userPublicKey
-      })
+      console.log('✅ NFT created with AI image URL and sent to user')
       
       const mint = nft.address
       

@@ -4,6 +4,7 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import axios from 'axios'
 import NFTGallery from '../components/NFTGallery'
+import TransparencyDashboard from '../components/TransparencyDashboard'
 
 export default function Dashboard() {
   const [user, setUser] = useState(null)
@@ -100,11 +101,16 @@ export default function Dashboard() {
             <NFTGallery />
           </div>
 
+          {/* AI Transparency Dashboard */}
+          <div className="lg:col-span-2">
+            <TransparencyDashboard />
+          </div>
+          
           {/* Leaderboard */}
-          <div className="card lg:col-span-3">
-            <h2 className="text-xl font-semibold mb-4">Leaderboard</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {leaderboard.slice(0, 10).map((leader, index) => (
+          <div className="card">
+            <h2 className="text-xl font-semibold mb-4">🏆 Leaderboard</h2>
+            <div className="space-y-2">
+              {leaderboard.slice(0, 5).map((leader, index) => (
                 <div key={leader.alias} className="flex justify-between items-center p-2 border-b">
                   <span className="font-medium">#{index + 1} {leader.alias}</span>
                   <span className="text-gray-600">{leader.cs_balance} CS</span>

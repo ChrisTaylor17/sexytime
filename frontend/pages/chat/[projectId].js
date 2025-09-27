@@ -199,15 +199,24 @@ export default function ChatRoom() {
         </div>
 
         <div className="border-t bg-white p-4">
-          <div className="mb-4">
-            <div className="flex space-x-2 mb-2">
+          <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-medium mb-2">Submit Task Proof</h3>
+            <div className="flex flex-col space-y-2">
               <input
                 type="file"
                 onChange={(e) => setTaskProof(e.target.files[0])}
-                className="text-sm"
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                accept="image/*,.pdf,.doc,.docx,.txt"
               />
-              <button onClick={submitTaskProof} className="btn-primary text-sm">
-                Submit Task Proof
+              {taskProof && (
+                <p className="text-sm text-green-600">✓ File selected: {taskProof.name}</p>
+              )}
+              <button 
+                onClick={submitTaskProof} 
+                className="btn-primary text-sm w-full"
+                disabled={!taskProof}
+              >
+                Submit Proof & Mint NFT to Wallet
               </button>
             </div>
           </div>

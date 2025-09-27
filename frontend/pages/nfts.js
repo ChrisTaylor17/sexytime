@@ -73,11 +73,15 @@ export default function NFTs() {
         });
         
         if (response.ok) {
-          alert('NFT collection created successfully!');
+          const data = await response.json();
+          alert(data.message || 'NFT collection created successfully!');
           setShowCreateForm(false);
           setNewNFT({ name: '', description: '', image: '', supply: 100, projectId: '' });
           fetchUserNFTs();
           return;
+        } else {
+          const errorData = await response.json();
+          alert(`Error: ${errorData.error || 'Creation failed'}`);
         }
       } catch (backendError) {
         console.log('Backend unavailable, using localStorage');
@@ -121,8 +125,11 @@ export default function NFTs() {
       });
       
       if (response.ok) {
-        alert(`✅ NFT minted successfully!`);
+        const data = await response.json();
+        alert(data.message || `✅ NFT minted successfully!`);
       } else {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.error || 'Minting failed'}`);
         throw new Error('Backend failed');
       }
     } catch (error) {

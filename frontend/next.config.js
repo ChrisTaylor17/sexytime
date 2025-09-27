@@ -4,7 +4,7 @@ const nextConfig = {
   swcMinify: true,
   // Force rebuild
   generateBuildId: async () => {
-    return 'force-dashboard-' + Date.now()
+    return 'fix-nav-' + Date.now()
   },
   trailingSlash: false,
   async rewrites() {

@@ -1,5 +1,6 @@
 frontend/
-*.md
+mcp-server/
+public/
 .git/
-.env
-.env.local
+*.md
+.env.example

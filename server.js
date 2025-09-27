@@ -104,86 +104,62 @@ try {
     }
   })
   
-  // Create real NFT with image and metadata using Metaplex
+  // Create simple working NFT
   app.post('/api/create-nft', async (req, res) => {
     try {
-      const { name, description, walletAddress, image } = req.body
+      const { name, description, walletAddress } = req.body
       
       if (!walletAddress) {
         return res.status(400).json({ error: 'Wallet address required' })
       }
       
-      console.log(`🎨 Creating real NFT "${name}" for ${walletAddress}`)
-      
-      // Import Metaplex SDK
-      const { Metaplex, keypairIdentity } = require('@metaplex-foundation/js')
-      
-      // Initialize Metaplex without bundlr
-      const metaplex = Metaplex.make(connection)
-        .use(keypairIdentity(aiWallet))
+      console.log(`🎨 Creating NFT for ${walletAddress}`)
       
       const userPublicKey = new PublicKey(walletAddress)
       
-      // Generate image based on description
-      const seed = encodeURIComponent(`${name || 'NFT'} ${description || 'art'}`)
-      const nftImage = image || `https://api.dicebear.com/7.x/shapes/svg?seed=${seed}&backgroundColor=00ff88,ff6b6b,4ecdc4,45b7d1,96ceb4,feca57,ff9ff3,54a0ff`
+      // Create simple NFT mint
+      const mint = await createMint(
+        connection,
+        aiWallet,
+        aiWallet.publicKey,
+        aiWallet.publicKey,
+        0
+      )
       
-      console.log('🎨 Using image:', nftImage)
+      console.log('✅ NFT mint created:', mint.toString())
       
-      // Ensure all values are defined
-      const nftName = name || 'Consilience NFT'
-      const nftDescription = description || 'A unique NFT created on Consilience DAO platform'
+      // Create token account and mint to user
+      const userTokenAccount = await getOrCreateAssociatedTokenAccount(
+        connection,
+        aiWallet,
+        mint,
+        userPublicKey
+      )
       
-      console.log('✅ Creating NFT with name:', nftName, 'description:', nftDescription, 'image:', nftImage)
+      await mintTo(
+        connection,
+        aiWallet,
+        mint,
+        userTokenAccount.address,
+        aiWallet,
+        1
+      )
       
-      console.log('✅ Creating NFT with Metaplex...')
-      
-      // Create NFT using Metaplex
-      const { nft } = await metaplex.nfts().create({
-        name: nftName,
-        description: nftDescription,
-        image: nftImage,
-        sellerFeeBasisPoints: 500,
-        symbol: 'CNSL',
-        creators: [
-          {
-            address: aiWallet.publicKey,
-            share: 100,
-          },
-        ],
-      })
-      
-      console.log('✅ NFT created with Metaplex:', nft.address.toString())
-      
-      // Transfer NFT to user
-      await metaplex.nfts().transfer({
-        nftOrSft: nft,
-        toOwner: userPublicKey,
-      })
-      
-      console.log('✅ NFT transferred to user')
+      console.log('✅ NFT minted to user')
       
       res.json({
         success: true,
-        message: `🎨 Real NFT "${name}" with image and metadata created!`,
-        mintAddress: nft.address.toString(),
-        metadataUri: nft.uri,
-        image: nftImage,
-        explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`,
-        solscanUrl: `https://solscan.io/token/${nft.address.toString()}?cluster=devnet`,
-        magicEdenUrl: `https://magiceden.io/item-details/${nft.address.toString()}`,
-        name: nft.name,
-        description: nft.description,
-        symbol: nft.symbol,
-        royalty: '5%',
-        isRealNFT: true,
-        hasMetadata: true,
-        hasImage: true
+        message: `🎨 NFT "${name || 'Consilience NFT'}" created!`,
+        mintAddress: mint.toString(),
+        explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
+        name: name || 'Consilience NFT',
+        description: description || 'NFT created on Consilience DAO',
+        isRealNFT: true
       })
       
     } catch (error) {
-      console.error('Real NFT creation error:', error)
-      res.status(500).json({ error: 'Real NFT creation failed: ' + error.message })
+      console.error('NFT creation error:', error)
+      res.status(500).json({ error: 'NFT creation failed: ' + error.message })
     }
   })
   

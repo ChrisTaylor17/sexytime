@@ -3,10 +3,8 @@ const { createMint, createAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID, ASSO
 
 const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com')
 
-// Use funded wallet for minting (you need to add the private key)
-const PAYER_KEYPAIR = process.env.SOLANA_PRIVATE_KEY ? 
-  Keypair.fromSecretKey(new Uint8Array(JSON.parse(process.env.SOLANA_PRIVATE_KEY))) :
-  Keypair.generate() // Fallback for testing
+// Use funded wallet for minting (fallback to generated keypair)
+const PAYER_KEYPAIR = Keypair.generate() // Generate for testing
 
 // AI Asset Manager - creates and distributes tokens/NFTs
 class AIAssetManager {

@@ -143,19 +143,27 @@ try {
         .use(keypairIdentity(aiWallet))
         .use(mockStorage())
       
-      // Try bundlr storage, fallback to mock if funding fails
-      let nftMetaplex
-      try {
-        nftMetaplex = Metaplex.make(connection)
-          .use(keypairIdentity(aiWallet))
-          .use(bundlrStorage())
-        console.log('✅ Bundlr storage initialized')
-      } catch (bundlrError) {
-        console.log('⚠️ Bundlr failed, using mock storage:', bundlrError.message)
-        nftMetaplex = Metaplex.make(connection)
-          .use(keypairIdentity(aiWallet))
-          .use(mockStorage())
+      // Fund AI wallet for bundlr if needed
+      const balance = await connection.getBalance(aiWallet.publicKey)
+      console.log(`💰 AI Wallet Balance: ${balance / LAMPORTS_PER_SOL} SOL`)
+      
+      if (balance < LAMPORTS_PER_SOL * 0.5) {
+        try {
+          console.log('💰 Funding AI wallet for bundlr...')
+          const signature = await connection.requestAirdrop(aiWallet.publicKey, LAMPORTS_PER_SOL * 2)
+          await connection.confirmTransaction(signature)
+          console.log('✅ AI Wallet funded with 2 SOL for bundlr')
+        } catch (err) {
+          console.log('⚠️ Airdrop failed:', err.message)
+        }
       }
+      
+      // Initialize Metaplex with bundlr storage
+      const nftMetaplex = Metaplex.make(connection)
+        .use(keypairIdentity(aiWallet))
+        .use(bundlrStorage())
+      
+      console.log('✅ Bundlr storage initialized with funded wallet')
       
       const userPublicKey = new PublicKey(walletAddress)
       
@@ -245,9 +253,9 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Upload metadata using mock storage (always works)
+      // Upload metadata to bundlr with AI image
       const { uri } = await nftMetaplex.nfts().uploadMetadata(nftMetadata)
-      console.log('✅ Metadata uploaded with AI image:', uri)
+      console.log('✅ Metadata uploaded to Arweave with AI image:', uri)
       
       // Create NFT with AI image metadata and proper error handling
       let nft

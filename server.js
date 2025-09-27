@@ -181,14 +181,20 @@ try {
           })
           
           imageUrl = response.data[0].url
-          console.log('✅ AI image generated successfully:', imageUrl)
+          console.log('✅ 🎨 AI IMAGE GENERATED SUCCESSFULLY!')
+          console.log('✅ 🔗 DALL-E 3 URL:', imageUrl)
+          console.log('✅ 📝 PROMPT USED:', imagePrompt)
+          console.log('✅ ✨ AI GENERATION: SUCCESS')
         } catch (error) {
-          console.log('⚠️ AI generation failed:', error.message)
+          console.log('❌ 🎨 AI GENERATION FAILED:', error.message)
+          console.log('❌ 🔍 ERROR DETAILS:', error.response?.data || error.toString())
           imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
+          console.log('⚠️ 🖼️ USING FALLBACK IMAGE:', imageUrl)
         }
       } else {
-        console.log('⚠️ No OpenAI API key, using fallback image')
+        console.log('❌ 🔑 NO OPENAI API KEY AVAILABLE')
         imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
+        console.log('⚠️ 🖼️ USING FALLBACK IMAGE:', imageUrl)
       }
       
       console.log('✅ Creating NFT with Metaplex...')
@@ -337,7 +343,9 @@ try {
         symbol: nft.symbol || 'CNSL',
         isRealNFT: true,
         hasAIImage: hasOpenAI,
-        aiImageUrl: hasOpenAI ? imageUrl : null
+        aiImageUrl: imageUrl, // Always include the image URL (AI or fallback)
+        aiGenerationWorking: hasOpenAI && imageUrl.includes('oaidalleapiprodscus'),
+        imageType: imageUrl.includes('oaidalleapiprodscus') ? 'DALL-E 3 AI Generated' : 'SVG Fallback'
       })
       
     } catch (error) {

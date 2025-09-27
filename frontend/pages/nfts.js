@@ -57,13 +57,24 @@ export default function NFTs() {
         })
       });
       
-      const data = await response.json();
+      if (!response.ok) {
+        alert(`Backend error: ${response.status}`);
+        return;
+      }
+      
+      const text = await response.text();
+      if (text.startsWith('<!DOCTYPE')) {
+        alert('Backend is down - returning HTML instead of API response');
+        return;
+      }
+      
+      const data = JSON.parse(text);
       alert(data.message || 'NFT collection created!');
       setShowCreateForm(false);
       setNewNFT({ name: '', description: '', image: '', supply: 100, projectId: '' });
       fetchUserNFTs();
     } catch (error) {
-      alert('Error: ' + error.message);
+      alert('Backend unavailable: ' + error.message);
     }
   };
 

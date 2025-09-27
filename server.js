@@ -241,18 +241,46 @@ try {
       
       console.log('Using metadata URI (length:', metadataUri.length, '):', metadataUri.slice(0, 100) + '...')
       
-      // Create NFT with AI image metadata
-      const { nft } = await nftMetaplex.nfts().create({
-        uri: metadataUri,
-        name: String(nftName),
-        sellerFeeBasisPoints: 500,
-        symbol: String(nftSymbol),
-        creators: [{
-          address: aiWallet.publicKey,
-          share: 100
-        }],
-        toOwner: userPublicKey
-      })
+      // Create NFT with AI image metadata and proper error handling
+      let nft
+      try {
+        const createResult = await nftMetaplex.nfts().create({
+          uri: metadataUri,
+          name: String(nftName),
+          sellerFeeBasisPoints: 500,
+          symbol: String(nftSymbol),
+          creators: [{
+            address: aiWallet.publicKey,
+            verified: true,
+            share: 100
+          }],
+          isMutable: true,
+          maxSupply: null
+        })
+        
+        nft = createResult.nft
+        console.log('✅ Metaplex NFT created successfully:', nft.address.toString())
+        
+        // Verify the NFT was actually created on-chain
+        const accountInfo = await connection.getAccountInfo(nft.address)
+        if (!accountInfo) {
+          throw new Error('NFT account not found on blockchain after creation')
+        }
+        console.log('✅ NFT verified on blockchain')
+        
+        // Transfer to user if not already owned
+        if (nft.updateAuthorityAddress.equals(aiWallet.publicKey)) {
+          await nftMetaplex.nfts().transfer({
+            nftOrSft: nft,
+            toOwner: userPublicKey
+          })
+          console.log('✅ NFT transferred to user')
+        }
+        
+      } catch (metaplexError) {
+        console.error('❌ Metaplex creation failed:', metaplexError)
+        throw new Error(`Metaplex NFT creation failed: ${metaplexError.message}`)
+      }
       
       console.log('✅ NFT created with AI image URL and sent to user')
       

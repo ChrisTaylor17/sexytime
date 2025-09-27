@@ -25,14 +25,27 @@ export default function NFTs() {
       return;
     }
     setUserAlias(alias);
-    fetchUserNFTs();
     fetchProjects();
   }, [router]);
 
+  useEffect(() => {
+    if (userAlias) {
+      fetchUserNFTs();
+    }
+  }, [userAlias, connected, publicKey]);
+
   const fetchUserNFTs = async () => {
-    const response = await fetch(`https://sexytime-production.up.railway.app/api/user-nfts/${userAlias}`);
-    const data = await response.json();
-    setUserNFTs(data.nfts || []);
+    if (connected && publicKey) {
+      // Fetch real NFTs from connected wallet
+      const response = await fetch(`https://sexytime-production.up.railway.app/api/wallet-nfts/${publicKey.toString()}`);
+      const data = await response.json();
+      setUserNFTs(data.nfts || []);
+    } else {
+      // Fallback to user alias NFTs
+      const response = await fetch(`https://sexytime-production.up.railway.app/api/user-nfts/${userAlias}`);
+      const data = await response.json();
+      setUserNFTs(data.nfts || []);
+    }
   };
 
   const fetchProjects = async () => {

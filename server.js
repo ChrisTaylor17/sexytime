@@ -245,18 +245,9 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Upload metadata with error handling
-      let uri
-      try {
-        const { uri: uploadedUri } = await nftMetaplex.nfts().uploadMetadata(nftMetadata)
-        uri = uploadedUri
-        console.log('✅ Metadata uploaded successfully:', uri)
-      } catch (uploadError) {
-        console.log('⚠️ Metadata upload failed, creating minimal NFT:', uploadError.message)
-        // Create NFT without metadata URI to avoid transaction size limit
-        uri = ''
-        console.log('✅ Using empty URI to avoid size limit')
-      }
+      // Upload metadata using mock storage (always works)
+      const { uri } = await nftMetaplex.nfts().uploadMetadata(nftMetadata)
+      console.log('✅ Metadata uploaded with AI image:', uri)
       
       // Create NFT with AI image metadata and proper error handling
       let nft

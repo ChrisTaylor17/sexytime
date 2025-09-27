@@ -4,7 +4,6 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import axios from 'axios'
 
-// Updated profile page with better design - v3.0 - MAJOR VISUAL OVERHAUL
 export default function Profile() {
   const [user, setUser] = useState(null)
   const [profileImage, setProfileImage] = useState(null)
@@ -40,13 +39,11 @@ export default function Profile() {
 
     setUploading(true)
     try {
-      // Convert to base64 for demo (in production, use proper image hosting)
       const reader = new FileReader()
       reader.onload = async () => {
         const imageData = reader.result
         setProfileImage(imageData)
         
-        // Save to backend
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sexytime-production.up.railway.app'
         await axios.post(`${backendUrl}/api/update-profile`, {
           alias: user.alias,
@@ -74,43 +71,513 @@ export default function Profile() {
     }
   }
 
-  if (!user) return <div className="loading">Loading profile...</div>
+  if (!user) return (
+    <>
+      <style jsx>{`
+        .loading-container {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .spinner {
+          width: 48px;
+          height: 48px;
+          border: 4px solid #475569;
+          border-top: 4px solid #3b82f6;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+      <div className="loading-container">
+        <div className="spinner"></div>
+      </div>
+    </>
+  )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-indigo-100">
-        <div className="container mx-auto px-6 py-5 flex justify-between items-center">
-          <button 
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-          >
-            ← Back to Dashboard
-          </button>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Profile</h1>
-          <div className="w-20"></div>
-        </div>
-      </div>
+    <>
+      <style jsx>{`
+        .profile-page {
+          min-height: 100vh;
+          background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .nav {
+          background: rgba(0, 0, 0, 0.2);
+          backdrop-filter: blur(20px);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 20px 0;
+        }
+        .nav-content {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 24px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .back-button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #cbd5e1;
+          text-decoration: none;
+          font-weight: 500;
+          transition: color 0.2s;
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 16px;
+        }
+        .back-button:hover {
+          color: white;
+        }
+        .page-title {
+          font-size: 28px;
+          font-weight: bold;
+          color: white;
+          margin: 0;
+        }
+        .main {
+          max-width: 1000px;
+          margin: 0 auto;
+          padding: 32px 24px;
+        }
+        .profile-card {
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(20px);
+          border-radius: 24px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          padding: 40px;
+          margin-bottom: 32px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .profile-header {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 32px;
+          margin-bottom: 40px;
+        }
+        .avatar-section {
+          position: relative;
+        }
+        .avatar {
+          width: 128px;
+          height: 128px;
+          border-radius: 50%;
+          overflow: hidden;
+          background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 48px;
+          font-weight: bold;
+          box-shadow: 0 8px 32px rgba(139, 92, 246, 0.3);
+        }
+        .avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .upload-button {
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+          transition: all 0.2s ease;
+        }
+        .upload-button:hover {
+          transform: scale(1.1);
+        }
+        .upload-input {
+          display: none;
+        }
+        .loading-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.6);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .loading-spinner {
+          width: 32px;
+          height: 32px;
+          border: 3px solid rgba(255, 255, 255, 0.3);
+          border-top: 3px solid white;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+        .profile-info {
+          text-align: center;
+          flex: 1;
+        }
+        .user-name {
+          font-size: 36px;
+          font-weight: bold;
+          color: white;
+          margin-bottom: 16px;
+        }
+        .badges {
+          display: flex;
+          justify-content: center;
+          gap: 12px;
+          margin-bottom: 24px;
+          flex-wrap: wrap;
+        }
+        .badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-size: 14px;
+          font-weight: 600;
+        }
+        .badge.tokens {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
+        }
+        .badge.wallet {
+          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+          color: white;
+        }
+        .interests-section {
+          margin-bottom: 32px;
+        }
+        .section-title {
+          font-size: 18px;
+          font-weight: bold;
+          color: white;
+          margin-bottom: 16px;
+        }
+        .interests-content {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+        .interests-text {
+          color: #cbd5e1;
+          font-size: 16px;
+          flex: 1;
+        }
+        .edit-form {
+          display: flex;
+          gap: 12px;
+          width: 100%;
+        }
+        .edit-input {
+          flex: 1;
+          padding: 12px 16px;
+          background: rgba(71, 85, 105, 0.5);
+          border: 1px solid #64748b;
+          border-radius: 8px;
+          color: white;
+          font-size: 16px;
+        }
+        .edit-input:focus {
+          outline: none;
+          border-color: #3b82f6;
+        }
+        .edit-input::placeholder {
+          color: #94a3b8;
+        }
+        .button {
+          padding: 12px 24px;
+          border: none;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-size: 14px;
+        }
+        .button.primary {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
+        }
+        .button.secondary {
+          background: rgba(107, 114, 128, 0.8);
+          color: white;
+        }
+        .button:hover {
+          transform: translateY(-1px);
+        }
+        .edit-button {
+          background: none;
+          border: none;
+          color: #60a5fa;
+          cursor: pointer;
+          font-size: 16px;
+          transition: color 0.2s;
+        }
+        .edit-button:hover {
+          color: #93c5fd;
+        }
+        .wallet-section {
+          text-align: center;
+        }
+        .funding-section {
+          background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%);
+          border: 2px solid rgba(245, 158, 11, 0.3);
+          border-radius: 20px;
+          padding: 32px;
+          margin-bottom: 32px;
+        }
+        .funding-header {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-bottom: 24px;
+        }
+        .funding-icon {
+          width: 48px;
+          height: 48px;
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+        }
+        .funding-title {
+          font-size: 24px;
+          font-weight: bold;
+          color: #fbbf24;
+        }
+        .funding-subtitle {
+          color: #f59e0b;
+          font-size: 16px;
+        }
+        .wallet-address-section {
+          background: white;
+          border-radius: 16px;
+          padding: 24px;
+          margin-bottom: 24px;
+        }
+        .wallet-address-header {
+          display: flex;
+          justify-content: between;
+          align-items: center;
+          margin-bottom: 16px;
+        }
+        .wallet-address-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: #374151;
+        }
+        .copy-button {
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .copy-button:hover {
+          transform: scale(1.05);
+        }
+        .wallet-address {
+          font-family: monospace;
+          font-size: 14px;
+          color: #374151;
+          background: #f3f4f6;
+          padding: 12px;
+          border-radius: 8px;
+          word-break: break-all;
+        }
+        .funding-steps {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 24px;
+        }
+        .step-card {
+          background: white;
+          border-radius: 16px;
+          padding: 24px;
+        }
+        .step-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+        .step-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          font-weight: bold;
+        }
+        .step-icon.devnet {
+          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+          color: white;
+        }
+        .step-icon.mainnet {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
+        }
+        .step-title {
+          font-size: 18px;
+          font-weight: bold;
+          color: #111827;
+        }
+        .step-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        .step-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          margin-bottom: 12px;
+          font-size: 14px;
+          color: #374151;
+        }
+        .step-number {
+          width: 20px;
+          height: 20px;
+          background: #e5e7eb;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: bold;
+          color: #6b7280;
+          flex-shrink: 0;
+        }
+        .step-number.success {
+          background: #10b981;
+          color: white;
+        }
+        .faucet-link {
+          color: #3b82f6;
+          text-decoration: underline;
+          font-weight: 600;
+        }
+        .faucet-link:hover {
+          color: #1d4ed8;
+        }
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 24px;
+        }
+        .stat-card {
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(20px);
+          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          padding: 24px;
+          text-align: center;
+          transition: transform 0.2s ease;
+        }
+        .stat-card:hover {
+          transform: translateY(-4px);
+        }
+        .stat-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          margin: 0 auto 16px;
+        }
+        .stat-icon.tokens {
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        .stat-icon.nfts {
+          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        }
+        .stat-icon.projects {
+          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+        .stat-number {
+          font-size: 32px;
+          font-weight: bold;
+          color: white;
+          margin-bottom: 8px;
+        }
+        .stat-label {
+          color: #cbd5e1;
+          font-size: 14px;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @media (max-width: 768px) {
+          .profile-header {
+            flex-direction: column;
+            text-align: center;
+          }
+          .funding-steps {
+            grid-template-columns: 1fr;
+          }
+          .stats-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+      
+      <div className="profile-page">
+        {/* Navigation */}
+        <nav className="nav">
+          <div className="nav-content">
+            <button 
+              onClick={() => router.push('/dashboard')}
+              className="back-button"
+            >
+              ← Back to Dashboard
+            </button>
+            <h1 className="page-title">Profile Settings</h1>
+            <div style={{width: '120px'}}></div>
+          </div>
+        </nav>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Profile Card */}
-          <div className="bg-white/70 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-10 mb-10">
-            <div className="flex flex-col lg:flex-row items-center lg:items-start gap-10">
-              
-              {/* Profile Image */}
-              <div className="relative group">
-                <div className="w-48 h-48 rounded-full overflow-hidden bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-2xl ring-4 ring-white/50">
+        <div className="main">
+          {/* Profile Header */}
+          <div className="profile-card">
+            <div className="profile-header">
+              <div className="avatar-section">
+                <div className="avatar">
                   {profileImage ? (
-                    <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                    <img src={profileImage} alt="Profile" />
                   ) : (
-                    <div className="text-white text-6xl font-bold drop-shadow-lg">
-                      {user.alias.charAt(0).toUpperCase()}
-                    </div>
+                    user.alias.charAt(0).toUpperCase()
                   )}
                 </div>
-                <label className="absolute bottom-3 right-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-4 rounded-full cursor-pointer transition-all duration-300 shadow-xl hover:scale-110">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <label className="upload-button">
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
@@ -118,56 +585,61 @@ export default function Profile() {
                     type="file" 
                     accept="image/*" 
                     onChange={handleImageUpload}
-                    className="hidden"
+                    className="upload-input"
                     disabled={uploading}
                   />
                 </label>
                 {uploading && (
-                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
+                  <div className="loading-overlay">
+                    <div className="loading-spinner"></div>
                   </div>
                 )}
               </div>
 
-              {/* Profile Info */}
-              <div className="flex-1 text-center lg:text-left">
-                <h2 className="text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-6">{user.alias}</h2>
-                <div className="flex flex-wrap justify-center lg:justify-start gap-4 mb-8">
-                  <div className="bg-gradient-to-r from-emerald-400 to-emerald-600 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg">
-                    💰 {user.cs_balance} CS Tokens
+              <div className="profile-info">
+                <h2 className="user-name">{user.alias}</h2>
+                
+                <div className="badges">
+                  <div className="badge tokens">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                    {user.cs_balance} CS Tokens
                   </div>
                   {connected && (
-                    <div className="bg-gradient-to-r from-blue-400 to-blue-600 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg">
-                      🔗 Wallet Connected
+                    <div className="badge wallet">
+                      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Wallet Connected
                     </div>
                   )}
                 </div>
                 
-                {/* Interests */}
-                <div className="mb-8">
-                  <label className="block text-gray-800 text-lg font-bold mb-4">Interests & Skills</label>
+                <div className="interests-section">
+                  <h3 className="section-title">Skills & Expertise</h3>
                   {editing ? (
-                    <div className="flex gap-3">
+                    <div className="edit-form">
                       <input
                         type="text"
                         value={formData.interests}
                         onChange={(e) => setFormData({...formData, interests: e.target.value})}
-                        className="flex-1 px-4 py-3 border-2 border-indigo-200 rounded-xl focus:border-indigo-500 focus:outline-none transition-colors"
-                        placeholder="e.g., blockchain, AI, design"
+                        className="edit-input"
+                        placeholder="e.g., Full-stack development, AI/ML, Product strategy"
                       />
-                      <button onClick={updateProfile} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all">
+                      <button onClick={updateProfile} className="button primary">
                         Save
                       </button>
-                      <button onClick={() => setEditing(false)} className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-xl font-semibold transition-all">
+                      <button onClick={() => setEditing(false)} className="button secondary">
                         Cancel
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-4">
-                      <p className="text-gray-700 text-xl font-medium">{user.interests}</p>
+                    <div className="interests-content">
+                      <p className="interests-text">{user.interests}</p>
                       <button 
                         onClick={() => setEditing(true)}
-                        className="text-indigo-600 hover:text-indigo-800 transition-colors font-semibold"
+                        className="edit-button"
                       >
                         ✏️ Edit
                       </button>
@@ -175,123 +647,116 @@ export default function Profile() {
                   )}
                 </div>
 
-                {/* Wallet Connection */}
-                <div className="mb-6">
-                  <WalletMultiButton className="!bg-gradient-to-r !from-indigo-600 !to-purple-600 hover:!from-indigo-700 hover:!to-purple-700 !rounded-xl !px-8 !py-4 !font-semibold !text-lg" />
+                <div className="wallet-section">
+                  <WalletMultiButton />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* AI Wallet Funding Instructions */}
-          <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-3xl p-8 mb-10 shadow-xl">
-            <h3 className="text-2xl font-bold text-orange-800 mb-6 flex items-center gap-3">
-              🚀 Fund Your AI Asset Manager
-              <span className="bg-orange-200 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">Required</span>
-            </h3>
-            <div className="space-y-4">
-              <p className="text-gray-700">To enable your AI to create real tokens and NFTs on Solana, fund this wallet:</p>
+          {/* AI Wallet Funding */}
+          <div className="funding-section">
+            <div className="funding-header">
+              <div className="funding-icon">⚡</div>
+              <div>
+                <h3 className="funding-title">Fund Your AI Asset Manager</h3>
+                <p className="funding-subtitle">Enable your AI to create real tokens and NFTs on Solana</p>
+              </div>
+            </div>
+            
+            <div className="wallet-address-section">
+              <div className="wallet-address-header">
+                <span className="wallet-address-label">AI Wallet Address</span>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText('FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W')
+                    alert('✅ Address copied to clipboard!')
+                  }}
+                  className="copy-button"
+                >
+                  📋 Copy
+                </button>
+              </div>
+              <div className="wallet-address">
+                FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W
+              </div>
+            </div>
+
+            <div className="funding-steps">
+              <div className="step-card">
+                <div className="step-header">
+                  <div className="step-icon devnet">DEV</div>
+                  <h4 className="step-title">Devnet Testing</h4>
+                </div>
+                <ol className="step-list">
+                  <li className="step-item">
+                    <span className="step-number">1</span>
+                    <span>Visit <a href="https://faucet.solana.com" target="_blank" className="faucet-link">faucet.solana.com</a></span>
+                  </li>
+                  <li className="step-item">
+                    <span className="step-number">2</span>
+                    <span>Paste the AI wallet address above</span>
+                  </li>
+                  <li className="step-item">
+                    <span className="step-number">3</span>
+                    <span>Request 2 SOL for testing</span>
+                  </li>
+                  <li className="step-item">
+                    <span className="step-number success">✓</span>
+                    <span>AI can now mint tokens/NFTs!</span>
+                  </li>
+                </ol>
+              </div>
               
-              <div className="bg-white rounded-2xl p-6 border-2 border-orange-200 shadow-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-orange-800 font-bold text-lg">AI Wallet Address:</span>
-                  <button 
-                    onClick={() => {
-                      navigator.clipboard.writeText('FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W')
-                      alert('✅ Address copied to clipboard!')
-                    }}
-                    className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 shadow-lg"
-                  >
-                    📋 Copy Address
-                  </button>
+              <div className="step-card">
+                <div className="step-header">
+                  <div className="step-icon mainnet">LIVE</div>
+                  <h4 className="step-title">Mainnet Production</h4>
                 </div>
-                <code className="text-orange-700 text-lg break-all bg-gradient-to-r from-orange-100 to-red-100 p-4 rounded-xl block font-mono font-bold">
-                  FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W
-                </code>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-200 shadow-lg">
-                  <h4 className="font-bold text-blue-800 mb-4 text-lg flex items-center gap-2">
-                    📱 For Devnet Testing
-                    <span className="bg-blue-200 text-blue-800 px-2 py-1 rounded-full text-xs">FREE</span>
-                  </h4>
-                  <ol className="space-y-3 text-gray-700">
-                    <li className="flex items-start gap-3">
-                      <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</span>
-                      <span>Visit <a href="https://faucet.solana.com" target="_blank" className="text-blue-600 hover:underline font-semibold">faucet.solana.com</a></span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">2</span>
-                      <span>Paste the AI wallet address</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
-                      <span>Request 2 SOL for testing</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">✓</span>
-                      <span className="font-semibold text-green-700">Your AI can now mint tokens/NFTs!</span>
-                    </li>
-                  </ol>
-                </div>
-                
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border-2 border-green-200 shadow-lg">
-                  <h4 className="font-bold text-green-800 mb-4 text-lg flex items-center gap-2">
-                    💰 For Mainnet Production
-                    <span className="bg-green-200 text-green-800 px-2 py-1 rounded-full text-xs">REAL</span>
-                  </h4>
-                  <ol className="space-y-3 text-gray-700">
-                    <li className="flex items-start gap-3">
-                      <span className="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</span>
-                      <span>Send real SOL to the AI wallet</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">2</span>
-                      <span>Minimum 0.1 SOL recommended</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
-                      <span>AI creates real blockchain assets</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">✓</span>
-                      <span className="font-semibold text-purple-700">Tokens appear in your wallet instantly!</span>
-                    </li>
-                  </ol>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-6 shadow-lg">
-                <p className="text-green-800 text-lg font-medium">
-                  ✅ <strong>Why fund the AI wallet?</strong> Your AI assistant needs SOL to pay transaction fees when creating tokens and NFTs on the Solana blockchain. Once funded, it can mint assets directly to your connected wallet!
-                </p>
+                <ol className="step-list">
+                  <li className="step-item">
+                    <span className="step-number">1</span>
+                    <span>Send real SOL to AI wallet</span>
+                  </li>
+                  <li className="step-item">
+                    <span className="step-number">2</span>
+                    <span>Minimum 0.1 SOL recommended</span>
+                  </li>
+                  <li className="step-item">
+                    <span className="step-number">3</span>
+                    <span>AI creates real blockchain assets</span>
+                  </li>
+                  <li className="step-item">
+                    <span className="step-number success">✓</span>
+                    <span>Tokens appear in wallet instantly</span>
+                  </li>
+                </ol>
               </div>
             </div>
           </div>
 
           {/* Stats Grid */}
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-3xl p-8 text-center shadow-2xl border-2 border-yellow-200 hover:scale-105 transition-transform">
-              <div className="text-6xl mb-4">🏆</div>
-              <div className="text-4xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">{user.cs_balance}</div>
-              <div className="text-gray-700 font-semibold text-lg">CS Tokens Earned</div>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-icon tokens">💰</div>
+              <div className="stat-number">{user.cs_balance}</div>
+              <div className="stat-label">CS Tokens Earned</div>
             </div>
             
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-8 text-center shadow-2xl border-2 border-purple-200 hover:scale-105 transition-transform">
-              <div className="text-6xl mb-4">🎨</div>
-              <div className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">0</div>
-              <div className="text-gray-700 font-semibold text-lg">NFTs Created</div>
+            <div className="stat-card">
+              <div className="stat-icon nfts">🎨</div>
+              <div className="stat-number">0</div>
+              <div className="stat-label">NFTs Created</div>
             </div>
             
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 text-center shadow-2xl border-2 border-blue-200 hover:scale-105 transition-transform">
-              <div className="text-6xl mb-4">🤝</div>
-              <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">0</div>
-              <div className="text-gray-700 font-semibold text-lg">Projects Joined</div>
+            <div className="stat-card">
+              <div className="stat-icon projects">🤝</div>
+              <div className="stat-number">0</div>
+              <div className="stat-label">Projects Joined</div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

@@ -16,6 +16,8 @@ export default function ChatRoom() {
   const { projectId } = router.query
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    
     const alias = localStorage.getItem('userAlias')
     if (!alias) {
       router.push('/')
@@ -75,7 +77,7 @@ export default function ChatRoom() {
 
   const sendMessage = async (e) => {
     e.preventDefault()
-    if (newMessage.trim() && socket) {
+    if (newMessage.trim() && socket && typeof window !== 'undefined') {
       const alias = localStorage.getItem('userAlias')
       const messageData = {
         projectId,
@@ -112,7 +114,7 @@ export default function ChatRoom() {
   }
 
   const submitTaskProof = async () => {
-    if (!taskProof) return
+    if (!taskProof || typeof window === 'undefined') return
     
     const alias = localStorage.getItem('userAlias')
     try {
@@ -133,6 +135,7 @@ export default function ChatRoom() {
   }
 
   const simulateQRScan = async () => {
+    if (typeof window === 'undefined') return
     const alias = localStorage.getItem('userAlias')
     try {
       await axios.post('http://localhost:5000/api/checkin', {
@@ -145,7 +148,7 @@ export default function ChatRoom() {
     }
   }
 
-  const qrData = `${localStorage.getItem('userAlias')}:${projectId}`
+  const qrData = typeof window !== 'undefined' ? `${localStorage.getItem('userAlias')}:${projectId}` : ''
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -181,9 +184,9 @@ export default function ChatRoom() {
         <div className="flex-1 p-4 overflow-y-auto">
           <div className="space-y-3">
             {messages.map((msg, index) => (
-              <div key={index} className={`flex ${msg.alias === localStorage.getItem('userAlias') ? 'justify-end' : 'justify-start'}`}>
+              <div key={index} className={`flex ${typeof window !== 'undefined' && msg.alias === localStorage.getItem('userAlias') ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  msg.alias === localStorage.getItem('userAlias')
+                  typeof window !== 'undefined' && msg.alias === localStorage.getItem('userAlias')
                     ? 'bg-black text-white'
                     : 'bg-white border border-gray-200'
                 }`}>

@@ -3,140 +3,226 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import axios from 'axios'
 
 export default function NFTGallery() {
-  const [walletNfts, setWalletNfts] = useState([])
-  const [earnedNfts, setEarnedNfts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const { publicKey, connected } = useWallet()
+  const [nfts, setNfts] = useState([])
+  const [loading, setLoading] = useState(false)
+  const { connected, publicKey } = useWallet()
 
-  useEffect(() => {
-    fetchAllNFTs()
-  }, [connected, publicKey])
-
-  const fetchAllNFTs = async () => {
-    setLoading(true)
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
+  const fetchNFTs = async () => {
+    if (!connected || !publicKey) return
     
+    setLoading(true)
     try {
-      // Fetch earned NFTs - try wallet first, then alias
-      let alias = localStorage.getItem('userAlias')
-      
-      if (connected && publicKey && !alias) {
-        // Try to find user by wallet address
-        try {
-          const userResponse = await axios.get(`${backendUrl}/api/user-by-wallet/${publicKey.toString()}`)
-          if (userResponse.data) {
-            alias = userResponse.data.alias
-            localStorage.setItem('userAlias', alias)
-          }
-        } catch (error) {
-          console.log('No user found for wallet')
-        }
-      }
-      
-      if (alias) {
-        const earnedResponse = await axios.get(`${backendUrl}/api/nfts/${alias}`)
-        setEarnedNfts(earnedResponse.data.nfts || [])
-      }
-      
-      // Fetch wallet NFTs if connected
-      if (connected && publicKey) {
-        console.log('Fetching wallet NFTs for:', publicKey.toString())
-        const walletResponse = await axios.get(`${backendUrl}/api/nfts/${publicKey.toString()}`)
-        setWalletNfts(walletResponse.data.nfts || [])
-      } else {
-        setWalletNfts([])
-      }
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sexytime-production.up.railway.app'
+      const response = await axios.get(`${backendUrl}/api/nfts/${publicKey.toString()}`)
+      setNfts(response.data || [])
     } catch (error) {
       console.error('Failed to fetch NFTs:', error)
-      setWalletNfts([])
-      setEarnedNfts([])
+      setNfts([])
     }
-    
     setLoading(false)
   }
 
-  if (!connected) {
-    return (
-      <div className="card">
-        <h2 className="text-xl font-semibold mb-4">Your NFT Collection</h2>
-        <p className="text-gray-500">Connect your wallet to view your NFTs</p>
-      </div>
-    )
-  }
-
-  if (loading) return <div className="text-center">Loading NFTs...</div>
+  useEffect(() => {
+    fetchNFTs()
+  }, [connected, publicKey])
 
   return (
-    <div className="card">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Your NFT Collection</h2>
-        <button 
-          onClick={fetchAllNFTs} 
-          className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
-          disabled={loading}
-        >
-          {loading ? 'Loading...' : 'Refresh'}
-        </button>
-      </div>
+    <>
+      <style jsx>{`
+        .nft-gallery {
+          color: white;
+        }
+        .header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 20px;
+        }
+        .title {
+          font-size: 18px;
+          font-weight: bold;
+          color: white;
+          margin: 0;
+        }
+        .refresh-button {
+          background: rgba(139, 92, 246, 0.2);
+          border: 1px solid rgba(139, 92, 246, 0.4);
+          color: #a78bfa;
+          padding: 8px 16px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 500;
+          transition: all 0.2s ease;
+        }
+        .refresh-button:hover {
+          background: rgba(139, 92, 246, 0.3);
+          border-color: rgba(139, 92, 246, 0.6);
+        }
+        .refresh-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        .content {
+          text-align: center;
+        }
+        .empty-state {
+          padding: 40px 20px;
+        }
+        .empty-icon {
+          font-size: 48px;
+          margin-bottom: 16px;
+          opacity: 0.6;
+        }
+        .empty-title {
+          font-size: 16px;
+          font-weight: 600;
+          color: #cbd5e1;
+          margin-bottom: 8px;
+        }
+        .empty-description {
+          font-size: 14px;
+          color: #94a3b8;
+          line-height: 1.5;
+        }
+        .nft-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+          gap: 16px;
+        }
+        .nft-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          padding: 12px;
+          transition: all 0.2s ease;
+          cursor: pointer;
+        }
+        .nft-card:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(139, 92, 246, 0.4);
+          transform: translateY(-2px);
+        }
+        .nft-image {
+          width: 100%;
+          height: 96px;
+          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 32px;
+          margin-bottom: 8px;
+        }
+        .nft-name {
+          font-size: 12px;
+          font-weight: 600;
+          color: white;
+          margin-bottom: 4px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .nft-description {
+          font-size: 10px;
+          color: #94a3b8;
+          line-height: 1.3;
+        }
+        .loading {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 40px;
+          color: #94a3b8;
+        }
+        .spinner {
+          width: 20px;
+          height: 20px;
+          border: 2px solid rgba(139, 92, 246, 0.3);
+          border-top: 2px solid #8b5cf6;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-right: 12px;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .connect-wallet {
+          padding: 40px 20px;
+          text-align: center;
+        }
+        .connect-icon {
+          font-size: 48px;
+          margin-bottom: 16px;
+          opacity: 0.6;
+        }
+        .connect-title {
+          font-size: 16px;
+          font-weight: 600;
+          color: #cbd5e1;
+          margin-bottom: 8px;
+        }
+        .connect-description {
+          font-size: 14px;
+          color: #94a3b8;
+        }
+      `}</style>
       
-      {earnedNfts.length === 0 && walletNfts.length === 0 ? (
-        <p className="text-gray-500">
-          {connected ? 'No NFTs found. Complete tasks to earn NFT certificates!' : 'Connect wallet to view NFTs'}
-        </p>
-      ) : (
-        <div className="space-y-6">
-          {earnedNfts.length > 0 && (
-            <div>
-              <h3 className="text-lg font-medium mb-3 text-green-600">🏆 Earned Certificates</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {earnedNfts.map(nft => (
-                  <div key={nft.mint} className="border-2 border-green-200 rounded-lg p-3 bg-green-50">
-                    <img 
-                      src={nft.image} 
-                      alt={nft.name} 
-                      className="w-full h-32 object-cover rounded mb-2"
-                    />
-                    <h4 className="font-medium text-sm">{nft.name}</h4>
-                    <p className="text-xs text-green-600 font-medium">✓ Achievement NFT</p>
-                    {nft.type === 'metaplex_nft' && (
-                      <p className="text-xs text-blue-600">🎯 Collectible</p>
-                    )}
-                    <p className="text-xs text-gray-400 truncate">{nft.mint}</p>
-                  </div>
-                ))}
+      <div className="nft-gallery">
+        <div className="header">
+          <h3 className="title">Your NFT Collection</h3>
+          <button 
+            onClick={fetchNFTs}
+            disabled={loading || !connected}
+            className="refresh-button"
+          >
+            {loading ? 'Loading...' : 'Refresh'}
+          </button>
+        </div>
+
+        <div className="content">
+          {!connected ? (
+            <div className="connect-wallet">
+              <div className="connect-icon">🔗</div>
+              <div className="connect-title">Connect Your Wallet</div>
+              <div className="connect-description">
+                Connect your wallet to view your NFT collection
               </div>
             </div>
-          )}
-          
-          {walletNfts.length > 0 && (
-            <div>
-              <h3 className="text-lg font-medium mb-3">💎 Wallet Collection</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {walletNfts.map(nft => (
-                  <div key={nft.mint} className="border rounded-lg p-3">
-                    {nft.image ? (
-                      <img 
-                        src={nft.image} 
-                        alt={nft.name} 
-                        className="w-full h-32 object-cover rounded mb-2"
-                        onError={(e) => {
-                          e.target.style.display = 'none'
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-32 bg-gradient-to-br from-purple-400 to-blue-500 rounded mb-2 flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">NFT</span>
-                      </div>
-                    )}
-                    <h4 className="font-medium text-sm">{nft.name}</h4>
-                    <p className="text-xs text-gray-500 truncate">{nft.mint}</p>
-                  </div>
-                ))}
+          ) : loading ? (
+            <div className="loading">
+              <div className="spinner"></div>
+              <span>Loading your NFTs...</span>
+            </div>
+          ) : nfts.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">🎨</div>
+              <div className="empty-title">No NFTs found</div>
+              <div className="empty-description">
+                Complete tasks to earn NFT certificates!<br />
+                Your achievement badges will appear here.
               </div>
+            </div>
+          ) : (
+            <div className="nft-grid">
+              {nfts.map((nft, index) => (
+                <div key={index} className="nft-card">
+                  <div className="nft-image">
+                    {nft.image ? (
+                      <img src={nft.image} alt={nft.name} style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px'}} />
+                    ) : (
+                      '🏆'
+                    )}
+                  </div>
+                  <div className="nft-name">{nft.name || 'Achievement NFT'}</div>
+                  <div className="nft-description">{nft.description || 'Task completion certificate'}</div>
+                </div>
+              ))}
             </div>
           )}
         </div>
-      )}
-    </div>
+      </div>
+    </>
   )
 }

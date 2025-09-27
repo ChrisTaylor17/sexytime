@@ -1,147 +1,284 @@
 import { useState } from 'react'
+import { useWallet } from '@solana/wallet-adapter-react'
 import axios from 'axios'
 
 export default function TokenCreator() {
-  const [tokenData, setTokenData] = useState({
-    name: '',
-    symbol: '',
-    supply: '',
-    decimals: '18'
-  })
+  const [tokenName, setTokenName] = useState('')
+  const [tokenSymbol, setTokenSymbol] = useState('')
+  const [totalSupply, setTotalSupply] = useState('')
+  const [decimals, setDecimals] = useState('18')
   const [creating, setCreating] = useState(false)
-  const [result, setResult] = useState(null)
+  const { connected, publicKey } = useWallet()
 
-  const handleSubmit = async (e) => {
+  const handleCreateToken = async (e) => {
     e.preventDefault()
-    setCreating(true)
-    
-    try {
-      const alias = localStorage.getItem('userAlias')
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
-      
-      const response = await axios.post(`${backendUrl}/api/create-token`, {
-        ...tokenData,
-        alias
-      })
-      
-      setResult(response.data)
-      setTokenData({ name: '', symbol: '', supply: '', decimals: '18' })
-      
-    } catch (error) {
-      setResult({ 
-        success: false, 
-        message: error.response?.data?.error || 'Token creation failed' 
-      })
+    if (!connected) {
+      alert('Please connect your wallet first')
+      return
     }
-    
+
+    setCreating(true)
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sexytime-production.up.railway.app'
+      const response = await axios.post(`${backendUrl}/api/create-token`, {
+        name: tokenName,
+        symbol: tokenSymbol,
+        totalSupply: parseInt(totalSupply),
+        decimals: parseInt(decimals),
+        walletAddress: publicKey.toString()
+      })
+      
+      alert(`Token created successfully! Mint address: ${response.data.mintAddress}`)
+      
+      // Reset form
+      setTokenName('')
+      setTokenSymbol('')
+      setTotalSupply('')
+      setDecimals('18')
+    } catch (error) {
+      console.error('Token creation failed:', error)
+      alert('Token creation failed: ' + (error.response?.data?.error || error.message))
+    }
     setCreating(false)
   }
 
   return (
-    <div className="card">
-      <div className="flex justify-between items-start mb-4">
-        <h2 className="text-xl font-semibold">🪙 Create Custom Token</h2>
-        <div className="text-right">
-          <p className="text-xs text-gray-500">AI Wallet:</p>
-          <code className="text-xs bg-gray-100 px-2 py-1 rounded">FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W</code>
-        </div>
-      </div>
+    <>
+      <style jsx>{`
+        .token-creator {
+          color: white;
+        }
+        .header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 24px;
+        }
+        .icon {
+          width: 32px;
+          height: 32px;
+          font-size: 20px;
+        }
+        .title {
+          font-size: 20px;
+          font-weight: bold;
+          color: white;
+          margin: 0;
+        }
+        .ai-wallet-section {
+          background: rgba(59, 130, 246, 0.1);
+          border: 1px solid rgba(59, 130, 246, 0.3);
+          border-radius: 12px;
+          padding: 16px;
+          margin-bottom: 24px;
+        }
+        .ai-wallet-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: #60a5fa;
+          margin-bottom: 8px;
+        }
+        .ai-wallet-address {
+          font-family: monospace;
+          font-size: 12px;
+          color: #cbd5e1;
+          background: rgba(0, 0, 0, 0.3);
+          padding: 8px 12px;
+          border-radius: 6px;
+          margin-bottom: 16px;
+          word-break: break-all;
+        }
+        .funding-info {
+          background: rgba(245, 158, 11, 0.1);
+          border: 1px solid rgba(245, 158, 11, 0.3);
+          border-radius: 8px;
+          padding: 12px;
+          margin-bottom: 16px;
+        }
+        .funding-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: #fbbf24;
+          margin-bottom: 8px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .funding-steps {
+          font-size: 12px;
+          color: #d1d5db;
+          line-height: 1.5;
+        }
+        .funding-step {
+          margin-bottom: 4px;
+        }
+        .copy-button {
+          background: #3b82f6;
+          color: white;
+          border: none;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 11px;
+          cursor: pointer;
+          margin-left: 8px;
+          transition: background-color 0.2s;
+        }
+        .copy-button:hover {
+          background: #2563eb;
+        }
+        .form {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .label {
+          font-size: 14px;
+          font-weight: 500;
+          color: #cbd5e1;
+        }
+        .input {
+          padding: 12px;
+          background: rgba(71, 85, 105, 0.5);
+          border: 1px solid #64748b;
+          border-radius: 8px;
+          color: white;
+          font-size: 14px;
+          transition: border-color 0.2s;
+        }
+        .input:focus {
+          outline: none;
+          border-color: #3b82f6;
+        }
+        .input::placeholder {
+          color: #94a3b8;
+        }
+        .button {
+          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+          color: white;
+          font-weight: 600;
+          padding: 12px 24px;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-size: 14px;
+        }
+        .button:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+        .button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none;
+        }
+        .faucet-link {
+          color: #60a5fa;
+          text-decoration: underline;
+        }
+        .faucet-link:hover {
+          color: #93c5fd;
+        }
+      `}</style>
       
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-        <h4 className="font-semibold text-blue-800 mb-2">💡 How to Enable Real Token Creation</h4>
-        <div className="space-y-2 text-sm text-blue-800">
-          <p><strong>Step 1:</strong> Fund the AI wallet with SOL to pay transaction fees</p>
-          <div className="bg-white rounded p-2 border">
-            <div className="flex justify-between items-center">
-              <code className="text-xs">FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W</code>
-              <button 
-                onClick={() => {
-                  navigator.clipboard.writeText('FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W')
-                  alert('AI wallet address copied!')
-                }}
-                className="text-blue-600 hover:text-blue-800 text-xs"
-              >
-                Copy
-              </button>
+      <div className="token-creator">
+        <div className="header">
+          <div className="icon">🪙</div>
+          <h3 className="title">Create Custom Token</h3>
+        </div>
+
+        <div className="ai-wallet-section">
+          <div className="ai-wallet-title">AI Wallet:</div>
+          <div className="ai-wallet-address">
+            FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W
+            <button 
+              className="copy-button"
+              onClick={() => {
+                navigator.clipboard.writeText('FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W')
+                alert('Address copied!')
+              }}
+            >
+              Copy
+            </button>
+          </div>
+          
+          <div className="funding-info">
+            <div className="funding-title">
+              💡 How to Enable Real Token Creation
+            </div>
+            <div className="funding-steps">
+              <div className="funding-step"><strong>Step 1:</strong> Fund the AI wallet with SOL to pay transaction fees</div>
+              <div className="funding-step"><strong>Step 2:</strong> Visit <a href="https://faucet.solana.com" target="_blank" className="faucet-link">faucet.solana.com</a> and request 2 SOL</div>
+              <div className="funding-step"><strong>Step 3:</strong> Your AI can now mint real tokens to your connected wallet!</div>
             </div>
           </div>
-          <p><strong>Step 2:</strong> Visit <a href="https://faucet.solana.com" target="_blank" className="text-blue-600 hover:underline font-medium">faucet.solana.com</a> and request 2 SOL</p>
-          <p><strong>Step 3:</strong> Your AI can now mint real tokens to your connected wallet!</p>
         </div>
-      </div>
-      
-      {result && (
-        <div className={`p-4 rounded mb-4 ${result.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-          <p className="font-medium">{result.message}</p>
-          {result.token && (
-            <div className="mt-2 text-sm">
-              <p>Token: {result.token.name} ({result.token.symbol})</p>
-              <p>Supply: {result.token.supply}</p>
-            </div>
-          )}
-        </div>
-      )}
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Token Name</label>
-          <input
-            type="text"
-            value={tokenData.name}
-            onChange={(e) => setTokenData({...tokenData, name: e.target.value})}
-            className="input-field w-full"
-            placeholder="e.g., Sexy Token"
-            required
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium mb-1">Symbol</label>
-          <input
-            type="text"
-            value={tokenData.symbol}
-            onChange={(e) => setTokenData({...tokenData, symbol: e.target.value.toUpperCase()})}
-            className="input-field w-full"
-            placeholder="e.g., SEXY"
-            maxLength="5"
-            required
-          />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Total Supply</label>
+
+        <form onSubmit={handleCreateToken} className="form">
+          <div className="form-group">
+            <label className="label">Token Name</label>
+            <input
+              type="text"
+              value={tokenName}
+              onChange={(e) => setTokenName(e.target.value)}
+              className="input"
+              placeholder="e.g., Sexy Token"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="label">Symbol</label>
+            <input
+              type="text"
+              value={tokenSymbol}
+              onChange={(e) => setTokenSymbol(e.target.value)}
+              className="input"
+              placeholder="e.g., SEXY"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="label">Total Supply</label>
             <input
               type="number"
-              value={tokenData.supply}
-              onChange={(e) => setTokenData({...tokenData, supply: e.target.value})}
-              className="input-field w-full"
+              value={totalSupply}
+              onChange={(e) => setTotalSupply(e.target.value)}
+              className="input"
               placeholder="1000"
               required
             />
           </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Decimals</label>
+
+          <div className="form-group">
+            <label className="label">Decimals</label>
             <input
               type="number"
-              value={tokenData.decimals}
-              onChange={(e) => setTokenData({...tokenData, decimals: e.target.value})}
-              className="input-field w-full"
+              value={decimals}
+              onChange={(e) => setDecimals(e.target.value)}
+              className="input"
+              placeholder="18"
               min="0"
               max="18"
+              required
             />
           </div>
-        </div>
-        
-        <button
-          type="submit"
-          disabled={creating}
-          className="btn-primary w-full"
-        >
-          {creating ? 'Creating Token...' : '🚀 Create & Mint Token'}
-        </button>
-      </form>
-    </div>
+
+          <button
+            type="submit"
+            disabled={creating || !connected}
+            className="button"
+          >
+            {creating ? '🚀 Creating Token...' : '🚀 Create & Mint Token'}
+          </button>
+        </form>
+      </div>
+    </>
   )
 }

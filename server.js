@@ -104,7 +104,7 @@ try {
     }
   })
   
-  // Create NFT endpoint
+  // Create real NFT with metadata
   app.post('/api/create-nft', async (req, res) => {
     try {
       const { name, description, walletAddress } = req.body
@@ -113,18 +113,77 @@ try {
         return res.status(400).json({ error: 'Wallet address required' })
       }
       
-      console.log(`🎨 Creating NFT "${name}" for ${walletAddress}`)
+      console.log(`🎨 Creating real NFT "${name}" for ${walletAddress}`)
       
       const userPublicKey = new PublicKey(walletAddress)
       
+      // Import Metaplex for real NFT creation
+      const { createCreateMetadataAccountV3Instruction, PROGRAM_ID } = require('@metaplex-foundation/mpl-token-metadata')
+      const { SystemProgram, Transaction } = require('@solana/web3.js')
+      
+      // Create mint for NFT
       const mint = await createMint(
         connection,
         aiWallet,
         aiWallet.publicKey,
-        null,
+        aiWallet.publicKey, // freeze authority
         0  // 0 decimals = NFT
       )
       
+      console.log('✅ NFT mint created:', mint.toString())
+      
+      // Create metadata account
+      const [metadataPDA] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from('metadata'),
+          PROGRAM_ID.toBuffer(),
+          mint.toBuffer()
+        ],
+        PROGRAM_ID
+      )
+      
+      // Create metadata
+      const metadata = {
+        name: name || 'Consilience NFT',
+        symbol: 'CNSL',
+        uri: `https://arweave.net/metadata-${mint.toString().slice(0, 8)}`,
+        sellerFeeBasisPoints: 500, // 5% royalty
+        creators: [
+          {
+            address: aiWallet.publicKey,
+            verified: true,
+            share: 100
+          }
+        ],
+        collection: null,
+        uses: null
+      }
+      
+      const createMetadataInstruction = createCreateMetadataAccountV3Instruction(
+        {
+          metadata: metadataPDA,
+          mint: mint,
+          mintAuthority: aiWallet.publicKey,
+          payer: aiWallet.publicKey,
+          updateAuthority: aiWallet.publicKey
+        },
+        {
+          createMetadataAccountArgsV3: {
+            data: metadata,
+            isMutable: true,
+            collectionDetails: null
+          }
+        }
+      )
+      
+      // Create and send transaction
+      const transaction = new Transaction().add(createMetadataInstruction)
+      const signature = await connection.sendTransaction(transaction, [aiWallet])
+      await connection.confirmTransaction(signature)
+      
+      console.log('✅ NFT metadata created, signature:', signature)
+      
+      // Create token account and mint NFT to user
       const userTokenAccount = await getOrCreateAssociatedTokenAccount(
         connection,
         aiWallet,
@@ -132,7 +191,7 @@ try {
         userPublicKey
       )
       
-      await mintTo(
+      const mintSignature = await mintTo(
         connection,
         aiWallet,
         mint,
@@ -141,20 +200,26 @@ try {
         1
       )
       
-      console.log('✅ NFT created:', mint.toString())
+      console.log('✅ NFT minted to user, signature:', mintSignature)
       
       res.json({
         success: true,
-        message: `Real NFT "${name}" created and sent to your wallet!`,
+        message: `🎨 Real NFT "${name}" with metadata created and sent to your wallet!`,
         mintAddress: mint.toString(),
+        metadataAddress: metadataPDA.toString(),
+        transactions: {
+          metadata: signature,
+          mint: mintSignature
+        },
         explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
         name: name,
-        description: description
+        description: description,
+        symbol: 'CNSL'
       })
       
     } catch (error) {
       console.error('NFT creation error:', error)
-      res.status(500).json({ error: 'NFT creation failed: ' + error.message })
+      res.status(500).json({ error: 'Real NFT creation failed: ' + error.message })
     }
   })
   
@@ -334,19 +399,56 @@ app.post('/api/mint-nft', async (req, res) => {
   }
   
   try {
-    const { recipient } = req.body
-    const { Connection, PublicKey, Keypair } = require('@solana/web3.js')
-    const { createMint, getOrCreateAssociatedTokenAccount, mintTo } = require('@solana/spl-token')
+    const { recipient, nftId } = req.body
+    const { createCreateMetadataAccountV3Instruction, PROGRAM_ID } = require('@metaplex-foundation/mpl-token-metadata')
+    const { SystemProgram, Transaction } = require('@solana/web3.js')
     
     const userPublicKey = new PublicKey(recipient)
-    const mint = await createMint(connection, aiWallet, aiWallet.publicKey, null, 0)
+    
+    // Create mint with metadata
+    const mint = await createMint(connection, aiWallet, aiWallet.publicKey, aiWallet.publicKey, 0)
+    
+    // Create metadata
+    const [metadataPDA] = PublicKey.findProgramAddressSync(
+      [Buffer.from('metadata'), PROGRAM_ID.toBuffer(), mint.toBuffer()],
+      PROGRAM_ID
+    )
+    
+    const metadata = {
+      name: `Consilience NFT #${nftId || Date.now()}`,
+      symbol: 'CNSL',
+      uri: `https://arweave.net/nft-${mint.toString().slice(0, 8)}`,
+      sellerFeeBasisPoints: 500,
+      creators: [{ address: aiWallet.publicKey, verified: true, share: 100 }],
+      collection: null,
+      uses: null
+    }
+    
+    const createMetadataInstruction = createCreateMetadataAccountV3Instruction(
+      {
+        metadata: metadataPDA,
+        mint: mint,
+        mintAuthority: aiWallet.publicKey,
+        payer: aiWallet.publicKey,
+        updateAuthority: aiWallet.publicKey
+      },
+      { createMetadataAccountArgsV3: { data: metadata, isMutable: true, collectionDetails: null } }
+    )
+    
+    const transaction = new Transaction().add(createMetadataInstruction)
+    const metadataSignature = await connection.sendTransaction(transaction, [aiWallet])
+    await connection.confirmTransaction(metadataSignature)
+    
+    // Mint to user
     const userTokenAccount = await getOrCreateAssociatedTokenAccount(connection, aiWallet, mint, userPublicKey)
-    await mintTo(connection, aiWallet, mint, userTokenAccount.address, aiWallet, 1)
+    const mintSignature = await mintTo(connection, aiWallet, mint, userTokenAccount.address, aiWallet, 1)
     
     res.json({
       success: true,
-      message: 'Real NFT minted to your wallet!',
+      message: 'Real NFT with metadata minted to your wallet!',
       mintAddress: mint.toString(),
+      metadataAddress: metadataPDA.toString(),
+      transactions: { metadata: metadataSignature, mint: mintSignature },
       explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`
     })
   } catch (error) {

@@ -118,8 +118,11 @@ try {
       const userPublicKey = new PublicKey(walletAddress)
       
       // Import Metaplex for real NFT creation
-      const { createCreateMetadataAccountV3Instruction, PROGRAM_ID } = require('@metaplex-foundation/mpl-token-metadata')
+      const { createCreateMetadataAccountV3Instruction } = require('@metaplex-foundation/mpl-token-metadata')
       const { SystemProgram, Transaction } = require('@solana/web3.js')
+      
+      // Metaplex Token Metadata Program ID
+      const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
       
       // Create mint for NFT
       const mint = await createMint(
@@ -136,10 +139,10 @@ try {
       const [metadataPDA] = PublicKey.findProgramAddressSync(
         [
           Buffer.from('metadata'),
-          PROGRAM_ID.toBuffer(),
+          TOKEN_METADATA_PROGRAM_ID.toBuffer(),
           mint.toBuffer()
         ],
-        PROGRAM_ID
+        TOKEN_METADATA_PROGRAM_ID
       )
       
       // Create metadata
@@ -400,9 +403,10 @@ app.post('/api/mint-nft', async (req, res) => {
   
   try {
     const { recipient, nftId } = req.body
-    const { createCreateMetadataAccountV3Instruction, PROGRAM_ID } = require('@metaplex-foundation/mpl-token-metadata')
+    const { createCreateMetadataAccountV3Instruction } = require('@metaplex-foundation/mpl-token-metadata')
     const { SystemProgram, Transaction } = require('@solana/web3.js')
     
+    const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
     const userPublicKey = new PublicKey(recipient)
     
     // Create mint with metadata
@@ -410,8 +414,8 @@ app.post('/api/mint-nft', async (req, res) => {
     
     // Create metadata
     const [metadataPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from('metadata'), PROGRAM_ID.toBuffer(), mint.toBuffer()],
-      PROGRAM_ID
+      [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+      TOKEN_METADATA_PROGRAM_ID
     )
     
     const metadata = {

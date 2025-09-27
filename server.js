@@ -249,30 +249,51 @@ try {
     }
   })
   
-  // Wallet NFTs endpoint
+  // Wallet NFTs endpoint with Metaplex
   app.get('/api/wallet-nfts/:address', async (req, res) => {
     try {
-      const publicKey = new PublicKey(req.params.address)
-      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
-        programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
-      })
+      const { Metaplex, keypairIdentity } = require('@metaplex-foundation/js')
+      const metaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet))
       
-      const nfts = tokenAccounts.value
-        .filter(account => {
-          const tokenInfo = account.account.data.parsed.info
-          return tokenInfo.tokenAmount.decimals === 0 && parseFloat(tokenInfo.tokenAmount.amount) === 1
-        })
-        .map(account => {
-          const tokenInfo = account.account.data.parsed.info
-          return {
-            mint: tokenInfo.mint,
-            name: `Consilience NFT ${tokenInfo.mint.slice(0, 8)}...`,
-            description: 'NFT created on Consilience DAO'
+      const publicKey = new PublicKey(req.params.address)
+      console.log(`🔍 Fetching NFTs for: ${publicKey.toString()}`)
+      
+      const nfts = await metaplex.nfts().findAllByOwner({ owner: publicKey })
+      console.log(`📦 Found ${nfts.length} NFTs`)
+      
+      const nftData = await Promise.all(
+        nfts.map(async (nft) => {
+          try {
+            const fullNft = await metaplex.nfts().load({ metadata: nft })
+            return {
+              mint: nft.address.toString(),
+              name: nft.name || `NFT ${nft.address.toString().slice(0, 8)}...`,
+              description: nft.description || 'Consilience DAO NFT',
+              image: fullNft.json?.image || `https://api.dicebear.com/7.x/shapes/svg?seed=${nft.address.toString()}&backgroundColor=00ff88`,
+              symbol: nft.symbol || 'CNSL',
+              uri: nft.uri,
+              explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`,
+              isRealNFT: true
+            }
+          } catch (error) {
+            return {
+              mint: nft.address.toString(),
+              name: `NFT ${nft.address.toString().slice(0, 8)}...`,
+              description: 'Consilience DAO NFT',
+              image: `https://api.dicebear.com/7.x/shapes/svg?seed=${nft.address.toString()}&backgroundColor=ff6b6b`,
+              symbol: 'CNSL',
+              explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`,
+              isRealNFT: true
+            }
           }
         })
+      )
       
-      res.json({ nfts })
+      console.log(`✅ Returning ${nftData.length} NFTs`)
+      res.json({ nfts: nftData })
+      
     } catch (error) {
+      console.error('NFT fetch error:', error)
       res.json({ nfts: [] })
     }
   })

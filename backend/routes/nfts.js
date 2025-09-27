@@ -16,7 +16,7 @@ router.post('/create-nft', apiLimiter, async (req, res) => {
   const nftId = Date.now()
   
   db.run(
-    'INSERT INTO nft_collections (id, name, description, image_url, supply, creator_alias, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO nft_collections (id, name, description, image, supply, creator, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
     [nftId, name, description, image, supply, creator, new Date().toISOString()],
     function(err) {
       if (err) {
@@ -46,7 +46,7 @@ router.get('/user-nfts/:alias', apiLimiter, async (req, res) => {
   const { alias } = req.params
   const db = req.app.locals.db
   
-  db.all('SELECT * FROM nft_collections WHERE creator_alias = ?', [alias], (err, nfts) => {
+  db.all('SELECT * FROM nft_collections WHERE creator = ?', [alias], (err, nfts) => {
     if (err) {
       return res.status(500).json({ error: 'Database error' })
     }

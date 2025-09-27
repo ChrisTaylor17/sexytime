@@ -42,9 +42,19 @@ try {
     console.log('✅ Solana RPC connected, version:', version['solana-core'])
     solanaEnabled = true
     
-    // Check AI wallet balance
-    connection.getBalance(aiWallet.publicKey).then(balance => {
+    // Check AI wallet balance and fund if needed
+    connection.getBalance(aiWallet.publicKey).then(async balance => {
       console.log(`💰 AI Wallet Balance: ${balance / LAMPORTS_PER_SOL} SOL`)
+      if (balance < LAMPORTS_PER_SOL * 0.1) {
+        try {
+          console.log('💰 AI Wallet low on SOL, requesting airdrop...')
+          const signature = await connection.requestAirdrop(aiWallet.publicKey, LAMPORTS_PER_SOL)
+          await connection.confirmTransaction(signature)
+          console.log('✅ AI Wallet funded with 1 SOL')
+        } catch (err) {
+          console.log('⚠️ AI Wallet airdrop failed:', err.message)
+        }
+      }
     }).catch(err => console.log('Balance check failed:', err.message))
     
   }).catch(err => {
@@ -128,13 +138,16 @@ try {
       
       // Generate AI image from description
       let imageUrl
-      if (process.env.OPENAI_API_KEY) {
+      const hasOpenAI = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'dummy'
+      console.log('🔑 OpenAI API Key available:', !!hasOpenAI)
+      
+      if (hasOpenAI) {
         try {
           const OpenAI = require('openai')
           const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
           
           const imagePrompt = description || `${name} digital art NFT`
-          console.log('🎨 Generating AI image for:', imagePrompt)
+          console.log('🎨 Generating AI image for prompt:', imagePrompt)
           
           const response = await openai.images.generate({
             model: 'dall-e-3',
@@ -145,13 +158,15 @@ try {
           })
           
           imageUrl = response.data[0].url
-          console.log('✅ AI image generated:', imageUrl)
+          console.log('✅ AI image generated successfully:', imageUrl)
         } catch (error) {
           console.log('⚠️ AI generation failed:', error.message)
-          imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=00ff88,ff6b6b,4ecdc4,45b7d1`
+          console.log('Error details:', error)
+          imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=ff0000,00ff00,0000ff`
         }
       } else {
-        imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=00ff88,ff6b6b,4ecdc4,45b7d1`
+        console.log('⚠️ No OpenAI API key, using fallback image')
+        imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=ff0000,00ff00,0000ff`
       }
       
       console.log('✅ Creating NFT with Metaplex...')

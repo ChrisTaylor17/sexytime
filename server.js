@@ -445,6 +445,23 @@ async function createRealToken(projectName) {
   }
 }
 
+// Generate AI image for NFT
+async function generateNFTImage(description) {
+  try {
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: `Create a unique digital art NFT: ${description}. Style: modern, colorful, suitable for blockchain NFT collection`,
+      size: "1024x1024",
+      quality: "standard",
+      n: 1,
+    })
+    return response.data[0].url
+  } catch (error) {
+    console.log('Image generation failed, using placeholder')
+    return `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description)}&backgroundColor=00ff88`
+  }
+}
+
 // Real NFT creation with supply of 1 (NFT standard)
 async function createRealNFT(description) {
   try {
@@ -458,10 +475,11 @@ async function createRealNFT(description) {
       throw new Error('Insufficient devnet SOL - fund wallet')
     }
     
-    // Generate NFT metadata
+    // Generate NFT metadata and image
     const tokenId = Math.floor(Math.random() * 10000)
     const nftName = `Consilience NFT #${tokenId}`
     const nftDescription = description || 'A unique NFT created on the Consilience DAO platform'
+    const imageUrl = await generateNFTImage(nftDescription)
     
     // Create mint for NFT (0 decimals = NFT)
     const mint = await createMint(
@@ -498,27 +516,42 @@ async function createRealNFT(description) {
     
     console.log('✅ Real NFT created:', mint.toString())
     
-    return {
+    // Store NFT data
+    const nftData = {
       mintAddress: mint.toString(),
       tokenId: tokenId,
       name: nftName,
       description: nftDescription,
+      image: imageUrl,
       supply: 1,
       explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
-      isReal: true
+      isReal: true,
+      createdAt: new Date().toISOString(),
+      creator: 'Consilience DAO'
     }
+    
+    // Store in memory (in production, use database)
+    if (!global.createdNFTs) global.createdNFTs = []
+    global.createdNFTs.push(nftData)
+    
+    return nftData
   } catch (error) {
     console.error('❌ Real NFT failed, using simulation:', error.message)
     
-    // Immediate fallback to simulation
+    // Generate image even for simulation
+    const imageUrl = await generateNFTImage(description || 'Simulated NFT')
+    
     return {
       mintAddress: 'SIM' + Math.random().toString(36).substr(2, 32).toUpperCase(),
       tokenId: Math.floor(Math.random() * 10000),
       name: 'Simulated NFT',
       description: 'Simulation - fund wallet for real NFTs',
+      image: imageUrl,
       explorerUrl: `https://explorer.solana.com/address/simulation?cluster=devnet`,
       isReal: false,
-      error: error.message
+      error: error.message,
+      createdAt: new Date().toISOString(),
+      creator: 'Consilience DAO'
     }
   }
 }
@@ -753,7 +786,7 @@ app.post('/api/ai-chat-direct', async (req, res) => {
       const nft = await createRealNFT(message)
       if (nft) {
         const status = nft.isReal ? '✅ REAL NFT created!' : '⚠️ Simulated (fund wallet for real NFTs)'
-        aiResponse = `🎨 ${status}\n\n🏷️ Name: ${nft.name}\n🔗 Mint: ${nft.mintAddress}\n📝 Description: ${nft.description}\n🔍 Explorer: ${nft.explorerUrl}\n\n${nft.isReal ? 'Your NFT is live on Solana devnet!' : 'To create real NFTs, fund this wallet with devnet SOL:'}`
+        aiResponse = `🎨 ${status}\n\n🏷️ Name: ${nft.name}\n🔗 Mint: ${nft.mintAddress}\n📝 Description: ${nft.description}\n🖼️ Image: ${nft.image}\n🔍 Explorer: ${nft.explorerUrl}\n\n${nft.isReal ? 'Your NFT is live on Solana devnet!' : 'To create real NFTs, fund this wallet with devnet SOL:'}`
         
         if (!nft.isReal) {
           aiResponse += `\n\n💰 Wallet Address: ${payer.publicKey.toString()}\n🚰 Get devnet SOL: https://faucet.solana.com\n💡 Or run: solana airdrop 1 ${payer.publicKey.toString()} --url devnet`
@@ -1140,6 +1173,12 @@ Respond as a helpful team member. If they mention creating tokens/NFTs, offer to
     return 'Great point! How can I help move this forward? 🤖'
   }
 }
+
+// Get created NFTs
+app.get('/api/nfts', (req, res) => {
+  const nfts = global.createdNFTs || []
+  res.json(nfts)
+})
 
 const PORT = process.env.PORT || 8080
 server.listen(PORT, '0.0.0.0', () => {

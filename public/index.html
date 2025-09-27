@@ -281,6 +281,7 @@
                 <div class="nav-item active" onclick="showPage('ai-chat')">🤖 AI Chat</div>
                 <div class="nav-item" onclick="showPage('matching')">Find Partners</div>
                 <div class="nav-item" onclick="showPage('dashboard')">Dashboard</div>
+                <div class="nav-item" onclick="showPage('nfts')">🖼️ NFTs</div>
                 <div class="nav-item" onclick="showPage('create')">Create</div>
                 <div class="nav-item" onclick="showPage('profile')">Profile</div>
             </div>
@@ -410,6 +411,10 @@
                     break;
                 case 'profile':
                     content.innerHTML = renderProfile();
+                    break;
+                case 'nfts':
+                    content.innerHTML = renderNFTGallery();
+                    loadNFTs();
                     break;
             }
         }
@@ -1118,6 +1123,67 @@
             }
         });
 
+        function renderNFTGallery() {
+            return `
+                <h2>🖼️ NFT Gallery</h2>
+                <p>AI-generated NFTs created on Consilience DAO</p>
+                
+                <div id="nftGrid" class="grid" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+                    <div class="loading">Loading NFTs...</div>
+                </div>
+            `;
+        }
+        
+        async function loadNFTs() {
+            try {
+                const response = await fetch('/api/nfts');
+                const nfts = await response.json();
+                
+                const grid = document.getElementById('nftGrid');
+                if (!grid) return;
+                
+                if (nfts.length === 0) {
+                    grid.innerHTML = `
+                        <div class="card">
+                            <h3>No NFTs Yet</h3>
+                            <p>Create your first NFT using the AI chat!</p>
+                            <button class="btn" onclick="showPage('ai-chat')">Create NFT</button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                grid.innerHTML = nfts.map(nft => `
+                    <div class="card" style="text-align: center;">
+                        <img src="${nft.image}" alt="${nft.name}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+                        <h4>${nft.name}</h4>
+                        <p style="font-size: 14px; color: #888;">${nft.description}</p>
+                        <div style="margin: 12px 0;">
+                            <span style="background: ${nft.isReal ? '#10b981' : '#f59e0b'}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                                ${nft.isReal ? '✅ Real' : '⚠️ Simulated'}
+                            </span>
+                        </div>
+                        <div style="font-size: 12px; color: #666;">
+                            <div>Mint: ${nft.mintAddress.slice(0, 8)}...</div>
+                            <div>Created: ${new Date(nft.createdAt).toLocaleDateString()}</div>
+                        </div>
+                        <button class="btn" style="margin-top: 8px; font-size: 12px; padding: 6px 12px;" onclick="window.open('${nft.explorerUrl}', '_blank')">View on Explorer</button>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                const grid = document.getElementById('nftGrid');
+                if (grid) {
+                    grid.innerHTML = `
+                        <div class="card">
+                            <h3>Error Loading NFTs</h3>
+                            <p>Could not load NFT gallery</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
         // Initialize
         showPage('ai-chat');
         if (walletManager.wallet) {

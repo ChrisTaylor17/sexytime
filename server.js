@@ -189,9 +189,22 @@ try {
         creatorAddress: aiWallet.publicKey.toString()
       })
       
-      // Create NFT with minimal data to avoid transaction size limit
+      // Upload metadata first using Metaplex storage
+      const { uri } = await nftMetaplex.nfts().uploadMetadata({
+        name: String(nftName),
+        description: String(nftDescription),
+        image: String(imageUrl),
+        attributes: [
+          { trait_type: 'Platform', value: 'Consilience DAO' },
+          { trait_type: 'AI Generated', value: 'Yes' }
+        ]
+      })
+      
+      console.log('Metadata uploaded to:', uri)
+      
+      // Create NFT with uploaded metadata URI
       const { nft } = await nftMetaplex.nfts().create({
-        uri: '',
+        uri: uri,
         name: String(nftName),
         sellerFeeBasisPoints: 500,
         symbol: String(nftSymbol),

@@ -320,7 +320,7 @@ try {
       console.log('  🎯 MINT ADDRESS:', mintAddress)
       console.log('  🔗 EXPLORER:', `https://explorer.solana.com/address/${mintAddress}?cluster=devnet`)
       console.log('  🔗 SOLSCAN:', `https://solscan.io/token/${mintAddress}?cluster=devnet`)
-      console.log('  🇺🇷 METADATA URI:', metadataUri)
+      console.log('  🇺🇷 METADATA URI:', finalMetadataUri)
       console.log('  🇮🇲 IMAGE URL:', imageUrl)
       console.log('  🅰️ AI GENERATED:', hasOpenAI)
       

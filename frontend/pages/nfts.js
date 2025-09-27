@@ -63,79 +63,72 @@ export default function NFTs() {
 
   const createNFT = async () => {
     try {
-      try {
-        // Try backend first
-        const response = await fetch('https://sexytime-production.up.railway.app/api/create-nft', {
+      // Generate AI image if no image provided
+      let imageUrl = newNFT.image;
+      if (!imageUrl) {
+        const imageResponse = await fetch('https://sexytime-production.up.railway.app/api/generate-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            ...newNFT,
-            creator: userAlias,
-            aiWallet: 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W'
+            prompt: `${newNFT.name}: ${newNFT.description}`,
+            style: 'digital art, vibrant colors, futuristic'
           })
         });
         
-        if (response.ok) {
-          const data = await response.json();
-          alert(data.message || 'NFT collection created successfully!');
-          setShowCreateForm(false);
-          setNewNFT({ name: '', description: '', image: '', supply: 100, projectId: '' });
-          fetchUserNFTs();
-          return;
-        } else {
-          const errorData = await response.json();
-          alert(`Error: ${errorData.error || 'Creation failed'}`);
+        if (imageResponse.ok) {
+          const imageData = await imageResponse.json();
+          imageUrl = imageData.imageUrl;
         }
-      } catch (backendError) {
-        console.log('Backend unavailable, using localStorage');
       }
       
-      // Fallback to localStorage
-      const mockNFT = {
-        id: Date.now(),
-        name: newNFT.name,
-        description: newNFT.description,
-        image: newNFT.image,
-        supply: newNFT.supply,
-        creator: userAlias,
-        owned: 1,
-        created_at: new Date().toISOString()
-      };
-      
-      const existingNFTs = JSON.parse(localStorage.getItem(`nfts_${userAlias}`) || '[]');
-      existingNFTs.push(mockNFT);
-      localStorage.setItem(`nfts_${userAlias}`, JSON.stringify(existingNFTs));
-      
-      alert('NFT collection created successfully!');
-      setShowCreateForm(false);
-      setNewNFT({ name: '', description: '', image: '', supply: 100, projectId: '' });
-      fetchUserNFTs();
-    } catch (error) {
-      console.error('Error creating NFT:', error);
-    }
-  };
-
-  const mintNFT = async (nft) => {
-    if (!connected || !publicKey) {
-      alert('❌ Please connect your Solana wallet first to mint real NFTs!');
-      return;
-    }
-
-    try {
-      const response = await fetch('https://sexytime-production.up.railway.app/api/mint-nft', {
+      const response = await fetch('https://sexytime-production.up.railway.app/api/create-nft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nftId: nft.id,
-          recipient: publicKey.toString(),
-          recipientAlias: userAlias,
+          ...newNFT,
+          image: imageUrl,
+          creator: userAlias,
           aiWallet: 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W'
         })
       });
       
       if (response.ok) {
         const data = await response.json();
-        alert(`✅ Real NFT minted to your wallet!\n\nTransaction: ${data.signature || 'Completed'}\nWallet: ${publicKey.toString().slice(0,8)}...`);
+        alert(`🎨 NFT collection created with ${imageUrl ? 'AI-generated' : 'custom'} artwork!`);
+        setShowCreateForm(false);
+        setNewNFT({ name: '', description: '', image: '', supply: 100, projectId: '' });
+        fetchUserNFTs();
+      } else {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.error || 'Creation failed'}`);
+      }
+    } catch (error) {
+      console.error('Error creating NFT:', error);
+      alert('Network error. Please try again.');
+    }
+  };
+
+  const mintNFT = async (nft) => {
+    try {
+      const response = await fetch('https://sexytime-production.up.railway.app/api/mint-nft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nftId: nft.id,
+          recipient: connected && publicKey ? publicKey.toString() : userAlias,
+          recipientAlias: userAlias,
+          walletConnected: connected,
+          aiWallet: 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W'
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (connected && publicKey) {
+          alert(`✅ Real NFT minted to your wallet!\n\nTransaction: ${data.signature || 'Completed'}\nWallet: ${publicKey.toString().slice(0,8)}...`);
+        } else {
+          alert(`🎨 NFT "${nft.name}" minted successfully!\n\n⚠️ Connect wallet for real Solana NFTs`);
+        }
         fetchUserNFTs();
       } else {
         const errorData = await response.json();
@@ -257,7 +250,7 @@ export default function NFTs() {
               
               <input
                 type="text"
-                placeholder="Image URL (optional)"
+                placeholder="Image URL (leave empty for AI-generated art)"
                 value={newNFT.image}
                 onChange={(e) => setNewNFT({...newNFT, image: e.target.value})}
                 style={{
@@ -271,6 +264,19 @@ export default function NFTs() {
                   fontSize: '14px'
                 }}
               />
+              
+              {!newNFT.image && (
+                <div style={{
+                  background: 'rgba(168, 85, 247, 0.1)',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  marginBottom: '15px',
+                  fontSize: '12px',
+                  color: '#a855f7'
+                }}>
+                  🤖 AI will generate unique artwork based on your name and description
+                </div>
+              )}
               
               <input
                 type="number"

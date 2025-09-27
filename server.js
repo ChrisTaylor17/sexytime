@@ -122,8 +122,33 @@ try {
       
       const userPublicKey = new PublicKey(walletAddress)
       
-      // Generate image based on description
-      const imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=00ff88,ff6b6b,4ecdc4,45b7d1`
+      // Generate AI image from description
+      let imageUrl
+      if (process.env.OPENAI_API_KEY) {
+        try {
+          const OpenAI = require('openai')
+          const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+          
+          const imagePrompt = description || `${name} digital art NFT`
+          console.log('🎨 Generating AI image for:', imagePrompt)
+          
+          const response = await openai.images.generate({
+            model: 'dall-e-3',
+            prompt: imagePrompt,
+            n: 1,
+            size: '1024x1024',
+            quality: 'standard'
+          })
+          
+          imageUrl = response.data[0].url
+          console.log('✅ AI image generated:', imageUrl)
+        } catch (error) {
+          console.log('⚠️ AI generation failed:', error.message)
+          imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=00ff88,ff6b6b,4ecdc4,45b7d1`
+        }
+      } else {
+        imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=00ff88,ff6b6b,4ecdc4,45b7d1`
+      }
       
       console.log('✅ Creating NFT with Metaplex...')
       
@@ -140,8 +165,19 @@ try {
         creatorAddress: aiWallet.publicKey.toString()
       })
       
+      // Upload metadata with AI image
+      const { uri } = await nftMetaplex.nfts().uploadMetadata({
+        name: nftName,
+        description: nftDescription,
+        image: imageUrl,
+        attributes: [
+          { trait_type: 'Platform', value: 'Consilience DAO' },
+          { trait_type: 'Generated', value: 'AI Image' }
+        ]
+      })
+      
       const { nft } = await nftMetaplex.nfts().create({
-        uri: '',
+        uri: uri,
         name: nftName,
         sellerFeeBasisPoints: 500,
         symbol: nftSymbol,

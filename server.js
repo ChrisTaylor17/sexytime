@@ -237,9 +237,10 @@ try {
       console.log('✅ NFT mint created:', mint.toString())
       
       // Create metadata PDA for on-chain storage
+      const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
       const [metadataPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from('metadata'), PROGRAM_ID.toBuffer(), mint.toBuffer()],
-        PROGRAM_ID
+        [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+        TOKEN_METADATA_PROGRAM_ID
       )
       
       // Create on-chain metadata with AI image URL
@@ -250,14 +251,16 @@ try {
           mint: mint,
           mintAuthority: aiWallet.publicKey,
           payer: aiWallet.publicKey,
-          updateAuthority: aiWallet.publicKey
+          updateAuthority: aiWallet.publicKey,
+          systemProgram: new PublicKey('11111111111111111111111111111111'),
+          rent: new PublicKey('SysvarRent111111111111111111111111111111111')
         },
         {
           createMetadataAccountArgsV3: {
             data: {
               name: String(nftName),
               symbol: String(nftSymbol),
-              uri: String(imageUrl), // AI image URL stored directly on-chain
+              uri: String(imageUrl),
               sellerFeeBasisPoints: 500,
               creators: [{ address: aiWallet.publicKey, verified: true, share: 100 }],
               collection: null,

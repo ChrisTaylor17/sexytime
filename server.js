@@ -143,18 +143,16 @@ try {
         .use(keypairIdentity(aiWallet))
         .use(mockStorage())
       
-      let nftMetaplex
-      try {
-        nftMetaplex = Metaplex.make(connection)
-          .use(keypairIdentity(aiWallet))
-          .use(bundlrStorage())
-        console.log('✅ Bundlr storage initialized')
-      } catch (bundlrError) {
-        console.log('⚠️ Bundlr failed, using mock storage:', bundlrError.message)
-        nftMetaplex = Metaplex.make(connection)
-          .use(keypairIdentity(aiWallet))
-          .use(mockStorage())
-      }
+      // Initialize Metaplex with bundlr storage for real metadata upload
+      const nftMetaplex = Metaplex.make(connection)
+        .use(keypairIdentity(aiWallet))
+        .use(bundlrStorage({
+          address: 'https://node1.bundlr.network',
+          providerUrl: connection.rpcEndpoint,
+          timeout: 60000
+        }))
+      
+      console.log('✅ Bundlr storage initialized with custom config')
       
       const userPublicKey = new PublicKey(walletAddress)
       
@@ -238,19 +236,29 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Try to upload metadata, fallback to simple URI if fails
-      let uri
+      // Fund bundlr if needed and upload metadata
       try {
-        const uploadResult = await nftMetaplex.nfts().uploadMetadata(nftMetadata)
-        uri = uploadResult.uri
-        console.log('✅ Metadata uploaded to:', uri)
-      } catch (uploadError) {
-        console.log('⚠️ Metadata upload failed, using simple URI:', uploadError.message)
-        // Use simple data URI as fallback with full image URL
-        const simpleMetadata = JSON.stringify({ name: String(nftName), image: String(imageUrl) })
-        uri = `data:application/json,${encodeURIComponent(simpleMetadata)}`
-        console.log('✅ Using fallback URI (length:', uri.length, ')')
+        // Check bundlr balance and fund if needed
+        const bundlr = nftMetaplex.storage().driver()
+        if (bundlr.fund) {
+          try {
+            const balance = await bundlr.getLoadedBalance()
+            console.log('Bundlr balance:', balance.toString())
+            if (balance.isLessThan(bundlr.utils.unitConverter(0.01))) {
+              console.log('Funding bundlr with 0.01 SOL...')
+              await bundlr.fund(bundlr.utils.unitConverter(0.01))
+            }
+          } catch (fundError) {
+            console.log('Bundlr funding info:', fundError.message)
+          }
+        }
+      } catch (bundlrError) {
+        console.log('Bundlr setup info:', bundlrError.message)
       }
+      
+      // Upload metadata to get short URI
+      const { uri } = await nftMetaplex.nfts().uploadMetadata(nftMetadata)
+      console.log('✅ Metadata uploaded to Arweave:', uri)
       
       // Create NFT with AI image metadata and proper error handling
       let nft

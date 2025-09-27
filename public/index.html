@@ -301,6 +301,14 @@
         let currentCollaboration = null;
         let isConnected = false;
 
+        // AI chat mode
+        let currentAIMode = 'direct';
+        
+        function setAIMode(mode) {
+            currentAIMode = mode;
+            showPage('ai-chat');
+        }
+        
         // Initialize socket connection
         function initSocket() {
             try {
@@ -348,6 +356,7 @@
             });
 
             socket.on('chat-message', (message) => {
+                // Display in collaboration chat (visible to all participants)
                 displayChatMessage(message, false);
             });
 
@@ -408,46 +417,79 @@
         function renderAIChat() {
             return `
                 <div style="max-width: 800px; margin: 0 auto;">
-                    <h2>🤖 AI-Guided Collaboration</h2>
+                    <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                        <button class="btn ${currentAIMode === 'direct' ? 'btn-purple' : ''}" onclick="setAIMode('direct')">🤖 Direct AI Chat</button>
+                        <button class="btn ${currentAIMode === 'collab' ? 'btn-green' : ''}" onclick="setAIMode('collab')">🤝 AI-Guided Collaboration</button>
+                    </div>
                     
-                    ${!currentUser ? `
+                    ${currentAIMode === 'direct' ? `
                         <div class="card">
-                            <h3>Create Profile First</h3>
-                            <p>Set up your profile to start AI-guided collaboration</p>
-                            <button class="btn" onclick="showPage('profile')">Create Profile</button>
-                        </div>
-                    ` : `
-                        <div class="card">
-                            <h3>Welcome, ${currentUser.alias}!</h3>
-                            <p>Find collaborators and let AI guide your project conversations</p>
-                            <button class="btn btn-green" onclick="showPage('matching')">🎯 Find Partners</button>
-                        </div>
-                        
-                        ${currentCollaboration ? `
-                            <div class="card" style="background: #065f46; margin-top: 20px;">
-                                <h3>🤝 Active Collaboration with ${currentCollaboration.partner}</h3>
-                                <p><strong>AI Suggestion:</strong> ${currentCollaboration.suggestedProject}</p>
-                                
-                                <div style="margin: 20px 0; display: flex; gap: 12px;">
-                                    <input type="text" id="projectName" placeholder="Project name..." style="flex: 1; padding: 8px; background: #0a0a0a; border: 1px solid #333; color: #fff; border-radius: 4px;">
-                                    <button class="btn btn-purple" onclick="createCollabProject()">🚀 Create Project</button>
-                                </div>
-                                
-                                <div class="chat-container" style="height: 500px; margin-top: 20px;">
-                                    <div class="chat-messages" id="chatMessages" style="height: 350px;"></div>
-
-                                    <div style="display: flex; gap: 12px;">
-                                        <input type="text" id="chatInput" placeholder="Type your message..." style="flex: 1; padding: 12px; background: #0a0a0a; border: 1px solid #333; color: #fff; border-radius: 8px;">
-                                        <button class="btn" onclick="sendMessage()">Send</button>
+                            <h2>🤖 AI Assistant</h2>
+                            <p>Chat directly with AI for help with blockchain development, project planning, and more!</p>
+                            
+                            <div class="chat-container" style="height: 600px; margin-top: 20px;">
+                                <div class="chat-messages" id="aiChatMessages" style="height: 450px; background: #0a0a0a; border-radius: 8px; padding: 16px; overflow-y: auto;">
+                                    <div class="message ai-message" style="background: #581c87; border: 1px solid #7c3aed; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+                                        <div class="message-author" style="color: #a855f7; font-weight: 600; margin-bottom: 4px;">🤖 AI Assistant</div>
+                                        <div>Hello! I'm your AI assistant for Consilience DAO. I can help you with:\n\n🪙 Creating tokens on Solana\n🎨 Minting NFTs\n🚀 Project planning\n🤝 Finding collaborators\n💡 Technical guidance\n\nWhat would you like to work on today?</div>
                                     </div>
                                 </div>
+                                
+                                <div style="display: flex; gap: 12px; margin-top: 16px;">
+                                    <input type="text" id="aiChatInput" placeholder="Ask me anything about blockchain, projects, or DAO collaboration..." style="flex: 1; padding: 12px; background: #1a1a1a; border: 1px solid #333; color: #fff; border-radius: 8px;">
+                                    <button class="btn btn-purple" onclick="sendAIMessage()">🚀 Send</button>
+                                </div>
+                                
+                                <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+                                    <button class="btn" style="font-size: 12px; padding: 6px 12px;" onclick="quickAIMessage('Create a token for my project')">Create Token</button>
+                                    <button class="btn" style="font-size: 12px; padding: 6px 12px;" onclick="quickAIMessage('Mint an NFT')">Mint NFT</button>
+                                    <button class="btn" style="font-size: 12px; padding: 6px 12px;" onclick="quickAIMessage('Help me plan a DAO project')">Plan Project</button>
+                                    <button class="btn" style="font-size: 12px; padding: 6px 12px;" onclick="quickAIMessage('Find collaborators for my idea')">Find Partners</button>
+                                </div>
+                            </div>
+                        </div>
+                    ` : `
+                        <h2>🤖 AI-Guided Collaboration</h2>
+                        
+                        ${!currentUser ? `
+                            <div class="card">
+                                <h3>Create Profile First</h3>
+                                <p>Set up your profile to start AI-guided collaboration</p>
+                                <button class="btn" onclick="showPage('profile')">Create Profile</button>
                             </div>
                         ` : `
                             <div class="card">
-                                <h3>💬 No Active Collaboration</h3>
-                                <p>Find a partner to start AI-guided project building</p>
-                                <button class="btn" onclick="showPage('matching')">Find Collaborator</button>
+                                <h3>Welcome, ${currentUser.alias}!</h3>
+                                <p>Find collaborators and let AI guide your project conversations</p>
+                                <button class="btn btn-green" onclick="showPage('matching')">🎯 Find Partners</button>
                             </div>
+                            
+                            ${currentCollaboration ? `
+                                <div class="card" style="background: #065f46; margin-top: 20px;">
+                                    <h3>🤝 Active Collaboration with ${currentCollaboration.partner}</h3>
+                                    <p><strong>AI Suggestion:</strong> ${currentCollaboration.suggestedProject}</p>
+                                    
+                                    <div style="margin: 20px 0; display: flex; gap: 12px;">
+                                        <input type="text" id="projectName" placeholder="Project name..." style="flex: 1; padding: 8px; background: #0a0a0a; border: 1px solid #333; color: #fff; border-radius: 4px;">
+                                        <button class="btn btn-purple" onclick="createCollabProject()">🚀 Create Project</button>
+                                    </div>
+                                    
+                                    <div class="chat-container" style="height: 500px; margin-top: 20px;">
+                                        <div class="chat-messages" id="chatMessages" style="height: 350px;"></div>
+
+                                        <div style="display: flex; gap: 12px;">
+                                            <input type="text" id="chatInput" placeholder="Type your message..." style="flex: 1; padding: 12px; background: #0a0a0a; border: 1px solid #333; color: #fff; border-radius: 8px;">
+                                            <button class="btn" onclick="sendMessage()">Send</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="card">
+                                    <h3>💬 No Active Collaboration</h3>
+                                    <p>Find a partner to start AI-guided project building</p>
+                                    <button class="btn" onclick="showPage('matching')">Find Collaborator</button>
+                                </div>
+                            `}
                         `}
                     `}
                 </div>
@@ -803,8 +845,7 @@
                 timestamp: Date.now()
             }, true);
             
-            // Get AI response as chat participant
-            getAIResponse(message);
+            // AI responses are now handled by the server and broadcast to all participants
             
             input.value = '';
         }
@@ -821,17 +862,125 @@
                 messageDiv.style.background = '#581c87';
                 messageDiv.style.border = '1px solid #7c3aed';
                 messageDiv.style.maxWidth = '90%';
+                messageDiv.style.padding = '12px';
+                messageDiv.style.borderRadius = '8px';
+                messageDiv.style.marginBottom = '12px';
             } else {
                 messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
             }
             
             messageDiv.innerHTML = `
-                <div class="message-author" style="${isAI ? 'color: #a855f7;' : ''}">${messageData.from}</div>
+                <div class="message-author" style="${isAI ? 'color: #a855f7; font-weight: 600; margin-bottom: 4px;' : ''}">${messageData.from}</div>
                 <div style="white-space: pre-line;">${messageData.message}</div>
             `;
             
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Direct AI chat functions
+        async function sendAIMessage() {
+            const input = document.getElementById('aiChatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Display user message
+            displayAIMessage({
+                from: currentUser?.alias || 'You',
+                message: message,
+                timestamp: Date.now()
+            }, true);
+            
+            input.value = '';
+            
+            // Show AI thinking
+            displayAIMessage({
+                from: '🤖 AI Assistant',
+                message: '💭 Thinking...',
+                timestamp: Date.now()
+            }, false);
+            
+            try {
+                const response = await fetch('/api/ai-chat-direct', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: message,
+                        alias: currentUser?.alias || 'anonymous'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Remove thinking message
+                const aiChatMessages = document.getElementById('aiChatMessages');
+                if (aiChatMessages && aiChatMessages.lastChild) {
+                    aiChatMessages.removeChild(aiChatMessages.lastChild);
+                }
+                
+                // Display AI response
+                displayAIMessage({
+                    from: '🤖 AI Assistant',
+                    message: data.response,
+                    timestamp: Date.now()
+                }, false);
+                
+            } catch (error) {
+                // Remove thinking message
+                const aiChatMessages = document.getElementById('aiChatMessages');
+                if (aiChatMessages && aiChatMessages.lastChild) {
+                    aiChatMessages.removeChild(aiChatMessages.lastChild);
+                }
+                
+                displayAIMessage({
+                    from: '🤖 AI Assistant',
+                    message: '⚠️ Sorry, I\'m having trouble connecting. I can still help with basic guidance though! What would you like to work on?',
+                    timestamp: Date.now()
+                }, false);
+            }
+        }
+        
+        function displayAIMessage(messageData, isOwn) {
+            const aiChatMessages = document.getElementById('aiChatMessages');
+            if (!aiChatMessages) return;
+            
+            const isAI = messageData.from.includes('AI Assistant');
+            const messageDiv = document.createElement('div');
+            
+            if (isAI) {
+                messageDiv.className = 'message ai-message';
+                messageDiv.style.background = '#581c87';
+                messageDiv.style.border = '1px solid #7c3aed';
+                messageDiv.style.padding = '12px';
+                messageDiv.style.borderRadius = '8px';
+                messageDiv.style.marginBottom = '12px';
+                messageDiv.style.maxWidth = '90%';
+            } else {
+                messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
+                messageDiv.style.background = isOwn ? '#1e40af' : '#374151';
+                messageDiv.style.padding = '8px 12px';
+                messageDiv.style.borderRadius = '8px';
+                messageDiv.style.marginBottom = '12px';
+                messageDiv.style.maxWidth = '80%';
+                if (isOwn) {
+                    messageDiv.style.marginLeft = 'auto';
+                    messageDiv.style.textAlign = 'right';
+                }
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-author" style="${isAI ? 'color: #a855f7; font-weight: 600; margin-bottom: 4px;' : 'font-size: 12px; font-weight: 600; margin-bottom: 4px;'}">${messageData.from}</div>
+                <div style="white-space: pre-line;">${messageData.message}</div>
+            `;
+            
+            aiChatMessages.appendChild(messageDiv);
+            aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+        }
+        
+        function quickAIMessage(message) {
+            document.getElementById('aiChatInput').value = message;
+            sendAIMessage();
         }
 
         function showAIGuidance(guidance) {
@@ -850,133 +999,8 @@
             }, 10000);
         }
         
-        // AI as chat participant
-        async function getAIResponse(userMessage) {
-            if (!currentCollaboration) return;
-            
-            // Show AI is typing
-            displayChatMessage({
-                from: '🤖 AI Assistant',
-                message: '💭 Analyzing and preparing response...',
-                timestamp: Date.now()
-            }, false);
-            
-            try {
-                const response = await fetch('/api/ai-chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        message: `You are an AI assistant helping ${currentUser.alias} and ${currentCollaboration.partner} collaborate. User said: "${userMessage}". Respond briefly and helpfully as a team member. Keep responses under 50 words.`,
-                        alias: 'AI_Assistant'
-                    })
-                });
-                
-                const data = await response.json();
-                
-                // Remove the typing message
-                const chatMessages = document.getElementById('chatMessages');
-                if (chatMessages && chatMessages.lastChild) {
-                    chatMessages.removeChild(chatMessages.lastChild);
-                }
-                
-                // Check if AI should take action - only on explicit requests
-                const lowerMessage = userMessage.toLowerCase();
-                let aiResponse = data.response;
-                
-                // Only create tokens/NFTs when explicitly requested
-                if ((lowerMessage.includes('create token') || lowerMessage.includes('make token')) && lowerMessage.length < 50) {
-                    setTimeout(async () => {
-                        try {
-                            const tokenResponse = await fetch('/api/ai-chat', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ 
-                                    message: `create token: ${currentCollaboration.suggestedProject}`,
-                                    alias: 'AI_Assistant'
-                                })
-                            });
-                            const tokenData = await tokenResponse.json();
-                            
-                            displayChatMessage({
-                                from: '🤖 AI Assistant',
-                                message: `🪙 Token Created!\n${tokenData.response}`,
-                                timestamp: Date.now()
-                            }, false);
-                        } catch (error) {
-                            displayChatMessage({
-                                from: '🤖 AI Assistant', 
-                                message: '⚠️ Token creation failed, but I can help with other tasks!',
-                                timestamp: Date.now()
-                            }, false);
-                        }
-                    }, 1500);
-                }
-                
-                if ((lowerMessage.includes('create nft') || lowerMessage.includes('mint nft')) && lowerMessage.length < 50) {
-                    setTimeout(async () => {
-                        try {
-                            const nftResponse = await fetch('/api/ai-chat', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ 
-                                    message: `mint an NFT: ${currentCollaboration.suggestedProject}`,
-                                    alias: 'AI_Assistant'
-                                })
-                            });
-                            const nftData = await nftResponse.json();
-                            
-                            displayChatMessage({
-                                from: '🤖 AI Assistant',
-                                message: `🎨 NFT Created!\n${nftData.response}`,
-                                timestamp: Date.now()
-                            }, false);
-                        } catch (error) {
-                            displayChatMessage({
-                                from: '🤖 AI Assistant',
-                                message: '⚠️ NFT creation failed, but I can help with planning!',
-                                timestamp: Date.now()
-                            }, false);
-                        }
-                    }, 1500);
-                }
-                
-                // Display AI response
-                displayChatMessage({
-                    from: '🤖 AI Assistant',
-                    message: aiResponse,
-                    timestamp: Date.now()
-                }, false);
-                
-            } catch (error) {
-                // Remove typing message
-                const chatMessages = document.getElementById('chatMessages');
-                if (chatMessages && chatMessages.lastChild) {
-                    chatMessages.removeChild(chatMessages.lastChild);
-                }
-                
-                // Fallback AI responses
-                const lowerMessage = userMessage.toLowerCase();
-                let aiResponse = '';
-                
-                if (lowerMessage.includes('ai') || lowerMessage.includes('help')) {
-                    aiResponse = '🤖 Yes, I\'m here! I can help guide your collaboration, create tokens/NFTs, and suggest next steps. What would you like to work on?';
-                } else if (lowerMessage.includes('token')) {
-                    aiResponse = '🪙 I can create real tokens on Solana! Just tell me the name and I\'ll mint it for your project.';
-                } else if (lowerMessage.includes('nft')) {
-                    aiResponse = '🎨 I can mint NFTs on the blockchain! Describe what your NFT should represent and I\'ll create it.';
-                } else if (lowerMessage.includes('project')) {
-                    aiResponse = '🚀 Great! Let\'s break down your project into actionable steps. What\'s the first feature you want to build?';
-                } else {
-                    aiResponse = '🤖 I\'m your AI collaborator! I can create tokens, mint NFTs, and help guide your project. What should we build together?';
-                }
-                
-                displayChatMessage({
-                    from: '🤖 AI Assistant',
-                    message: aiResponse,
-                    timestamp: Date.now()
-                }, false);
-            }
-        }
+        // Note: AI responses in collaboration chat are now handled by the server
+        // and broadcast to all participants via socket events
 
         function createCollabProject() {
             const projectName = document.getElementById('projectName').value.trim();
@@ -1088,6 +1112,9 @@
         document.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && e.target.id === 'chatInput') {
                 sendMessage();
+            }
+            if (e.key === 'Enter' && e.target.id === 'aiChatInput') {
+                sendAIMessage();
             }
         });
 

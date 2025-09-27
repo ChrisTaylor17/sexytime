@@ -85,6 +85,60 @@ class ConsilienceMCPServer {
               },
               required: ['proposal', 'userInterests']
             }
+          },
+          {
+            name: 'create_dao_token',
+            description: 'Create a new token on Solana for DAO projects',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                tokenName: {
+                  type: 'string',
+                  description: 'Name of the token to create'
+                },
+                projectDescription: {
+                  type: 'string',
+                  description: 'Description of the project this token represents'
+                }
+              },
+              required: ['tokenName', 'projectDescription']
+            }
+          },
+          {
+            name: 'mint_project_nft',
+            description: 'Mint an NFT for a DAO project milestone',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                nftDescription: {
+                  type: 'string',
+                  description: 'Description of the NFT and what it represents'
+                },
+                projectName: {
+                  type: 'string',
+                  description: 'Name of the associated project'
+                }
+              },
+              required: ['nftDescription', 'projectName']
+            }
+          },
+          {
+            name: 'ai_chat_direct',
+            description: 'Direct chat with Consilience AI assistant for project guidance',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                message: {
+                  type: 'string',
+                  description: 'Message to send to the AI assistant'
+                },
+                context: {
+                  type: 'string',
+                  description: 'Additional context about current project or goals'
+                }
+              },
+              required: ['message']
+            }
           }
         ]
       }
@@ -105,6 +159,15 @@ class ConsilienceMCPServer {
         
         case 'ai_negotiate':
           return await this.aiNegotiate(args.proposal, args.userInterests)
+        
+        case 'create_dao_token':
+          return await this.createDAOToken(args.tokenName, args.projectDescription)
+        
+        case 'mint_project_nft':
+          return await this.mintProjectNFT(args.nftDescription, args.projectName)
+        
+        case 'ai_chat_direct':
+          return await this.aiChatDirect(args.message, args.context)
         
         default:
           throw new Error(`Unknown tool: ${name}`)
@@ -247,10 +310,94 @@ class ConsilienceMCPServer {
     return recommendations[Math.floor(Math.random() * recommendations.length)]
   }
 
+  async createDAOToken(tokenName, projectDescription) {
+    try {
+      const response = await axios.post(`${process.env.BACKEND_URL || 'http://localhost:5000'}/api/ai-chat`, {
+        message: `create token: ${tokenName} for project: ${projectDescription}`,
+        alias: 'MCP_Server'
+      })
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Token Creation Result:\n${response.data.response}`
+          }
+        ]
+      }
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Token creation failed: ${error.message}\n\nFallback: Token "${tokenName}" would be created for project "${projectDescription}" with 1M supply on Solana devnet.`
+          }
+        ]
+      }
+    }
+  }
+
+  async mintProjectNFT(nftDescription, projectName) {
+    try {
+      const response = await axios.post(`${process.env.BACKEND_URL || 'http://localhost:5000'}/api/ai-chat`, {
+        message: `mint NFT: ${nftDescription} for project ${projectName}`,
+        alias: 'MCP_Server'
+      })
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `NFT Minting Result:\n${response.data.response}`
+          }
+        ]
+      }
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `NFT minting failed: ${error.message}\n\nFallback: NFT "${nftDescription}" would be minted for project "${projectName}" on Solana devnet.`
+          }
+        ]
+      }
+    }
+  }
+
+  async aiChatDirect(message, context) {
+    try {
+      const fullMessage = context ? `Context: ${context}\n\nUser: ${message}` : message
+      
+      const response = await axios.post(`${process.env.BACKEND_URL || 'http://localhost:5000'}/api/ai-chat-direct`, {
+        message: fullMessage,
+        alias: 'MCP_User'
+      })
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `AI Assistant Response:\n${response.data.response}`
+          }
+        ]
+      }
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `AI chat failed: ${error.message}\n\nFallback: I'm your Consilience DAO AI assistant. I can help with:\n• Creating tokens and NFTs on Solana\n• Project planning and collaboration\n• Finding team members\n• Technical guidance\n\nWhat would you like to work on?`
+          }
+        ]
+      }
+    }
+  }
+
   async run() {
     const transport = new StdioServerTransport()
     await this.server.connect(transport)
     console.error('Consilience MCP Server running on stdio')
+    console.error('Available tools: get_solana_balance, get_dao_projects, get_user_profile, ai_negotiate, create_dao_token, mint_project_nft, ai_chat_direct')
   }
 }
 

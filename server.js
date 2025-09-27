@@ -714,6 +714,58 @@ app.post('/api/chat-response', async (req, res) => {
   }
 })
 
+// Dedicated AI chat endpoint
+app.post('/api/ai-chat-direct', async (req, res) => {
+  const { message, alias } = req.body
+  
+  try {
+    // Full AI assistant with agentic capabilities
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are a powerful AI assistant for Consilience DAO. You can help with blockchain development, project planning, token creation, NFT minting, and general collaboration. Be helpful, knowledgeable, and suggest actionable next steps. You have access to Solana blockchain tools and can create real tokens/NFTs when requested."
+        },
+        {
+          role: "user",
+          content: message
+        }
+      ],
+      max_tokens: 200
+    })
+    
+    let aiResponse = completion.choices[0].message.content
+    
+    // Check for action requests
+    const lowerMessage = message.toLowerCase()
+    
+    if (lowerMessage.includes('create token') || lowerMessage.includes('make token')) {
+      const token = await createRealToken(message)
+      if (token) {
+        const status = token.isReal ? '✅ REAL Token created!' : '⚠️ Simulated (fund wallet for real tokens)'
+        aiResponse += `\n\n🪙 ${status}\n🔗 Symbol: ${token.symbol}\n✅ Mint: ${token.mintAddress}\n💎 Supply: ${token.supply.toLocaleString()}\n🔍 Explorer: https://explorer.solana.com/address/${token.mintAddress}?cluster=devnet`
+      }
+    }
+    
+    if (lowerMessage.includes('mint nft') || lowerMessage.includes('create nft')) {
+      const nft = await createRealNFT(message)
+      if (nft) {
+        const status = nft.isReal ? '✅ REAL NFT created!' : '⚠️ Simulated (fund wallet for real NFTs)'
+        aiResponse += `\n\n🎨 ${status}\n🏷️ Name: ${nft.name}\n🔗 Mint: ${nft.mintAddress}\n📝 Description: ${nft.description}\n🔍 Explorer: ${nft.explorerUrl}`
+      }
+    }
+    
+    res.json({ response: aiResponse, timestamp: new Date().toISOString() })
+  } catch (error) {
+    console.error('AI Chat error:', error)
+    res.json({ 
+      response: `I'm your AI assistant for Consilience DAO! I can help with:\n\n🪙 Creating tokens on Solana\n🎨 Minting NFTs\n🚀 Project planning\n🤝 Finding collaborators\n💡 Technical guidance\n\nWhat would you like to work on?`, 
+      timestamp: new Date().toISOString() 
+    })
+  }
+})
+
 // Enhanced project endpoints
 app.get('/api/projects/featured', (req, res) => {
   const featuredProjects = [
@@ -844,7 +896,7 @@ io.on('connection', (socket) => {
       timestamp: Date.now()
     }
     
-    // Send to recipient
+    // Send to recipient and room
     if (to) {
       const recipientSocket = userSockets.get(to)
       if (recipientSocket) {
@@ -854,15 +906,27 @@ io.on('connection', (socket) => {
       socket.to(roomId).emit('chat-message', messageData)
     }
     
-    // Get AI guidance for the conversation
-    const guidance = await getAIGuidance(message, user, to)
-    if (guidance) {
-      // Send guidance to both users
-      socket.emit('ai-guidance', guidance)
-      if (to) {
-        const recipientSocket = userSockets.get(to)
-        if (recipientSocket) {
-          io.to(recipientSocket).emit('ai-guidance', guidance)
+    // AI responds as participant (less frequently)
+    const shouldAIRespond = await shouldAIParticipate(message, user)
+    if (shouldAIRespond) {
+      const aiResponse = await getAIResponse(message, user, to || roomId)
+      if (aiResponse) {
+        const aiMessageData = {
+          from: '🤖 AI Assistant',
+          message: aiResponse,
+          timestamp: Date.now() + 1000
+        }
+        
+        // Send AI response to all participants
+        if (to) {
+          socket.emit('chat-message', aiMessageData)
+          const recipientSocket = userSockets.get(to)
+          if (recipientSocket) {
+            io.to(recipientSocket).emit('chat-message', aiMessageData)
+          }
+        } else if (roomId) {
+          io.to(roomId).emit('chat-message', aiMessageData)
+          socket.emit('chat-message', aiMessageData)
         }
       }
     }
@@ -1012,37 +1076,55 @@ Provide a brief project name and 2-sentence description that uses both users' st
   }
 }
 
-// AI guidance for conversations
-async function getAIGuidance(message, user, partner) {
-  try {
-    const prompt = `${user.alias} said to ${partner}: "${message}"
+// Determine if AI should participate in conversation
+async function shouldAIParticipate(message, user) {
+  const lowerMessage = message.toLowerCase()
+  
+  // AI responds to direct mentions or specific requests
+  if (lowerMessage.includes('ai') || 
+      lowerMessage.includes('help') ||
+      lowerMessage.includes('create') ||
+      lowerMessage.includes('token') ||
+      lowerMessage.includes('nft') ||
+      lowerMessage.includes('mint') ||
+      lowerMessage.includes('project') ||
+      lowerMessage.includes('suggest')) {
+    return true
+  }
+  
+  // Random participation (10% chance) for natural conversation
+  return Math.random() < 0.1
+}
 
-As a DAO collaboration facilitator, provide a brief suggestion to help them move toward building a concrete project together. Keep it under 30 words.`
+// AI response as chat participant
+async function getAIResponse(message, user, target) {
+  try {
+    const prompt = `You are an AI assistant helping DAO members collaborate. ${user.alias} said: "${message}"
+
+Respond as a helpful team member. If they mention creating tokens/NFTs, offer to help. Keep responses under 40 words and be encouraging.`
     
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 50
+      max_tokens: 60
     })
     
-    return {
-      type: 'guidance',
-      message: response.choices[0].message.content.trim(),
-      timestamp: Date.now()
-    }
+    return response.choices[0].message.content.trim()
   } catch (error) {
-    // Fallback guidance based on keywords
+    // Fallback responses
     const lowerMessage = message.toLowerCase()
     
-    if (lowerMessage.includes('idea') || lowerMessage.includes('think')) {
-      return { type: 'guidance', message: '💡 Great! Now define the problem you want to solve together.', timestamp: Date.now() }
-    } else if (lowerMessage.includes('project') || lowerMessage.includes('build')) {
-      return { type: 'guidance', message: '🚀 Awesome! What specific features should your project have?', timestamp: Date.now() }
-    } else if (lowerMessage.includes('skill') || lowerMessage.includes('experience')) {
-      return { type: 'guidance', message: '🤝 Perfect match! How can you combine your skills effectively?', timestamp: Date.now() }
+    if (lowerMessage.includes('ai') || lowerMessage.includes('help')) {
+      return '🤖 I\'m here to help! I can create tokens, mint NFTs, and guide your collaboration. What do you need?'
+    } else if (lowerMessage.includes('token')) {
+      return '🪙 I can create real tokens on Solana! Just tell me the name and purpose.'
+    } else if (lowerMessage.includes('nft')) {
+      return '🎨 I can mint NFTs for your project! Describe what it should represent.'
+    } else if (lowerMessage.includes('project')) {
+      return '🚀 Exciting project! Let\'s break it into actionable steps. What\'s the first milestone?'
     }
     
-    return null
+    return 'Great point! How can I help move this forward? 🤖'
   }
 }
 

@@ -246,33 +246,38 @@ try {
       
       console.log('✅ NFT transferred to user')
       
+      if (!nft || !nft.address) {
+        throw new Error('NFT creation failed - no address returned')
+      }
+      
       const mintAddress = nft.address.toString()
-      const metadataUri = nft.uri
+      const metadataUri = nft.uri || 'No URI'
       
       clearTimeout(timeout)
       const duration = Date.now() - startTime
-      console.log(`✅ NFT Creation Success (${duration}ms):`)
-      console.log('  Mint Address:', mintAddress)
-      console.log('  Metadata URI:', metadataUri)
-      console.log('  Image URL:', imageUrl)
-      console.log('  Explorer:', `https://explorer.solana.com/address/${mintAddress}?cluster=devnet`)
+      
+      console.log(`✅ NFT SUCCESSFULLY CREATED (${duration}ms):`)
+      console.log('  🎯 MINT ADDRESS:', mintAddress)
+      console.log('  🔗 EXPLORER:', `https://explorer.solana.com/address/${mintAddress}?cluster=devnet`)
+      console.log('  🔗 SOLSCAN:', `https://solscan.io/token/${mintAddress}?cluster=devnet`)
+      console.log('  🇺🇷 METADATA URI:', metadataUri)
+      console.log('  🇮🇲 IMAGE URL:', imageUrl)
+      console.log('  🅰️ AI GENERATED:', hasOpenAI)
       
       res.json({
         success: true,
-        message: `🎨 Real Metaplex NFT "${nft.name || name}" created!`,
+        message: `🎨 NFT CREATED! Mint: ${mintAddress}`,
         mintAddress: mintAddress,
         metadataUri: metadataUri,
         image: imageUrl,
         explorerUrl: `https://explorer.solana.com/address/${mintAddress}?cluster=devnet`,
         solscanUrl: `https://solscan.io/token/${mintAddress}?cluster=devnet`,
-        magicEdenUrl: `https://magiceden.io/item-details/${mintAddress}`,
         name: nft.name || name,
         description: nft.description || description,
-        symbol: nft.symbol,
+        symbol: nft.symbol || 'CNSL',
         isRealNFT: true,
-        hasMetadata: true,
         hasAIImage: hasOpenAI,
-        imageType: hasOpenAI ? 'DALL-E 3' : 'Generated SVG'
+        aiImageUrl: hasOpenAI ? imageUrl : null
       })
       
     } catch (error) {

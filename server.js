@@ -121,8 +121,18 @@ try {
     }
   })
   
-  // Create real Metaplex NFT
+  // Create real Metaplex NFT with immediate response
   app.post('/api/create-nft', async (req, res) => {
+    // Send immediate response to prevent timeout
+    res.json({
+      success: true,
+      message: '🎨 NFT creation started! Check back in 30 seconds.',
+      status: 'processing',
+      estimatedTime: '30 seconds'
+    })
+    
+    // Process NFT creation in background
+    setTimeout(async () => {
     try {
       const { name, description, walletAddress } = req.body
       
@@ -296,14 +306,8 @@ try {
       console.error('Error message:', error.message)
       console.error('Error stack:', error.stack)
       console.error('Error details:', error)
-      
-      res.status(500).json({ 
-        error: 'Real NFT creation failed: ' + error.message,
-        details: error.toString(),
-        hasOpenAI: hasOpenAI,
-        imageUrl: imageUrl || 'undefined'
-      })
     }
+    }, 100) // Small delay to ensure response is sent
   })
   
   // Wallet balance endpoint

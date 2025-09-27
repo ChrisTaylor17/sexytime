@@ -213,7 +213,7 @@ export default function Tokens() {
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
-            onClick={() => alert('🔗 Wallet Connection\n\nTo create real Solana tokens:\n1. Install Phantom or Solflare wallet\n2. Connect to devnet\n3. Use Solana Token Program\n\nCurrent tokens are simulated for demo.')}
+            onClick={() => router.push('/nfts')}
             style={{
               background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
               border: 'none',
@@ -224,7 +224,7 @@ export default function Tokens() {
               fontWeight: '500'
             }}
           >
-            🔗 Connect Wallet
+            🔗 Real Tokens (NFT Page)
           </button>
           <button
             onClick={() => setShowCreateForm(true)}

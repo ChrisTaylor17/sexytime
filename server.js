@@ -192,21 +192,11 @@ try {
       
       console.log('✅ Creating NFT with Metaplex...')
       
-      // Upload metadata to Arweave/IPFS for wallet compatibility
-      const { uri } = await metaplex.nfts().uploadMetadata({
+      // Create NFT using Metaplex with inline metadata
+      const { nft } = await metaplex.nfts().create({
         name: metadata.name,
         description: metadata.description,
         image: nftImage,
-        attributes: metadata.attributes,
-        properties: metadata.properties
-      })
-      
-      console.log('✅ Metadata uploaded to:', uri)
-      
-      // Create NFT using Metaplex with uploaded metadata
-      const { nft } = await metaplex.nfts().create({
-        uri: uri,
-        name: metadata.name,
         sellerFeeBasisPoints: 500, // 5% royalty
         symbol: 'CNSL',
         creators: [
@@ -215,6 +205,7 @@ try {
             share: 100,
           },
         ],
+        attributes: metadata.attributes,
         collection: null,
         uses: null,
       })
@@ -479,21 +470,15 @@ app.post('/api/mint-nft', async (req, res) => {
       nftImage = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(nftName)}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
     }
     
-    // Upload metadata for mint NFT
-    const { uri } = await metaplex.nfts().uploadMetadata({
+    // Create real NFT with Metaplex
+    const { nft } = await metaplex.nfts().create({
       name: nftName,
       description: 'Minted on Consilience DAO platform',
       image: nftImage,
-      attributes: [{ trait_type: 'Platform', value: 'Consilience DAO' }]
-    })
-    
-    // Create real NFT with Metaplex
-    const { nft } = await metaplex.nfts().create({
-      uri: uri,
-      name: nftName,
       sellerFeeBasisPoints: 500,
       symbol: 'CNSL',
-      creators: [{ address: aiWallet.publicKey, share: 100 }]
+      creators: [{ address: aiWallet.publicKey, share: 100 }],
+      attributes: [{ trait_type: 'Platform', value: 'Consilience DAO' }]
     })
     
     // Transfer to user

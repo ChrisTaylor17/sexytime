@@ -145,7 +145,6 @@ try {
       
       const nftMetaplex = Metaplex.make(connection)
         .use(keypairIdentity(aiWallet))
-        .use(mockStorage())
       
       const userPublicKey = new PublicKey(walletAddress)
       
@@ -216,15 +215,11 @@ try {
       
       console.log('Uploading metadata:', JSON.stringify(nftMetadata, null, 2))
       
-      // Upload metadata to get short URI
-      const { uri } = await nftMetaplex.nfts().uploadMetadata(nftMetadata)
-      
-      console.log('Metadata uploaded to:', uri)
-      
-      // Use Metaplex to create NFT with uploaded metadata
+      // Create NFT with AI image directly in metadata
       const { nft } = await nftMetaplex.nfts().create({
-        uri: uri, // Use uploaded metadata URI
         name: String(nftName),
+        description: String(nftDescription),
+        image: String(imageUrl), // AI image URL directly
         sellerFeeBasisPoints: 500,
         symbol: String(nftSymbol),
         creators: [{

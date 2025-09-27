@@ -18,7 +18,7 @@ router.get('/nfts/:identifier', apiLimiter, async (req, res) => {
   
   if (isWalletAddress) {
     // Fetch from wallet
-    return fetchWalletNFTs(identifier, res)
+    return await fetchWalletNFTs(identifier, res)
   } else {
     // Fetch earned NFTs from database
     return fetchEarnedNFTs(identifier, db, res)
@@ -45,9 +45,7 @@ function fetchEarnedNFTs(alias, db, res) {
 }
 
 // Fetch NFTs from connected wallet
-function fetchWalletNFTs(walletAddress, res) {
-
-  
+async function fetchWalletNFTs(walletAddress, res) {
   try {
     const publicKey = new PublicKey(walletAddress)
     
@@ -155,8 +153,6 @@ function fetchWalletNFTs(walletAddress, res) {
     console.error('NFT fetch error:', error)
     res.json({ nfts: [] })
   }
-})
-
-
+}
 
 module.exports = router

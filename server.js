@@ -132,7 +132,6 @@ try {
       
       const nftMetaplex = Metaplex.make(connection)
         .use(keypairIdentity(aiWallet))
-        .use(mockStorage())
       
       const userPublicKey = new PublicKey(walletAddress)
       

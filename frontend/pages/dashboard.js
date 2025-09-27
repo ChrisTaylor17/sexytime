@@ -530,6 +530,30 @@ export default function Dashboard() {
                 </div>
                 <span className="nav-text">NFTs</span>
               </button>
+
+              <button 
+                onClick={() => router.push('/tasks')}
+                className="nav-item"
+              >
+                <div className="nav-icon" style={{background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'}}>
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span className="nav-text">AI Tasks</span>
+              </button>
+
+              <button 
+                onClick={() => router.push('/chatbot')}
+                className="nav-item"
+              >
+                <div className="nav-icon" style={{background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)'}}>
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <span className="nav-text">AI Chat</span>
+              </button>
             </nav>
 
             <div className="user-info">

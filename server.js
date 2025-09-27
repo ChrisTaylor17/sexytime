@@ -235,9 +235,18 @@ try {
         image: String(imageUrl)
       })
       
-      const metadataUri = compactMetadata.length < 200 ? 
-        `data:application/json,${encodeURIComponent(compactMetadata)}` :
-        `data:application/json;base64,${Buffer.from(compactMetadata).toString('base64').slice(0, 150)}`
+      // Use URL encoding for shorter metadata, avoid truncation
+      const metadataUri = `data:application/json,${encodeURIComponent(compactMetadata)}`
+      
+      // If too long, use a shorter image URL
+      if (metadataUri.length > 200) {
+        const shortMetadata = JSON.stringify({
+          name: String(nftName),
+          description: String(nftDescription),
+          image: `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(nftName)}&backgroundColor=ff6b6b`
+        })
+        const metadataUri = `data:application/json,${encodeURIComponent(shortMetadata)}`
+      }
       
       console.log('Using metadata URI (length:', metadataUri.length, '):', metadataUri.slice(0, 100) + '...')
       

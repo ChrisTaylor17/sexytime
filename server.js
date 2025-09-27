@@ -18,7 +18,7 @@ try {
   // Force require with explicit paths
   const web3 = require('@solana/web3.js')
   const splToken = require('@solana/spl-token')
-  const { Metaplex, keypairIdentity, bundlrStorage } = require('@metaplex-foundation/js')
+  const { Metaplex, keypairIdentity, bundlrStorage, mockStorage } = require('@metaplex-foundation/js')
   
   console.log('✅ @solana/web3.js loaded:', !!web3.Connection)
   console.log('✅ @solana/spl-token loaded:', !!splToken.createMint)
@@ -130,9 +130,19 @@ try {
         .use(keypairIdentity(aiWallet))
         .use(mockStorage())
       
-      const nftMetaplex = Metaplex.make(connection)
-        .use(keypairIdentity(aiWallet))
-        .use(bundlrStorage())
+      let nftMetaplex
+      try {
+        nftMetaplex = Metaplex.make(connection)
+          .use(keypairIdentity(aiWallet))
+          .use(bundlrStorage())
+        console.log('✅ Bundlr storage initialized')
+      } catch (bundlrError) {
+        console.log('⚠️ Bundlr failed, using mock storage:', bundlrError.message)
+        const { mockStorage } = require('@metaplex-foundation/js')
+        nftMetaplex = Metaplex.make(connection)
+          .use(keypairIdentity(aiWallet))
+          .use(mockStorage())
+      }
       
       const userPublicKey = new PublicKey(walletAddress)
       

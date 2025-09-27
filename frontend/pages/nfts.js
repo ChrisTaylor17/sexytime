@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { useWallet } from '@solana/wallet-adapter-react';
+import WalletConnection from '../components/WalletConnection';
 
 export default function NFTs() {
   const [userNFTs, setUserNFTs] = useState([]);
@@ -14,6 +16,7 @@ export default function NFTs() {
   });
   const [projects, setProjects] = useState([]);
   const router = useRouter();
+  const { connected, publicKey } = useWallet();
 
   useEffect(() => {
     const alias = localStorage.getItem('userAlias');
@@ -113,41 +116,35 @@ export default function NFTs() {
   };
 
   const mintNFT = async (nft) => {
+    if (!connected || !publicKey) {
+      alert('❌ Please connect your Solana wallet first to mint real NFTs!');
+      return;
+    }
+
     try {
       const response = await fetch('https://sexytime-production.up.railway.app/api/mint-nft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nftId: nft.id,
-          recipient: userAlias,
+          recipient: publicKey.toString(),
+          recipientAlias: userAlias,
           aiWallet: 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W'
         })
       });
       
       if (response.ok) {
         const data = await response.json();
-        alert(data.message || `✅ NFT minted successfully!`);
+        alert(`✅ Real NFT minted to your wallet!\n\nTransaction: ${data.signature || 'Completed'}\nWallet: ${publicKey.toString().slice(0,8)}...`);
+        fetchUserNFTs();
       } else {
         const errorData = await response.json();
-        alert(`Error: ${errorData.error || 'Minting failed'}`);
-        throw new Error('Backend failed');
+        alert(`❌ Minting failed: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
-      // Fallback to localStorage simulation
-      const updatedNFTs = userNFTs.map(n => {
-        if (n.id === nft.id) {
-          return { ...n, owned: (n.owned || 0) + 1 };
-        }
-        return n;
-      });
-      
-      setUserNFTs(updatedNFTs);
-      localStorage.setItem(`nfts_${userAlias}`, JSON.stringify(updatedNFTs));
-      
-      alert(`🎨 NFT "${nft.name}" minted successfully!\n\n⚠️ Note: This is a simulated NFT for demo purposes. To mint real Solana NFTs, connect your wallet.`);
+      console.error('Minting error:', error);
+      alert('❌ Network error. Please try again.');
     }
-    
-    fetchUserNFTs();
   };
 
   return (
@@ -199,6 +196,7 @@ export default function NFTs() {
       </div>
 
       <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+        <WalletConnection userAlias={userAlias} />
         {showCreateForm && (
           <div style={{
             position: 'fixed',

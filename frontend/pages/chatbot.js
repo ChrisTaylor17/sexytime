@@ -38,78 +38,27 @@ export default function Chatbot() {
     setLoading(true);
 
     try {
-      // Try backend API first, fallback to local AI logic
+      // Use real backend AI - no fallback simulation
       let botContent = '';
       let actions = [];
       let projectId = null;
       
-      try {
-        const response = await fetch('https://sexytime-production.up.railway.app/api/ai-matchmaker', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ alias: userAlias, query: input })
-        });
+      const response = await fetch('https://sexytime-production.up.railway.app/api/ai-matchmaker', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alias: userAlias, query: input })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        botContent = data.response || 'I found some interesting opportunities for you!';
         
-        if (response.ok) {
-          const data = await response.json();
-          botContent = data.response || 'I found some interesting opportunities for you!';
-          
-          if (data.action === 'create_project') {
-            botContent += `\n\n🚀 I've created a new project: "${data.projectName}"\nWould you like to join the workroom?`;
-            projectId = data.projectId;
-          }
-        } else {
-          throw new Error('Backend unavailable');
+        if (data.action === 'create_project') {
+          botContent += `\n\n🚀 I've created a new project: "${data.projectName}"\nWould you like to join the workroom?`;
+          projectId = data.projectId;
         }
-      } catch (backendError) {
-        // Advanced AI fallback logic
-        const query = input.toLowerCase();
-        projectId = Date.now();
-        
-        let projectName, projectType, skills, aiResponse;
-        
-        if (query.includes('token') || query.includes('launch') || query.includes('coin') || query.includes('crypto')) {
-          projectName = `${userAlias}'s Token Launch`;
-          projectType = 'token';
-          skills = 'blockchain development, tokenomics, smart contracts, marketing';
-          aiResponse = `🚀 Excellent! I've analyzed your request and created a comprehensive token launch project.`;
-          botContent = `${aiResponse}\n\n**Project Created:** "${projectName}"\n\n📊 **AI Recommendations:**\n• Set up tokenomics with 80% to contributors, 20% to platform\n• Create utility features for your token\n• Plan marketing and community building\n\n🤖 **AI Asset Manager Ready:** I'll handle token creation, distribution, and wallet management automatically.`;
-        } else if (query.includes('nft') || query.includes('art') || query.includes('collectible') || query.includes('digital art')) {
-          projectName = `${userAlias}'s NFT Collection`;
-          projectType = 'nft';
-          skills = 'digital art, 3D modeling, blockchain, community management';
-          aiResponse = `🎨 Perfect! I've designed an NFT collection project tailored to your vision.`;
-          botContent = `${aiResponse}\n\n**Project Created:** "${projectName}"\n\n🎨 **AI Recommendations:**\n• Design unique artwork with rarity tiers\n• Create utility and holder benefits\n• Build community engagement strategies\n\n🤖 **AI Asset Manager Ready:** I'll mint NFTs and distribute them based on participation levels.`;
-        } else if (query.includes('dao') || query.includes('governance') || query.includes('voting')) {
-          projectName = `${userAlias}'s DAO Initiative`;
-          projectType = 'dao';
-          skills = 'governance design, community building, blockchain, legal';
-          aiResponse = `🏡 Brilliant! I've structured a DAO governance project for you.`;
-          botContent = `${aiResponse}\n\n**Project Created:** "${projectName}"\n\n🏡 **AI Recommendations:**\n• Design governance token distribution\n• Create proposal and voting mechanisms\n• Establish treasury management\n\n🤖 **AI Asset Manager Ready:** I'll create governance tokens and manage treasury allocations.`;
-        } else {
-          projectName = `${userAlias}'s Innovation Project`;
-          projectType = 'collaboration';
-          skills = 'determined by project scope';
-          aiResponse = `💡 Interesting! I've created a flexible collaboration project based on your input.`;
-          botContent = `${aiResponse}\n\n**Project Created:** "${projectName}"\n\n💡 **AI Analysis:** "${input}"\n\n🤖 **AI Recommendations:**\n• Define clear project milestones\n• Identify required skills and team members\n• Set up reward mechanisms for contributors\n\n**Ready to help with:** Token creation, NFT rewards, team coordination`;
-        }
-        
-        // Store project with enhanced metadata
-        const mockProject = {
-          id: projectId,
-          name: projectName,
-          description: `AI-generated project based on: "${input}"`,
-          skills_needed: skills,
-          type: projectType,
-          owner_alias: userAlias,
-          ai_generated: true,
-          original_query: input,
-          created_at: new Date().toISOString()
-        };
-        
-        const existingProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-        existingProjects.push(mockProject);
-        localStorage.setItem('projects', JSON.stringify(existingProjects));
+      } else {
+        throw new Error('AI service unavailable');
       }
       
       actions = [

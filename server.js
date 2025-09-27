@@ -205,15 +205,11 @@ try {
       
       console.log('NFT created, now updating with metadata...')
       
-      // Update with full metadata
+      // Update with minimal metadata to avoid transaction size limit
       const updatedNft = await nftMetaplex.nfts().update({
         nftOrSft: nft,
-        uri: `data:application/json;base64,${Buffer.from(JSON.stringify({
-          name: String(nftName),
-          description: String(nftDescription),
-          image: String(imageUrl),
-          attributes: [{ trait_type: 'Platform', value: 'Consilience DAO' }]
-        })).toString('base64')}`
+        name: String(nftName),
+        symbol: String(nftSymbol)
       })
       
       console.log('✅ NFT created:', nft.address.toString())

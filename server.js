@@ -237,12 +237,39 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Create simple data URI with AI image metadata
-      const compactMetadata = { name: String(nftName), image: String(imageUrl) }
-      const metadataJson = JSON.stringify(compactMetadata)
-      const uri = `data:application/json;base64,${Buffer.from(metadataJson).toString('base64')}`
+      // Upload AI image to IPFS to get shorter URL
+      let ipfsImageUrl = imageUrl
+      try {
+        console.log('💾 Uploading AI image to IPFS...')
+        const imageResponse = await fetch(imageUrl)
+        const imageBuffer = await imageResponse.arrayBuffer()
+        
+        // Upload to public IPFS gateway
+        const formData = new FormData()
+        formData.append('file', new Blob([imageBuffer], { type: 'image/png' }))
+        
+        const ipfsResponse = await fetch('https://ipfs.infura.io:5001/api/v0/add', {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (ipfsResponse.ok) {
+          const ipfsResult = await ipfsResponse.json()
+          ipfsImageUrl = `https://ipfs.io/ipfs/${ipfsResult.Hash}`
+          console.log('✅ AI image uploaded to IPFS:', ipfsImageUrl)
+        } else {
+          console.log('⚠️ IPFS upload failed, using original URL')
+        }
+      } catch (uploadError) {
+        console.log('⚠️ IPFS upload error:', uploadError.message)
+      }
       
-      console.log('✅ Created metadata URI with AI image (length:', uri.length, ')')
+      // Create compact metadata with IPFS image URL
+      const compactMetadata = { name: String(nftName), image: ipfsImageUrl }
+      const metadataJson = JSON.stringify(compactMetadata)
+      const uri = `data:application/json,${encodeURIComponent(metadataJson)}`
+      
+      console.log('✅ Created metadata URI with IPFS image (length:', uri.length, ')')
       
       // Create NFT with base64 metadata URI
       let nft

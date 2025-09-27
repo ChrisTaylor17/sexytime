@@ -311,7 +311,7 @@ try {
       }
       
       const mintAddress = nft.address.toString()
-      const finalMetadataUri = nft.uri || metadataUri
+      const finalMetadataUri = nft.uri || uri
       
       clearTimeout(timeout)
       const duration = Date.now() - startTime

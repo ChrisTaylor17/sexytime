@@ -237,20 +237,20 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Create short image URL that fits in transaction
-      const shortImageUrl = `https://i.imgur.com/${Date.now()}.png`
-      
-      // Store full AI image URL in server memory for later retrieval
+      // Create image proxy endpoint for AI image
+      const imageId = Date.now().toString()
       global.aiImageCache = global.aiImageCache || {}
-      global.aiImageCache[Date.now()] = imageUrl
+      global.aiImageCache[imageId] = imageUrl
       
-      // Create compact metadata with short image URL
-      const compactMetadata = { name: String(nftName), image: shortImageUrl }
+      const proxyImageUrl = `https://sexytime-production.up.railway.app/api/image/${imageId}`
+      
+      // Create compact metadata with proxy image URL
+      const compactMetadata = { name: String(nftName), image: proxyImageUrl }
       const metadataJson = JSON.stringify(compactMetadata)
       const uri = `data:application/json,${encodeURIComponent(metadataJson)}`
       
-      console.log('✅ Created metadata URI with short image URL (length:', uri.length, ')')
-      console.log('✅ Full AI image URL cached:', imageUrl)
+      console.log('✅ Created metadata with proxy image URL (length:', uri.length, ')')
+      console.log('✅ Proxy URL:', proxyImageUrl, '-> AI URL:', imageUrl)
       
       // Create NFT with base64 metadata URI
       let nft
@@ -451,6 +451,19 @@ try {
       })
     } catch (error) {
       res.status(500).json({ error: 'Airdrop failed: ' + error.message })
+    }
+  })
+  
+  // Image proxy endpoint for AI images
+  app.get('/api/image/:id', (req, res) => {
+    const imageId = req.params.id
+    const aiImageUrl = global.aiImageCache?.[imageId]
+    
+    if (aiImageUrl) {
+      console.log('🖼️ Serving AI image:', imageId, '->', aiImageUrl)
+      res.redirect(aiImageUrl)
+    } else {
+      res.status(404).json({ error: 'Image not found' })
     }
   })
   

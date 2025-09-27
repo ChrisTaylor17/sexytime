@@ -133,7 +133,7 @@ try {
           const OpenAI = require('openai')
           const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || 'dummy' })
           
-          const imagePrompt = `Create a digital art NFT image: ${name}. ${description || 'Abstract digital art'}. Style: vibrant, modern, NFT collection artwork, high quality, detailed`
+          const imagePrompt = description || `${name} - vibrant digital art NFT`
           
           console.log('🎨 Generating AI image with prompt:', imagePrompt)
           
@@ -192,12 +192,21 @@ try {
       
       console.log('✅ Creating NFT with Metaplex...')
       
-      // Create NFT using Metaplex
-      const { nft } = await metaplex.nfts().create({
-        uri: '', // Will be auto-generated
+      // Upload metadata to Arweave/IPFS for wallet compatibility
+      const { uri } = await metaplex.nfts().uploadMetadata({
         name: metadata.name,
         description: metadata.description,
         image: nftImage,
+        attributes: metadata.attributes,
+        properties: metadata.properties
+      })
+      
+      console.log('✅ Metadata uploaded to:', uri)
+      
+      // Create NFT using Metaplex with uploaded metadata
+      const { nft } = await metaplex.nfts().create({
+        uri: uri,
+        name: metadata.name,
         sellerFeeBasisPoints: 500, // 5% royalty
         symbol: 'CNSL',
         creators: [
@@ -455,7 +464,7 @@ app.post('/api/mint-nft', async (req, res) => {
       const OpenAI = require('openai')
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || 'dummy' })
       
-      const imagePrompt = `Create a digital art NFT: ${nftName}. Minted on Consilience DAO. Style: vibrant, modern, NFT artwork, high quality`
+      const imagePrompt = `${nftName} - digital art NFT`
       
       const response = await openai.images.generate({
         model: 'dall-e-3',
@@ -470,11 +479,18 @@ app.post('/api/mint-nft', async (req, res) => {
       nftImage = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(nftName)}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
     }
     
-    // Create real NFT with Metaplex
-    const { nft } = await metaplex.nfts().create({
+    // Upload metadata for mint NFT
+    const { uri } = await metaplex.nfts().uploadMetadata({
       name: nftName,
       description: 'Minted on Consilience DAO platform',
       image: nftImage,
+      attributes: [{ trait_type: 'Platform', value: 'Consilience DAO' }]
+    })
+    
+    // Create real NFT with Metaplex
+    const { nft } = await metaplex.nfts().create({
+      uri: uri,
+      name: nftName,
       sellerFeeBasisPoints: 500,
       symbol: 'CNSL',
       creators: [{ address: aiWallet.publicKey, share: 100 }]

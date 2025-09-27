@@ -18,7 +18,7 @@ try {
   // Force require with explicit paths
   const web3 = require('@solana/web3.js')
   const splToken = require('@solana/spl-token')
-  const { Metaplex, keypairIdentity, mockStorage } = require('@metaplex-foundation/js')
+  const { Metaplex, keypairIdentity, bundlrStorage } = require('@metaplex-foundation/js')
   
   console.log('✅ @solana/web3.js loaded:', !!web3.Connection)
   console.log('✅ @solana/spl-token loaded:', !!splToken.createMint)
@@ -132,6 +132,7 @@ try {
       
       const nftMetaplex = Metaplex.make(connection)
         .use(keypairIdentity(aiWallet))
+        .use(bundlrStorage())
       
       const userPublicKey = new PublicKey(walletAddress)
       
@@ -486,7 +487,7 @@ app.post('/api/mint-nft', async (req, res) => {
     
     const nftName = name || `Consilience NFT #${nftId || Date.now()}`
     
-    const mintMetaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet)).use(mockStorage())
+    const mintMetaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet)).use(bundlrStorage())
     
     const nftImage = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(nftName || 'NFT')}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
     

@@ -24,6 +24,25 @@ export default function Dashboard() {
     
     fetchDashboardData(alias)
   }, [])
+  
+  // Save wallet connection to user profile
+  useEffect(() => {
+    if (connected && publicKey && user) {
+      const saveWalletConnection = async () => {
+        try {
+          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
+          await axios.post(`${backendUrl}/api/connect-wallet`, {
+            alias: user.alias,
+            walletAddress: publicKey.toString()
+          })
+          console.log('Wallet connected and saved')
+        } catch (error) {
+          console.error('Failed to save wallet connection:', error)
+        }
+      }
+      saveWalletConnection()
+    }
+  }, [connected, publicKey, user])
 
   const fetchDashboardData = async (alias) => {
     try {

@@ -31,6 +31,7 @@ app.use('/api', require('./routes/ai'))
 app.use('/api', require('./routes/messages'))
 app.use('/api', require('./routes/nfts'))
 app.use('/api', require('./routes/transparency'))
+app.use('/api', require('./routes/wallet'))
 
 // Socket.io for real-time chat
 io.on('connection', (socket) => {

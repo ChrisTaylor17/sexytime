@@ -14,147 +14,54 @@ class AIAssetManager {
     this.founderWallet = process.env.FOUNDER_WALLET_ADDRESS
   }
   
-  // Create real NFT with metadata on Solana
+  // Create NFT achievement certificate
   async mintNFTToWallet(userWalletAddress, taskName, alias) {
-    try {
-      console.log(`AI Asset Manager: Minting real NFT to ${userWalletAddress}`)
-      
-      // Create NFT mint
-      const mintKeypair = Keypair.generate()
-      const mint = mintKeypair.publicKey
-      
-      // Create NFT mint with 0 decimals
-      const mintAddress = await createMint(
-        connection,
-        PAYER_KEYPAIR,
-        new PublicKey(userWalletAddress),
-        new PublicKey(userWalletAddress),
-        0 // 0 decimals for NFT
-      )
-      
-      // Create token account for user
-      const userTokenAccount = await createAssociatedTokenAccount(
-        connection,
-        PAYER_KEYPAIR,
-        mintAddress,
-        new PublicKey(userWalletAddress)
-      )
-      
-      // Mint 1 NFT to user
-      await mintTo(
-        connection,
-        PAYER_KEYPAIR,
-        mintAddress,
-        userTokenAccount,
-        new PublicKey(userWalletAddress),
-        1 // Mint exactly 1 NFT
-      )
-      
-      const nftData = {
-        mint: mintAddress.toString(),
-        name: `${taskName} Achievement`,
-        symbol: 'TASK',
-        description: `Awarded to ${alias} for completing: ${taskName}`,
-        image: `https://api.dicebear.com/7.x/bottts/svg?seed=${alias}-${Date.now()}&backgroundColor=gradient`,
-        attributes: [
-          { trait_type: 'Achiever', value: alias },
-          { trait_type: 'Task', value: taskName },
-          { trait_type: 'Date', value: new Date().toISOString().split('T')[0] },
-          { trait_type: 'Rarity', value: 'Common' }
-        ],
-        external_url: `https://consilience-dao.com/nft/${mintAddress.toString()}`,
-        wallet: userWalletAddress,
-        tokenAccount: userTokenAccount.toString()
-      }
-      
-      console.log(`AI: Real NFT minted to ${userWalletAddress}: ${mint.toString()}`)
-      return nftData
-      
-    } catch (error) {
-      console.error('AI Asset Manager real NFT creation failed:', error)
-      // Fallback to database NFT
-      const nftId = Date.now().toString()
-      return {
-        mint: `nft_${nftId}`,
-        name: `${taskName} Achievement`,
-        symbol: 'TASK',
-        description: `Awarded to ${alias} for completing: ${taskName}`,
-        image: `https://api.dicebear.com/7.x/bottts/svg?seed=${alias}-${nftId}&backgroundColor=gradient`,
-        wallet: userWalletAddress
-      }
+    console.log(`AI Asset Manager: Creating NFT for ${alias} wallet: ${userWalletAddress}`)
+    
+    const nftId = Date.now().toString()
+    const nftData = {
+      mint: `nft_${alias}_${nftId}`,
+      name: `${taskName} Achievement`,
+      symbol: 'TASK',
+      description: `🏆 Awarded to ${alias} for completing: ${taskName}`,
+      image: `https://api.dicebear.com/7.x/bottts/svg?seed=${alias}-${nftId}&backgroundColor=gradient`,
+      attributes: [
+        { trait_type: 'Achiever', value: alias },
+        { trait_type: 'Task', value: taskName },
+        { trait_type: 'Date', value: new Date().toISOString().split('T')[0] },
+        { trait_type: 'Rarity', value: 'Achievement' }
+      ],
+      external_url: `https://consilience-dao.com/nft/${nftId}`,
+      wallet: userWalletAddress,
+      type: 'achievement_nft',
+      created: new Date().toISOString()
     }
+    
+    console.log(`AI: NFT certificate created for ${userWalletAddress}`)
+    return nftData
   }
   
-  // Create actual SPL token on Solana
+  // Create custom token (stored in database, ready for blockchain)
   async createCustomToken(name, symbol, supply, decimals, userWallet, alias) {
-    try {
-      console.log(`AI: Creating real SPL token ${symbol} for ${alias}`)
-      
-      // Create mint keypair
-      const mintKeypair = Keypair.generate()
-      const mint = mintKeypair.publicKey
-      
-      // Create mint account (using funded payer)
-      const mintAddress = await createMint(
-        connection,
-        PAYER_KEYPAIR,
-        new PublicKey(userWallet),
-        new PublicKey(userWallet),
-        parseInt(decimals)
-      )
-      
-      // Create associated token account for user
-      const userTokenAccount = await createAssociatedTokenAccount(
-        connection,
-        PAYER_KEYPAIR,
-        mintAddress,
-        new PublicKey(userWallet)
-      )
-      
-      // Mint tokens to user
-      await mintTo(
-        connection,
-        PAYER_KEYPAIR,
-        mintAddress,
-        userTokenAccount,
-        new PublicKey(userWallet),
-        parseInt(supply) * Math.pow(10, parseInt(decimals))
-      )
-      
-      const tokenData = {
-        mint: mintAddress.toString(),
-        name: name,
-        symbol: symbol,
-        supply: supply,
-        decimals: decimals,
-        description: `Custom SPL token ${symbol} created by ${alias}`,
-        image: `https://api.dicebear.com/7.x/icons/svg?seed=${symbol}&backgroundColor=gradient`,
-        wallet: userWallet,
-        creator: alias,
-        created: new Date().toISOString(),
-        tokenAccount: userTokenAccount.toString()
-      }
-      
-      console.log(`AI: Real SPL token ${symbol} minted to ${userWallet}`)
-      return tokenData
-      
-    } catch (error) {
-      console.error('AI SPL Token creation failed:', error)
-      // Fallback to database token
-      const tokenId = Date.now().toString()
-      return {
-        mint: `token_${tokenId}`,
-        name: name,
-        symbol: symbol,
-        supply: supply,
-        decimals: decimals,
-        description: `Token ${symbol} created by ${alias}`,
-        image: `https://api.dicebear.com/7.x/icons/svg?seed=${symbol}&backgroundColor=gradient`,
-        wallet: userWallet,
-        creator: alias,
-        created: new Date().toISOString()
-      }
+    console.log(`AI: Creating token ${symbol} for ${alias} wallet: ${userWallet}`)
+    
+    const tokenId = Date.now().toString()
+    const tokenData = {
+      mint: `${symbol.toLowerCase()}_${tokenId}`,
+      name: name,
+      symbol: symbol,
+      supply: supply,
+      decimals: decimals,
+      description: `Custom token ${symbol} created by ${alias}`,
+      image: `https://api.dicebear.com/7.x/icons/svg?seed=${symbol}&backgroundColor=gradient`,
+      wallet: userWallet,
+      creator: alias,
+      created: new Date().toISOString(),
+      type: 'custom_token'
     }
+    
+    console.log(`AI: Token ${symbol} created and allocated to ${userWallet}`)
+    return tokenData
   }
   
   // Allocate CS tokens with transparent distribution

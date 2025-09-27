@@ -17,8 +17,22 @@ export default function NFTGallery() {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
     
     try {
-      // Fetch earned NFTs from database
-      const alias = localStorage.getItem('userAlias')
+      // Fetch earned NFTs - try wallet first, then alias
+      let alias = localStorage.getItem('userAlias')
+      
+      if (connected && publicKey && !alias) {
+        // Try to find user by wallet address
+        try {
+          const userResponse = await axios.get(`${backendUrl}/api/user-by-wallet/${publicKey.toString()}`)
+          if (userResponse.data) {
+            alias = userResponse.data.alias
+            localStorage.setItem('userAlias', alias)
+          }
+        } catch (error) {
+          console.log('No user found for wallet')
+        }
+      }
+      
       if (alias) {
         const earnedResponse = await axios.get(`${backendUrl}/api/nfts/${alias}`)
         setEarnedNfts(earnedResponse.data.nfts || [])

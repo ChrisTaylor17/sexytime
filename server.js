@@ -224,22 +224,16 @@ try {
       
       console.log('Uploading metadata:', JSON.stringify(metadata, null, 2))
       
-      // Create NFT with working Metaplex pattern
+      // Create NFT with minimal data to avoid transaction size limit
       const { nft } = await nftMetaplex.nfts().create({
-        uri: `data:application/json,${encodeURIComponent(JSON.stringify({
-          name: String(nftName),
-          description: String(nftDescription),
-          image: String(imageUrl)
-        }))}`,
+        uri: '',
         name: String(nftName),
         sellerFeeBasisPoints: 500,
         symbol: String(nftSymbol),
         creators: [{
           address: aiWallet.publicKey,
-          verified: true,
           share: 100
-        }],
-        isMutable: true
+        }]
       })
       
       console.log('✅ NFT created:', nft.address.toString())

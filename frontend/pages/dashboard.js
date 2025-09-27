@@ -77,8 +77,8 @@ export default function Dashboard() {
       <div className="max-w-6xl mx-auto">
         <header className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-black">Dashboard</h1>
-            <p className="text-gray-600">Welcome back, {user?.alias}</p>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-red-600 to-blue-600 bg-clip-text text-transparent">🚀 UPDATED DASHBOARD v4.0</h1>
+            <p className="text-purple-600 font-bold text-lg">Welcome back, {user?.alias} - RAILWAY TEST</p>
           </div>
           <div className="flex items-center gap-4">
             <button 

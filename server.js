@@ -18,7 +18,7 @@ try {
   // Force require with explicit paths
   const web3 = require('@solana/web3.js')
   const splToken = require('@solana/spl-token')
-  const { createCreateMetadataAccountV3Instruction, PROGRAM_ID } = require('@metaplex-foundation/mpl-token-metadata')
+  const { Metaplex, keypairIdentity, mockStorage } = require('@metaplex-foundation/js')
   
   console.log('✅ @solana/web3.js loaded:', !!web3.Connection)
   console.log('✅ @solana/spl-token loaded:', !!splToken.createMint)

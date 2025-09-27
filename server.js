@@ -240,24 +240,45 @@ try {
       
       console.log('✅ NFT transferred to user')
       
+      const mintAddress = nft.address.toString()
+      const metadataUri = nft.uri
+      
+      console.log('✅ NFT Creation Success:')
+      console.log('  Mint Address:', mintAddress)
+      console.log('  Metadata URI:', metadataUri)
+      console.log('  Image URL:', imageUrl)
+      console.log('  Explorer:', `https://explorer.solana.com/address/${mintAddress}?cluster=devnet`)
+      
       res.json({
         success: true,
-        message: `🎨 Real Metaplex NFT "${name || 'Consilience NFT'}" created!`,
-        mintAddress: nft.address.toString(),
-        metadataUri: nft.uri,
+        message: `🎨 Real Metaplex NFT "${nft.name || name}" created!`,
+        mintAddress: mintAddress,
+        metadataUri: metadataUri,
         image: imageUrl,
-        explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`,
-        magicEdenUrl: `https://magiceden.io/item-details/${nft.address.toString()}`,
-        name: nft.name,
-        description: nft.description,
+        explorerUrl: `https://explorer.solana.com/address/${mintAddress}?cluster=devnet`,
+        solscanUrl: `https://solscan.io/token/${mintAddress}?cluster=devnet`,
+        magicEdenUrl: `https://magiceden.io/item-details/${mintAddress}`,
+        name: nft.name || name,
+        description: nft.description || description,
         symbol: nft.symbol,
         isRealNFT: true,
-        hasMetadata: true
+        hasMetadata: true,
+        hasAIImage: hasOpenAI,
+        imageType: hasOpenAI ? 'DALL-E 3' : 'Generated SVG'
       })
       
     } catch (error) {
-      console.error('Metaplex NFT creation error:', error)
-      res.status(500).json({ error: 'Real NFT creation failed: ' + error.message })
+      console.error('❌ Metaplex NFT creation error:')
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+      console.error('Error details:', error)
+      
+      res.status(500).json({ 
+        error: 'Real NFT creation failed: ' + error.message,
+        details: error.toString(),
+        hasOpenAI: hasOpenAI,
+        imageUrl: imageUrl || 'undefined'
+      })
     }
   })
   

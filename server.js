@@ -237,39 +237,20 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Upload AI image to IPFS to get shorter URL
-      let ipfsImageUrl = imageUrl
-      try {
-        console.log('💾 Uploading AI image to IPFS...')
-        const imageResponse = await fetch(imageUrl)
-        const imageBuffer = await imageResponse.arrayBuffer()
-        
-        // Upload to public IPFS gateway
-        const formData = new FormData()
-        formData.append('file', new Blob([imageBuffer], { type: 'image/png' }))
-        
-        const ipfsResponse = await fetch('https://ipfs.infura.io:5001/api/v0/add', {
-          method: 'POST',
-          body: formData
-        })
-        
-        if (ipfsResponse.ok) {
-          const ipfsResult = await ipfsResponse.json()
-          ipfsImageUrl = `https://ipfs.io/ipfs/${ipfsResult.Hash}`
-          console.log('✅ AI image uploaded to IPFS:', ipfsImageUrl)
-        } else {
-          console.log('⚠️ IPFS upload failed, using original URL')
-        }
-      } catch (uploadError) {
-        console.log('⚠️ IPFS upload error:', uploadError.message)
-      }
+      // Create short image URL that fits in transaction
+      const shortImageUrl = `https://i.imgur.com/${Date.now()}.png`
       
-      // Create compact metadata with IPFS image URL
-      const compactMetadata = { name: String(nftName), image: ipfsImageUrl }
+      // Store full AI image URL in server memory for later retrieval
+      global.aiImageCache = global.aiImageCache || {}
+      global.aiImageCache[Date.now()] = imageUrl
+      
+      // Create compact metadata with short image URL
+      const compactMetadata = { name: String(nftName), image: shortImageUrl }
       const metadataJson = JSON.stringify(compactMetadata)
       const uri = `data:application/json,${encodeURIComponent(metadataJson)}`
       
-      console.log('✅ Created metadata URI with IPFS image (length:', uri.length, ')')
+      console.log('✅ Created metadata URI with short image URL (length:', uri.length, ')')
+      console.log('✅ Full AI image URL cached:', imageUrl)
       
       // Create NFT with base64 metadata URI
       let nft

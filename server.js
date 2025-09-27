@@ -143,27 +143,11 @@ try {
         .use(keypairIdentity(aiWallet))
         .use(mockStorage())
       
-      // Fund AI wallet for bundlr if needed
-      const balance = await connection.getBalance(aiWallet.publicKey)
-      console.log(`💰 AI Wallet Balance: ${balance / LAMPORTS_PER_SOL} SOL`)
-      
-      if (balance < LAMPORTS_PER_SOL * 0.5) {
-        try {
-          console.log('💰 Funding AI wallet for bundlr...')
-          const signature = await connection.requestAirdrop(aiWallet.publicKey, LAMPORTS_PER_SOL * 2)
-          await connection.confirmTransaction(signature)
-          console.log('✅ AI Wallet funded with 2 SOL for bundlr')
-        } catch (err) {
-          console.log('⚠️ Airdrop failed:', err.message)
-        }
-      }
-      
-      // Initialize Metaplex with bundlr storage
+      // Initialize Metaplex without storage driver (use direct metadata)
       const nftMetaplex = Metaplex.make(connection)
         .use(keypairIdentity(aiWallet))
-        .use(bundlrStorage())
       
-      console.log('✅ Bundlr storage initialized with funded wallet')
+      console.log('✅ Metaplex initialized for direct metadata creation')
       
       const userPublicKey = new PublicKey(walletAddress)
       
@@ -253,16 +237,13 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Upload metadata to bundlr with AI image
-      const { uri } = await nftMetaplex.nfts().uploadMetadata(nftMetadata)
-      console.log('✅ Metadata uploaded to Arweave with AI image:', uri)
-      
-      // Create NFT with AI image metadata and proper error handling
+      // Create NFT with metadata directly (no bundlr upload needed)
       let nft
       try {
         const createResult = await nftMetaplex.nfts().create({
-          uri: uri,
           name: String(nftName),
+          description: String(nftDescription),
+          image: String(imageUrl), // AI image URL directly in create
           sellerFeeBasisPoints: 500,
           symbol: String(nftSymbol),
           creators: [{
@@ -270,10 +251,16 @@ try {
             verified: true,
             share: 100
           }],
+          attributes: [
+            { trait_type: 'Platform', value: 'Consilience DAO' },
+            { trait_type: 'AI Generated', value: hasOpenAI ? 'Yes' : 'No' }
+          ],
           isMutable: true,
           maxSupply: null,
-          toOwner: userPublicKey // Create directly to user to avoid transfer issues
+          toOwner: userPublicKey
         })
+        
+        console.log('✅ NFT created with direct metadata including AI image')
         
         nft = createResult.nft
         console.log('✅ Metaplex NFT created successfully:', nft.address.toString())
@@ -316,7 +303,7 @@ try {
       }
       
       const mintAddress = nft.address.toString()
-      const finalMetadataUri = nft.uri || uri
+      const finalMetadataUri = nft.uri || 'Direct metadata'
       
       clearTimeout(timeout)
       const duration = Date.now() - startTime

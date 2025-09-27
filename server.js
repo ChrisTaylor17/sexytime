@@ -25,7 +25,7 @@ try {
   const web3 = require('@solana/web3.js')
   const splToken = require('@solana/spl-token')
   const { Metaplex, keypairIdentity, bundlrStorage, mockStorage } = require('@metaplex-foundation/js')
-  const { createCreateMetadataAccountV3Instruction, PROGRAM_ID } = require('@metaplex-foundation/mpl-token-metadata')
+  const { createCreateMetadataAccountV3Instruction } = require('@metaplex-foundation/mpl-token-metadata')
   
   console.log('✅ @solana/web3.js loaded:', !!web3.Connection)
   console.log('✅ @solana/spl-token loaded:', !!splToken.createMint)
@@ -243,40 +243,22 @@ try {
         TOKEN_METADATA_PROGRAM_ID
       )
       
-      // Create on-chain metadata with AI image URL
-      const { Transaction } = web3
-      const metadataInstruction = createCreateMetadataAccountV3Instruction(
-        {
-          metadata: metadataPDA,
-          mint: mint,
-          mintAuthority: aiWallet.publicKey,
-          payer: aiWallet.publicKey,
-          updateAuthority: aiWallet.publicKey,
-          systemProgram: new PublicKey('11111111111111111111111111111111'),
-          rent: new PublicKey('SysvarRent111111111111111111111111111111111')
-        },
-        {
-          createMetadataAccountArgsV3: {
-            data: {
-              name: String(nftName),
-              symbol: String(nftSymbol),
-              uri: String(imageUrl),
-              sellerFeeBasisPoints: 500,
-              creators: [{ address: aiWallet.publicKey, verified: true, share: 100 }],
-              collection: null,
-              uses: null
-            },
-            isMutable: true,
-            collectionDetails: null
-          }
-        }
-      )
+      // Use Metaplex to create NFT with on-chain metadata
+      const { nft } = await nftMetaplex.nfts().create({
+        uri: String(imageUrl), // AI image URL stored as metadata URI
+        name: String(nftName),
+        sellerFeeBasisPoints: 500,
+        symbol: String(nftSymbol),
+        creators: [{
+          address: aiWallet.publicKey,
+          share: 100
+        }]
+      })
       
-      const transaction = new Transaction().add(metadataInstruction)
-      const signature = await connection.sendTransaction(transaction, [aiWallet])
-      await connection.confirmTransaction(signature)
+      console.log('✅ NFT created with AI image URL as metadata URI')
       
-      console.log('✅ On-chain metadata created with AI image URL')
+      // Override mint with the one from Metaplex
+      const finalMint = nft.address
       
       // Mint NFT to user
       const userTokenAccount = await getOrCreateAssociatedTokenAccount(
@@ -295,13 +277,14 @@ try {
         1
       )
       
-      // Create nft object for response
-      const nft = {
-        address: mint,
-        name: nftName,
-        symbol: nftSymbol,
-        uri: imageUrl
-      }
+      // Transfer to user
+      await nftMetaplex.nfts().transfer({
+        nftOrSft: nft,
+        toOwner: userPublicKey
+      })
+      
+      // Use final mint address
+      const mint = finalMint
       
       console.log('✅ NFT created:', nft.address.toString())
       

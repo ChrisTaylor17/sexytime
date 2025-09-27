@@ -29,9 +29,9 @@ try {
   connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
   console.log('✅ Solana connection created')
   
-  // Initialize AI wallet
+  // Initialize AI wallet with valid keypair
   aiWallet = Keypair.fromSecretKey(new Uint8Array([
-    174, 47, 154, 16, 202, 193, 206, 113, 199, 190, 53, 133, 169, 175, 31, 56, 222, 53, 138, 189, 224, 216, 117, 173, 10, 149, 53, 45, 73, 251, 237, 246, 15, 185, 186, 9, 166, 66, 49, 124, 65, 20, 147, 37, 1, 158, 86, 93, 137, 234, 150, 64, 135, 199, 112, 26, 131, 70, 74, 13, 103, 23, 34, 63
+    0,46,47,103,69,243,32,227,111,4,19,115,29,104,206,194,143,87,106,165,154,238,229,42,120,76,194,178,113,146,160,176,102,53,107,181,41,161,184,189,64,196,126,101,49,186,197,17,185,228,184,25,23,28,187,43,45,34,82,83,246,213,17,165
   ]))
   
   console.log('✅ AI Wallet loaded:', aiWallet.publicKey.toString())

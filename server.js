@@ -25,6 +25,7 @@ try {
   const web3 = require('@solana/web3.js')
   const splToken = require('@solana/spl-token')
   const { Metaplex, keypairIdentity, bundlrStorage, mockStorage } = require('@metaplex-foundation/js')
+  const { createCreateMetadataAccountV3Instruction, PROGRAM_ID } = require('@metaplex-foundation/mpl-token-metadata')
   
   console.log('✅ @solana/web3.js loaded:', !!web3.Connection)
   console.log('✅ @solana/spl-token loaded:', !!splToken.createMint)
@@ -224,17 +225,80 @@ try {
       
       console.log('Uploading metadata:', JSON.stringify(metadata, null, 2))
       
-      // Create NFT with minimal data to avoid transaction size limit
-      const { nft } = await nftMetaplex.nfts().create({
-        uri: '',
-        name: String(nftName),
-        sellerFeeBasisPoints: 500,
-        symbol: String(nftSymbol),
-        creators: [{
-          address: aiWallet.publicKey,
-          share: 100
-        }]
-      })
+      // Create NFT mint first
+      const mint = await createMint(
+        connection,
+        aiWallet,
+        aiWallet.publicKey,
+        aiWallet.publicKey,
+        0
+      )
+      
+      console.log('✅ NFT mint created:', mint.toString())
+      
+      // Create metadata PDA for on-chain storage
+      const [metadataPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from('metadata'), PROGRAM_ID.toBuffer(), mint.toBuffer()],
+        PROGRAM_ID
+      )
+      
+      // Create on-chain metadata with AI image URL
+      const { Transaction } = web3
+      const metadataInstruction = createCreateMetadataAccountV3Instruction(
+        {
+          metadata: metadataPDA,
+          mint: mint,
+          mintAuthority: aiWallet.publicKey,
+          payer: aiWallet.publicKey,
+          updateAuthority: aiWallet.publicKey
+        },
+        {
+          createMetadataAccountArgsV3: {
+            data: {
+              name: String(nftName),
+              symbol: String(nftSymbol),
+              uri: String(imageUrl), // AI image URL stored directly on-chain
+              sellerFeeBasisPoints: 500,
+              creators: [{ address: aiWallet.publicKey, verified: true, share: 100 }],
+              collection: null,
+              uses: null
+            },
+            isMutable: true,
+            collectionDetails: null
+          }
+        }
+      )
+      
+      const transaction = new Transaction().add(metadataInstruction)
+      const signature = await connection.sendTransaction(transaction, [aiWallet])
+      await connection.confirmTransaction(signature)
+      
+      console.log('✅ On-chain metadata created with AI image URL')
+      
+      // Mint NFT to user
+      const userTokenAccount = await getOrCreateAssociatedTokenAccount(
+        connection,
+        aiWallet,
+        mint,
+        userPublicKey
+      )
+      
+      await mintTo(
+        connection,
+        aiWallet,
+        mint,
+        userTokenAccount.address,
+        aiWallet,
+        1
+      )
+      
+      // Create nft object for response
+      const nft = {
+        address: mint,
+        name: nftName,
+        symbol: nftSymbol,
+        uri: imageUrl
+      }
       
       console.log('✅ NFT created:', nft.address.toString())
       

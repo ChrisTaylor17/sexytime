@@ -1,8 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const { Connection, PublicKey, Keypair, clusterApiUrl } = require('@solana/web3.js')
-const { createMint, getOrCreateAssociatedTokenAccount, mintTo, getAccount } = require('@solana/spl-token')
-const { Metaplex, keypairIdentity, bundlrStorage } = require('@metaplex-foundation/js')
+const { createMint, getOrCreateAssociatedTokenAccount, mintTo } = require('@solana/spl-token')
 
 const app = express()
 app.use(cors())
@@ -15,11 +14,6 @@ const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
 const aiWallet = Keypair.fromSecretKey(new Uint8Array([
   174, 47, 154, 16, 202, 193, 206, 113, 199, 190, 53, 133, 169, 175, 31, 56, 222, 53, 138, 189, 224, 216, 117, 173, 10, 149, 53, 45, 73, 251, 237, 246, 15, 185, 186, 9, 166, 66, 49, 124, 65, 20, 147, 37, 1, 158, 86, 93, 137, 234, 150, 64, 135, 199, 112, 26, 131, 70, 74, 13, 103, 23, 34, 63
 ]))
-
-// Metaplex
-const metaplex = Metaplex.make(connection)
-  .use(keypairIdentity(aiWallet))
-  .use(bundlrStorage())
 
 console.log('AI Wallet:', aiWallet.publicKey.toString())
 
@@ -97,31 +91,12 @@ app.post('/api/create-token', async (req, res) => {
       userAmount
     )
     
-    // Create token account for platform (20%)
-    const platformAccount = await getOrCreateAssociatedTokenAccount(
-      connection,
-      aiWallet,
-      mint,
-      aiWallet.publicKey
-    )
-    
-    const platformAmount = Math.floor(supply * 0.2) * 1000000
-    await mintTo(
-      connection,
-      aiWallet,
-      mint,
-      platformAccount.address,
-      aiWallet,
-      platformAmount
-    )
-    
     res.json({
       success: true,
       message: `Real token ${symbol} created on Solana!`,
       mintAddress: mint.toString(),
       explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
-      userTokens: Math.floor(supply * 0.8),
-      platformTokens: Math.floor(supply * 0.2)
+      userTokens: Math.floor(supply * 0.8)
     })
     
   } catch (error) {
@@ -130,7 +105,7 @@ app.post('/api/create-token', async (req, res) => {
   }
 })
 
-// Create real NFT
+// Create NFT (simplified - creates a token with 0 decimals)
 app.post('/api/create-nft', async (req, res) => {
   try {
     const { name, description, walletAddress } = req.body
@@ -141,36 +116,40 @@ app.post('/api/create-nft', async (req, res) => {
     
     const userPublicKey = new PublicKey(walletAddress)
     
-    // Create NFT
-    const { nft } = await metaplex.nfts().create({
-      uri: `https://arweave.net/placeholder-${Date.now()}`,
-      name: name || 'Consilience NFT',
-      description: description || 'Created on Consilience DAO',
-      sellerFeeBasisPoints: 500,
-      symbol: 'CNSL',
-      creators: [
-        {
-          address: aiWallet.publicKey,
-          share: 100,
-        },
-      ],
-      collection: null,
-      uses: null,
-    })
+    // Create NFT mint (0 decimals = NFT)
+    const mint = await createMint(
+      connection,
+      aiWallet,
+      aiWallet.publicKey,
+      null,
+      0  // 0 decimals = NFT
+    )
     
-    // Transfer NFT to user
-    await metaplex.nfts().transfer({
-      nftOrSft: nft,
-      toOwner: userPublicKey,
-    })
+    // Create token account for user
+    const tokenAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      aiWallet,
+      mint,
+      userPublicKey
+    )
+    
+    // Mint 1 NFT to user
+    await mintTo(
+      connection,
+      aiWallet,
+      mint,
+      tokenAccount.address,
+      aiWallet,
+      1  // Mint exactly 1 NFT
+    )
     
     res.json({
       success: true,
       message: `Real NFT "${name}" created and sent to your wallet!`,
-      mintAddress: nft.address.toString(),
-      explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`,
-      name: nft.name,
-      description: nft.description
+      mintAddress: mint.toString(),
+      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
+      name: name,
+      description: description
     })
     
   } catch (error) {
@@ -179,36 +158,41 @@ app.post('/api/create-nft', async (req, res) => {
   }
 })
 
-// Mint NFT (same as create for now)
+// Mint NFT (creates new NFT)
 app.post('/api/mint-nft', async (req, res) => {
   try {
-    const { nftId, recipient } = req.body
+    const { recipient } = req.body
     const userPublicKey = new PublicKey(recipient)
     
-    const { nft } = await metaplex.nfts().create({
-      uri: `https://arweave.net/nft-${nftId}`,
-      name: `Consilience NFT #${nftId}`,
-      description: 'Minted on Consilience DAO',
-      sellerFeeBasisPoints: 500,
-      symbol: 'CNSL',
-      creators: [
-        {
-          address: aiWallet.publicKey,
-          share: 100,
-        },
-      ],
-    })
+    const mint = await createMint(
+      connection,
+      aiWallet,
+      aiWallet.publicKey,
+      null,
+      0
+    )
     
-    await metaplex.nfts().transfer({
-      nftOrSft: nft,
-      toOwner: userPublicKey,
-    })
+    const tokenAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      aiWallet,
+      mint,
+      userPublicKey
+    )
+    
+    await mintTo(
+      connection,
+      aiWallet,
+      mint,
+      tokenAccount.address,
+      aiWallet,
+      1
+    )
     
     res.json({
       success: true,
       message: 'Real NFT minted to your wallet!',
-      mintAddress: nft.address.toString(),
-      explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`
+      mintAddress: mint.toString(),
+      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`
     })
     
   } catch (error) {
@@ -251,20 +235,30 @@ app.get('/api/wallet-tokens/:address', async (req, res) => {
   }
 })
 
-// Get real wallet NFTs
+// Get wallet NFTs (tokens with 0 decimals)
 app.get('/api/wallet-nfts/:address', async (req, res) => {
   try {
     const publicKey = new PublicKey(req.params.address)
-    const nfts = await metaplex.nfts().findAllByOwner({ owner: publicKey })
+    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+      programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
+    })
     
-    const nftData = nfts.map(nft => ({
-      mint: nft.address.toString(),
-      name: nft.name,
-      description: nft.description,
-      image: nft.json?.image || null
-    }))
+    const nfts = tokenAccounts.value
+      .filter(account => {
+        const tokenInfo = account.account.data.parsed.info
+        return tokenInfo.tokenAmount.decimals === 0 && parseFloat(tokenInfo.tokenAmount.amount) === 1
+      })
+      .map(account => {
+        const tokenInfo = account.account.data.parsed.info
+        return {
+          mint: tokenInfo.mint,
+          name: `NFT ${tokenInfo.mint.slice(0, 8)}...`,
+          description: 'Consilience NFT',
+          image: null
+        }
+      })
     
-    res.json({ nfts: nftData })
+    res.json({ nfts })
   } catch (error) {
     res.json({ nfts: [] })
   }

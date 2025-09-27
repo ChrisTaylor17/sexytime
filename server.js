@@ -237,10 +237,7 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Create ultra-compact URI that fits in transaction
-      const shortUri = `https://api.consilience.ai/nft/${nft.address || Date.now()}?img=${encodeURIComponent(imageUrl.slice(0, 50))}`
-      
-      console.log('Creating NFT with short URI (length:', shortUri.length, ')')
+      console.log('Creating NFT with empty URI to avoid transaction size limit')
       
       // Create NFT with AI image in data URI
       let nft

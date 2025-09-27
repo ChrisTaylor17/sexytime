@@ -10,21 +10,48 @@ const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzj
 
 // Create NFT collection
 router.post('/create-nft', apiLimiter, async (req, res) => {
-  const { name, description, image, supply, creator } = req.body
-  const db = req.app.locals.db
-  
-  const nftId = Date.now()
-  
-  db.run(
-    'INSERT INTO nft_collections (id, name, description, image, supply, creator, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [nftId, name, description, image, supply, creator, new Date().toISOString()],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' })
-      }
-      res.json({ message: `NFT collection "${name}" created successfully!`, nftId })
+  try {
+    const { name, description, image, supply, creator } = req.body
+    const db = req.app.locals.db
+    
+    if (!db) {
+      return res.status(500).json({ error: 'Database not initialized' })
     }
-  )
+    
+    const nftId = Date.now()
+    
+    // Create table if it doesn't exist
+    db.run(`CREATE TABLE IF NOT EXISTS nft_collections (
+      id INTEGER PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      description TEXT,
+      image TEXT,
+      supply INTEGER NOT NULL,
+      creator VARCHAR(50) NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+      if (err) {
+        console.error('Table creation error:', err)
+        return res.status(500).json({ error: 'Database setup failed' })
+      }
+      
+      // Insert NFT
+      db.run(
+        'INSERT INTO nft_collections (id, name, description, image, supply, creator, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [nftId, name, description, image, supply || 100, creator, new Date().toISOString()],
+        function(err) {
+          if (err) {
+            console.error('Insert error:', err)
+            return res.status(500).json({ error: 'Database insert failed: ' + err.message })
+          }
+          res.json({ message: `NFT collection "${name}" created successfully!`, nftId })
+        }
+      )
+    })
+  } catch (error) {
+    console.error('NFT creation error:', error)
+    res.status(500).json({ error: 'Server error: ' + error.message })
+  }
 })
 
 // Mint NFT

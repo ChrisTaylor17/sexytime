@@ -145,6 +145,7 @@ try {
       
       const nftMetaplex = Metaplex.make(connection)
         .use(keypairIdentity(aiWallet))
+        .use(bundlrStorage())
       
       const userPublicKey = new PublicKey(walletAddress)
       
@@ -228,33 +229,16 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Create compact metadata URI with AI image
-      const compactMetadata = JSON.stringify({
-        name: String(nftName),
-        description: String(nftDescription),
-        image: String(imageUrl)
-      })
+      // Upload metadata with AI image to get short URI
+      const { uri } = await nftMetaplex.nfts().uploadMetadata(nftMetadata)
       
-      // Use URL encoding for shorter metadata, avoid truncation
-      const metadataUri = `data:application/json,${encodeURIComponent(compactMetadata)}`
-      
-      // If too long, use a shorter image URL
-      if (metadataUri.length > 200) {
-        const shortMetadata = JSON.stringify({
-          name: String(nftName),
-          description: String(nftDescription),
-          image: `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(nftName)}&backgroundColor=ff6b6b`
-        })
-        const metadataUri = `data:application/json,${encodeURIComponent(shortMetadata)}`
-      }
-      
-      console.log('Using metadata URI (length:', metadataUri.length, '):', metadataUri.slice(0, 100) + '...')
+      console.log('Metadata uploaded to:', uri)
       
       // Create NFT with AI image metadata and proper error handling
       let nft
       try {
         const createResult = await nftMetaplex.nfts().create({
-          uri: metadataUri,
+          uri: uri,
           name: String(nftName),
           sellerFeeBasisPoints: 500,
           symbol: String(nftSymbol),

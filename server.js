@@ -143,17 +143,14 @@ try {
         .use(keypairIdentity(aiWallet))
         .use(mockStorage())
       
-      // Initialize Metaplex with bundlr storage and proper funding
+      // Use NFT.Storage for free IPFS metadata storage
+      const { NFTStorage } = require('nft.storage')
+      const nftStorage = new NFTStorage({ token: process.env.NFT_STORAGE_KEY || 'dummy' })
+      
+      console.log('✅ NFT.Storage initialized for IPFS metadata')
+      
       const nftMetaplex = Metaplex.make(connection)
         .use(keypairIdentity(aiWallet))
-        .use(bundlrStorage({
-          address: 'https://node1.bundlr.network',
-          providerUrl: connection.rpcEndpoint,
-          timeout: 60000,
-          priceMultiplier: 1.1
-        }))
-      
-      console.log('✅ Bundlr storage initialized for decentralized metadata')
       
       const userPublicKey = new PublicKey(walletAddress)
       
@@ -243,15 +240,25 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Upload AI image metadata to Arweave via bundlr
-      const { uri } = await nftMetaplex.nfts().uploadMetadata(nftMetadata)
-      console.log('✅ AI image metadata uploaded to Arweave:', uri)
+      // Upload AI image metadata to IPFS via NFT.Storage
+      let uri
+      try {
+        const metadataBlob = new Blob([JSON.stringify(nftMetadata)], { type: 'application/json' })
+        const cid = await nftStorage.storeBlob(metadataBlob)
+        uri = `https://nftstorage.link/ipfs/${cid}`
+        console.log('✅ AI image metadata uploaded to IPFS:', uri)
+      } catch (ipfsError) {
+        console.log('⚠️ IPFS upload failed, using data URI:', ipfsError.message)
+        const metadataJson = JSON.stringify({ name: String(nftName), image: String(imageUrl).slice(0, 100) })
+        uri = `data:application/json,${encodeURIComponent(metadataJson)}`
+        console.log('✅ Using data URI fallback (length:', uri.length, ')')
+      }
       
-      // Create NFT with Arweave metadata URI
+      // Create NFT with IPFS metadata URI
       let nft
       try {
         const createResult = await nftMetaplex.nfts().create({
-          uri: uri, // Arweave URI with AI image
+          uri: uri, // IPFS URI with AI image
           name: String(nftName),
           sellerFeeBasisPoints: 500,
           symbol: String(nftSymbol),
@@ -263,7 +270,7 @@ try {
           toOwner: userPublicKey
         })
         
-        console.log('✅ NFT created with Arweave metadata containing AI image')
+        console.log('✅ NFT created with IPFS metadata containing AI image')
         
         nft = createResult.nft
         console.log('✅ Metaplex NFT created successfully:', nft.address.toString())

@@ -63,6 +63,36 @@ app.get('/api/user-nfts/:alias', (req, res) => {
   res.json({ nfts: [] })
 })
 
+// Wallet balance
+app.get('/api/wallet-balance/:address', (req, res) => {
+  res.json({ balance: 1.5 })
+})
+
+// Wallet tokens
+app.get('/api/wallet-tokens/:address', (req, res) => {
+  res.json({ 
+    tokens: [
+      { symbol: 'CS', balance: 250 },
+      { symbol: 'USDC', balance: 100 }
+    ]
+  })
+})
+
+// Wallet NFTs
+app.get('/api/wallet-nfts/:address', (req, res) => {
+  res.json({ nfts: [] })
+})
+
+// Connect wallet
+app.post('/api/connect-wallet', (req, res) => {
+  res.json({ success: true })
+})
+
+// Request airdrop
+app.post('/api/request-airdrop', (req, res) => {
+  res.json({ success: true, message: '1 SOL airdropped!' })
+})
+
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)

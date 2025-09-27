@@ -17,9 +17,15 @@ export default function NFTGallery() {
   }, [connected, publicKey])
 
   const fetchNFTs = async () => {
+    console.log('Fetching NFTs for wallet:', publicKey.toString())
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
-      const response = await axios.get(`${backendUrl}/api/nfts/${publicKey.toString()}`)
+      const url = `${backendUrl}/api/nfts/${publicKey.toString()}`
+      console.log('NFT API URL:', url)
+      
+      const response = await axios.get(url)
+      console.log('NFT API Response:', response.data)
+      
       setNfts(response.data.nfts || [])
     } catch (error) {
       console.error('Failed to fetch NFTs:', error)
@@ -41,7 +47,16 @@ export default function NFTGallery() {
 
   return (
     <div className="card">
-      <h2 className="text-xl font-semibold mb-4">Your NFT Collection</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Your NFT Collection</h2>
+        <button 
+          onClick={fetchNFTs} 
+          className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+          disabled={loading}
+        >
+          {loading ? 'Loading...' : 'Refresh'}
+        </button>
+      </div>
       
       {nfts.length === 0 ? (
         <p className="text-gray-500">No NFTs found in your wallet</p>

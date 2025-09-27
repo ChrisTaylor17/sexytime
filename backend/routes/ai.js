@@ -1,6 +1,6 @@
 const express = require('express')
 const OpenAI = require('openai')
-const { mintTokens } = require('../utils/solana')
+const { mintTokens, createNFT } = require('../utils/solana')
 
 const router = express.Router()
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null
@@ -82,32 +82,55 @@ router.post('/find-match', (req, res) => {
 })
 
 // Task verification
-router.post('/verify-task', (req, res) => {
+router.post('/verify-task', async (req, res) => {
   const { alias, projectId, proof } = req.body
   const db = req.app.locals.db
   
   const verified = true // Simplified for demo
   
   if (verified) {
-    mintTokens(alias, 100)
-    
-    db.run(
-      'INSERT INTO transactions (from_alias, to_alias, amount, type) VALUES (?, ?, ?, ?)',
-      ['system', alias, 80, 'task_reward']
-    )
-    
-    db.run(
-      'INSERT INTO transactions (from_alias, to_alias, amount, type) VALUES (?, ?, ?, ?)',
-      ['system', 'founder', 20, 'founder_fee']
-    )
-    
-    db.run(
-      'UPDATE users SET cs_balance = cs_balance + 80 WHERE alias = ?',
-      [alias]
-    )
+    // Get project name for NFT
+    db.get('SELECT name FROM projects WHERE id = ?', [projectId], async (err, project) => {
+      const taskName = project?.name || 'DAO Task'
+      
+      // Create NFT for task completion
+      const nftData = await createNFT(alias, taskName)
+      
+      if (nftData) {
+        // Store NFT in database
+        db.run(
+          'INSERT INTO nfts (mint_address, owner_alias, name, image_url, metadata_uri) VALUES (?, ?, ?, ?, ?)',
+          [nftData.mint, alias, nftData.name, nftData.image, JSON.stringify(nftData)]
+        )
+      }
+      
+      // Mint CS tokens
+      mintTokens(alias, 100)
+      
+      db.run(
+        'INSERT INTO transactions (from_alias, to_alias, amount, type) VALUES (?, ?, ?, ?)',
+        ['system', alias, 80, 'task_reward']
+      )
+      
+      db.run(
+        'INSERT INTO transactions (from_alias, to_alias, amount, type) VALUES (?, ?, ?, ?)',
+        ['system', 'founder', 20, 'founder_fee']
+      )
+      
+      db.run(
+        'UPDATE users SET cs_balance = cs_balance + 80 WHERE alias = ?',
+        [alias]
+      )
+      
+      res.json({ 
+        verified, 
+        message: 'VERIFIED - Task completed successfully! NFT certificate created.',
+        nft: nftData
+      })
+    })
+  } else {
+    res.json({ verified, message: 'Task verification failed' })
   }
-  
-  res.json({ verified, message: 'VERIFIED - Task completed successfully' })
 })
 
 // QR Check-in

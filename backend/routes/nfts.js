@@ -8,9 +8,45 @@ const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.dev
 // Metaplex Token Metadata Program ID
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
 
-// Get NFTs for connected wallet
-router.get('/nfts/:walletAddress', apiLimiter, async (req, res) => {
-  const { walletAddress } = req.params
+// Get NFTs for user (both wallet and earned)
+router.get('/nfts/:identifier', apiLimiter, async (req, res) => {
+  const { identifier } = req.params
+  const db = req.app.locals.db
+  
+  // Check if identifier is wallet address or alias
+  const isWalletAddress = identifier.length > 32
+  
+  if (isWalletAddress) {
+    // Fetch from wallet
+    return fetchWalletNFTs(identifier, res)
+  } else {
+    // Fetch earned NFTs from database
+    return fetchEarnedNFTs(identifier, db, res)
+  }
+})
+
+// Fetch earned NFTs from database
+function fetchEarnedNFTs(alias, db, res) {
+  db.all('SELECT * FROM nfts WHERE owner_alias = ?', [alias], (err, nfts) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    
+    const formattedNFTs = nfts.map(nft => ({
+      mint: nft.mint_address,
+      name: nft.name,
+      image: nft.image_url,
+      description: 'Task completion certificate',
+      earned: true
+    }))
+    
+    res.json({ nfts: formattedNFTs })
+  })
+}
+
+// Fetch NFTs from connected wallet
+function fetchWalletNFTs(walletAddress, res) {
+
   
   try {
     const publicKey = new PublicKey(walletAddress)

@@ -235,21 +235,21 @@ try {
       
       console.log('Uploading metadata:', JSON.stringify(metadata, null, 2))
       
-      // Upload metadata using Metaplex storage
-      const { uri } = await nftMetaplex.nfts().uploadMetadata(metadata)
-      
-      console.log('Metadata uploaded to:', uri)
-      
-      // Create NFT with uploaded metadata URI
+      // Create NFT directly with metadata to avoid slow upload
       const { nft } = await nftMetaplex.nfts().create({
-        uri: uri,
         name: String(nftName),
+        description: String(nftDescription),
+        image: String(imageUrl),
         sellerFeeBasisPoints: 500,
         symbol: String(nftSymbol),
         creators: [{
           address: aiWallet.publicKey,
           share: 100
-        }]
+        }],
+        attributes: [
+          { trait_type: 'Platform', value: 'Consilience DAO' },
+          { trait_type: 'AI Generated', value: hasOpenAI ? 'Yes' : 'No' }
+        ]
       })
       
       console.log('✅ NFT created:', nft.address.toString())

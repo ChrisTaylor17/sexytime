@@ -76,17 +76,17 @@ export default function Profile() {
   if (!user) return <div className="loading">Loading profile...</div>
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
+      <div className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <button 
             onClick={() => router.push('/dashboard')}
-            className="text-white hover:text-purple-300 transition-colors"
+            className="text-gray-600 hover:text-gray-800"
           >
             ← Back to Dashboard
           </button>
-          <h1 className="text-2xl font-bold text-white">Profile</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
           <div></div>
         </div>
       </div>
@@ -94,16 +94,16 @@ export default function Profile() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Profile Card */}
-          <div className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-8 mb-8">
+          <div className="card mb-8">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
               
               {/* Profile Image */}
               <div className="relative">
-                <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center">
+                <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
                   {profileImage ? (
                     <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="text-white text-4xl font-bold">
+                    <div className="text-gray-600 text-4xl font-bold">
                       {user.alias.charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -130,7 +130,7 @@ export default function Profile() {
 
               {/* Profile Info */}
               <div className="flex-1 text-center md:text-left">
-                <h2 className="text-3xl font-bold text-white mb-2">{user.alias}</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">{user.alias}</h2>
                 <div className="flex flex-wrap gap-4 mb-4">
                   <div className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm">
                     💰 {user.cs_balance} CS Tokens
@@ -144,14 +144,14 @@ export default function Profile() {
                 
                 {/* Interests */}
                 <div className="mb-4">
-                  <label className="block text-purple-300 text-sm font-medium mb-2">Interests & Skills</label>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">Interests & Skills</label>
                   {editing ? (
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={formData.interests}
                         onChange={(e) => setFormData({...formData, interests: e.target.value})}
-                        className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50"
+                        className="flex-1 input-field"
                         placeholder="e.g., blockchain, AI, design"
                       />
                       <button onClick={updateProfile} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
@@ -163,7 +163,7 @@ export default function Profile() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <p className="text-white/80">{user.interests}</p>
+                      <p className="text-gray-700">{user.interests}</p>
                       <button 
                         onClick={() => setEditing(true)}
                         className="text-purple-300 hover:text-purple-200 transition-colors"

@@ -141,16 +141,15 @@ try {
       })
       
       const { nft } = await nftMetaplex.nfts().create({
+        uri: '',
         name: nftName,
-        description: nftDescription,
-        image: imageUrl,
         sellerFeeBasisPoints: 500,
         symbol: nftSymbol,
         creators: [{
           address: aiWallet.publicKey,
-          verified: true,
           share: 100
-        }]
+        }],
+        isMutable: true
       })
       
       console.log('✅ NFT created:', nft.address.toString())

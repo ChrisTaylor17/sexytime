@@ -215,11 +215,23 @@ try {
       
       console.log('Uploading metadata:', JSON.stringify(nftMetadata, null, 2))
       
-      // Create NFT with AI image directly in metadata
+      // Validate all parameters before creating NFT
+      console.log('Pre-creation validation:')
+      console.log('  nftName:', nftName, typeof nftName)
+      console.log('  nftDescription:', nftDescription, typeof nftDescription)
+      console.log('  imageUrl:', imageUrl, typeof imageUrl)
+      console.log('  nftSymbol:', nftSymbol, typeof nftSymbol)
+      console.log('  aiWallet.publicKey:', aiWallet?.publicKey?.toString())
+      console.log('  userPublicKey:', userPublicKey?.toString())
+      
+      if (!nftName || !nftDescription || !imageUrl || !nftSymbol || !aiWallet?.publicKey || !userPublicKey) {
+        throw new Error('Missing required parameters for NFT creation')
+      }
+      
+      // Create NFT with validated parameters
       const { nft } = await nftMetaplex.nfts().create({
+        uri: '', // Empty URI to avoid undefined issues
         name: String(nftName),
-        description: String(nftDescription),
-        image: String(imageUrl), // AI image URL directly
         sellerFeeBasisPoints: 500,
         symbol: String(nftSymbol),
         creators: [{

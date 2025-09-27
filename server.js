@@ -237,30 +237,21 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Create NFT with metadata directly (no bundlr upload needed)
+      // Create NFT with minimal required parameters only
       let nft
       try {
         const createResult = await nftMetaplex.nfts().create({
+          uri: '', // Empty URI to avoid undefined issues
           name: String(nftName),
-          description: String(nftDescription),
-          image: String(imageUrl), // AI image URL directly in create
           sellerFeeBasisPoints: 500,
           symbol: String(nftSymbol),
           creators: [{
             address: aiWallet.publicKey,
-            verified: true,
             share: 100
-          }],
-          attributes: [
-            { trait_type: 'Platform', value: 'Consilience DAO' },
-            { trait_type: 'AI Generated', value: hasOpenAI ? 'Yes' : 'No' }
-          ],
-          isMutable: true,
-          maxSupply: null,
-          toOwner: userPublicKey
+          }]
         })
         
-        console.log('✅ NFT created with direct metadata including AI image')
+        console.log('✅ NFT created with minimal metadata (AI image in response only)')
         
         nft = createResult.nft
         console.log('✅ Metaplex NFT created successfully:', nft.address.toString())

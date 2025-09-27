@@ -74,6 +74,7 @@ if (process.env.SOLANA_PRIVATE_KEY) {
     
     payer = Keypair.fromSecretKey(new Uint8Array(secretKey))
     console.log('✅ SUCCESS! Using funded wallet:', payer.publicKey.toString())
+    console.log('🚰 Fund at: https://faucet.solana.com')
   } catch (error) {
     console.error('❌ Wallet loading failed:', error.message)
     console.error('❌ Full error:', error)
@@ -740,27 +741,39 @@ app.post('/api/ai-chat-direct', async (req, res) => {
     // Check for action requests
     const lowerMessage = message.toLowerCase()
     
-    if (lowerMessage.includes('create token') || lowerMessage.includes('make token')) {
+    if (lowerMessage.includes('create token') || lowerMessage.includes('make token') || lowerMessage.includes('launch token')) {
       const token = await createRealToken(message)
       if (token) {
         const status = token.isReal ? '✅ REAL Token created!' : '⚠️ Simulated (fund wallet for real tokens)'
-        aiResponse += `\n\n🪙 ${status}\n🔗 Symbol: ${token.symbol}\n✅ Mint: ${token.mintAddress}\n💎 Supply: ${token.supply.toLocaleString()}\n🔍 Explorer: https://explorer.solana.com/address/${token.mintAddress}?cluster=devnet`
+        aiResponse = `🪙 ${status}\n\n🔗 Symbol: ${token.symbol}\n✅ Mint: ${token.mintAddress}\n💎 Supply: ${token.supply.toLocaleString()}\n🔍 Explorer: https://explorer.solana.com/address/${token.mintAddress}?cluster=devnet\n\n${token.isReal ? 'Your token is live on Solana devnet!' : 'Fund the wallet with devnet SOL to create real tokens.'}`
       }
     }
     
-    if (lowerMessage.includes('mint nft') || lowerMessage.includes('create nft')) {
+    if (lowerMessage.includes('mint nft') || lowerMessage.includes('create nft') || (lowerMessage.includes('mint') && lowerMessage.includes('nft'))) {
       const nft = await createRealNFT(message)
       if (nft) {
         const status = nft.isReal ? '✅ REAL NFT created!' : '⚠️ Simulated (fund wallet for real NFTs)'
-        aiResponse += `\n\n🎨 ${status}\n🏷️ Name: ${nft.name}\n🔗 Mint: ${nft.mintAddress}\n📝 Description: ${nft.description}\n🔍 Explorer: ${nft.explorerUrl}`
+        aiResponse = `🎨 ${status}\n\n🏷️ Name: ${nft.name}\n🔗 Mint: ${nft.mintAddress}\n📝 Description: ${nft.description}\n🔍 Explorer: ${nft.explorerUrl}\n\n${nft.isReal ? 'Your NFT is live on Solana devnet!' : 'To create real NFTs, fund this wallet with devnet SOL:'}`
+        
+        if (!nft.isReal) {
+          aiResponse += `\n\n💰 Wallet Address: ${payer.publicKey.toString()}\n🚰 Get devnet SOL: https://faucet.solana.com\n💡 Or run: solana airdrop 1 ${payer.publicKey.toString()} --url devnet`
+        }
       }
+    }
+    
+    // Add wallet funding info if no actions were taken
+    if (!lowerMessage.includes('token') && !lowerMessage.includes('nft') && !lowerMessage.includes('mint') && !lowerMessage.includes('create')) {
+      // Keep original AI response
+    } else if (aiResponse === completion.choices[0].message.content) {
+      // No blockchain action was triggered, add funding info
+      aiResponse += `\n\n💡 To create real tokens/NFTs, fund this wallet:\n💰 ${payer.publicKey.toString()}\n🚰 Get devnet SOL: https://faucet.solana.com`
     }
     
     res.json({ response: aiResponse, timestamp: new Date().toISOString() })
   } catch (error) {
     console.error('AI Chat error:', error)
     res.json({ 
-      response: `I'm your AI assistant for Consilience DAO! I can help with:\n\n🪙 Creating tokens on Solana\n🎨 Minting NFTs\n🚀 Project planning\n🤝 Finding collaborators\n💡 Technical guidance\n\nWhat would you like to work on?`, 
+      response: `I'm your AI assistant for Consilience DAO! I can help with:\n\n🪙 Creating tokens on Solana\n🎨 Minting NFTs\n🚀 Project planning\n🤝 Finding collaborators\n💡 Technical guidance\n\n💰 Wallet: ${payer.publicKey.toString()}\n🚰 Fund with devnet SOL: https://faucet.solana.com\n\nWhat would you like to work on?`, 
       timestamp: new Date().toISOString() 
     })
   }

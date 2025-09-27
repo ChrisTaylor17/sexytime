@@ -246,8 +246,8 @@ try {
         console.log('✅ Metadata uploaded to:', uri)
       } catch (uploadError) {
         console.log('⚠️ Metadata upload failed, using simple URI:', uploadError.message)
-        // Use simple data URI as fallback
-        const simpleMetadata = JSON.stringify({ name: String(nftName), image: String(imageUrl).slice(0, 100) })
+        // Use simple data URI as fallback with full image URL
+        const simpleMetadata = JSON.stringify({ name: String(nftName), image: String(imageUrl) })
         uri = `data:application/json,${encodeURIComponent(simpleMetadata)}`
         console.log('✅ Using fallback URI (length:', uri.length, ')')
       }

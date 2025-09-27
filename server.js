@@ -124,8 +124,37 @@ try {
       
       const userPublicKey = new PublicKey(walletAddress)
       
-      // Generate or use provided image
-      const nftImage = image || `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(name)}&backgroundColor=00ff88,ff6b6b,4ecdc4,45b7d1,96ceb4,feca57,ff9ff3,54a0ff`
+      // Generate AI image based on description
+      let nftImage = image
+      
+      if (!nftImage) {
+        try {
+          // Use OpenAI DALL-E to generate image
+          const OpenAI = require('openai')
+          const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || 'dummy' })
+          
+          const imagePrompt = `Create a digital art NFT image: ${name}. ${description || 'Abstract digital art'}. Style: vibrant, modern, NFT collection artwork, high quality, detailed`
+          
+          console.log('🎨 Generating AI image with prompt:', imagePrompt)
+          
+          const response = await openai.images.generate({
+            model: 'dall-e-3',
+            prompt: imagePrompt,
+            n: 1,
+            size: '1024x1024',
+            quality: 'standard'
+          })
+          
+          nftImage = response.data[0].url
+          console.log('✅ AI image generated:', nftImage)
+          
+        } catch (aiError) {
+          console.log('⚠️ AI image generation failed, using fallback:', aiError.message)
+          // Fallback to descriptive generated image
+          const seed = encodeURIComponent(`${name} ${description}`)
+          nftImage = `https://api.dicebear.com/7.x/shapes/svg?seed=${seed}&backgroundColor=00ff88,ff6b6b,4ecdc4,45b7d1,96ceb4,feca57,ff9ff3,54a0ff`
+        }
+      }
       
       // Create metadata JSON
       const metadata = {
@@ -419,7 +448,27 @@ app.post('/api/mint-nft', async (req, res) => {
     const userPublicKey = new PublicKey(recipient)
     
     const nftName = name || `Consilience NFT #${nftId || Date.now()}`
-    const nftImage = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(nftName)}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
+    
+    // Generate AI image for minted NFT too
+    let nftImage
+    try {
+      const OpenAI = require('openai')
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || 'dummy' })
+      
+      const imagePrompt = `Create a digital art NFT: ${nftName}. Minted on Consilience DAO. Style: vibrant, modern, NFT artwork, high quality`
+      
+      const response = await openai.images.generate({
+        model: 'dall-e-3',
+        prompt: imagePrompt,
+        n: 1,
+        size: '1024x1024',
+        quality: 'standard'
+      })
+      
+      nftImage = response.data[0].url
+    } catch (error) {
+      nftImage = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(nftName)}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
+    }
     
     // Create real NFT with Metaplex
     const { nft } = await metaplex.nfts().create({

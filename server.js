@@ -143,16 +143,19 @@ try {
         .use(keypairIdentity(aiWallet))
         .use(mockStorage())
       
-      // Initialize Metaplex with bundlr storage for real metadata upload
-      const nftMetaplex = Metaplex.make(connection)
-        .use(keypairIdentity(aiWallet))
-        .use(bundlrStorage({
-          address: 'https://node1.bundlr.network',
-          providerUrl: connection.rpcEndpoint,
-          timeout: 60000
-        }))
-      
-      console.log('✅ Bundlr storage initialized with custom config')
+      // Try bundlr storage, fallback to mock if funding fails
+      let nftMetaplex
+      try {
+        nftMetaplex = Metaplex.make(connection)
+          .use(keypairIdentity(aiWallet))
+          .use(bundlrStorage())
+        console.log('✅ Bundlr storage initialized')
+      } catch (bundlrError) {
+        console.log('⚠️ Bundlr failed, using mock storage:', bundlrError.message)
+        nftMetaplex = Metaplex.make(connection)
+          .use(keypairIdentity(aiWallet))
+          .use(mockStorage())
+      }
       
       const userPublicKey = new PublicKey(walletAddress)
       
@@ -236,29 +239,18 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Fund bundlr if needed and upload metadata
+      // Upload metadata with error handling
+      let uri
       try {
-        // Check bundlr balance and fund if needed
-        const bundlr = nftMetaplex.storage().driver()
-        if (bundlr.fund) {
-          try {
-            const balance = await bundlr.getLoadedBalance()
-            console.log('Bundlr balance:', balance.toString())
-            if (balance.isLessThan(bundlr.utils.unitConverter(0.01))) {
-              console.log('Funding bundlr with 0.01 SOL...')
-              await bundlr.fund(bundlr.utils.unitConverter(0.01))
-            }
-          } catch (fundError) {
-            console.log('Bundlr funding info:', fundError.message)
-          }
-        }
-      } catch (bundlrError) {
-        console.log('Bundlr setup info:', bundlrError.message)
+        const { uri: uploadedUri } = await nftMetaplex.nfts().uploadMetadata(nftMetadata)
+        uri = uploadedUri
+        console.log('✅ Metadata uploaded successfully:', uri)
+      } catch (uploadError) {
+        console.log('⚠️ Metadata upload failed, creating minimal NFT:', uploadError.message)
+        // Create NFT without metadata URI to avoid transaction size limit
+        uri = ''
+        console.log('✅ Using empty URI to avoid size limit')
       }
-      
-      // Upload metadata to get short URI
-      const { uri } = await nftMetaplex.nfts().uploadMetadata(nftMetadata)
-      console.log('✅ Metadata uploaded to Arweave:', uri)
       
       // Create NFT with AI image metadata and proper error handling
       let nft

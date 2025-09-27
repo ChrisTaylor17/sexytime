@@ -127,20 +127,30 @@ try {
       
       console.log('✅ Creating NFT with Metaplex...')
       
+      // Ensure all parameters are properly typed
+      const nftName = String(name || 'Consilience NFT')
+      const nftDescription = String(description || 'Created on Consilience DAO')
+      const nftSymbol = String('CNSL')
+      
+      console.log('Creating NFT with params:', {
+        name: nftName,
+        description: nftDescription,
+        image: imageUrl,
+        symbol: nftSymbol,
+        creatorAddress: aiWallet.publicKey.toString()
+      })
+      
       const { nft } = await nftMetaplex.nfts().create({
-        name: name || 'Consilience NFT',
-        description: description || 'Created on Consilience DAO',
+        name: nftName,
+        description: nftDescription,
         image: imageUrl,
         sellerFeeBasisPoints: 500,
-        symbol: 'CNSL',
+        symbol: nftSymbol,
         creators: [{
           address: aiWallet.publicKey,
+          verified: true,
           share: 100
-        }],
-        attributes: [
-          { trait_type: 'Platform', value: 'Consilience DAO' },
-          { trait_type: 'Network', value: 'Solana Devnet' }
-        ]
+        }]
       })
       
       console.log('✅ NFT created:', nft.address.toString())

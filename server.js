@@ -116,7 +116,7 @@ try {
       
       console.log(`🎨 Creating Metaplex NFT for ${walletAddress}`)
       
-      const metaplex = Metaplex.make(connection)
+      const nftMetaplex = Metaplex.make(connection)
         .use(keypairIdentity(aiWallet))
         .use(mockStorage())
       
@@ -127,7 +127,7 @@ try {
       
       console.log('✅ Creating NFT with Metaplex...')
       
-      const { nft } = await metaplex.nfts().create({
+      const { nft } = await nftMetaplex.nfts().create({
         uri: `data:application/json;base64,${Buffer.from(JSON.stringify({
           name: name || 'Consilience NFT',
           description: description || 'Created on Consilience DAO',
@@ -149,7 +149,7 @@ try {
       console.log('✅ NFT created:', nft.address.toString())
       
       // Transfer to user
-      await metaplex.nfts().transfer({
+      await nftMetaplex.nfts().transfer({
         nftOrSft: nft,
         toOwner: userPublicKey
       })
@@ -382,11 +382,11 @@ app.post('/api/mint-nft', async (req, res) => {
     
     const nftName = name || `Consilience NFT #${nftId || Date.now()}`
     
-    const metaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet)).use(mockStorage())
+    const mintMetaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet)).use(mockStorage())
     
     const nftImage = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(nftName || 'NFT')}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
     
-    const { nft } = await metaplex.nfts().create({
+    const { nft } = await mintMetaplex.nfts().create({
       uri: `data:application/json;base64,${Buffer.from(JSON.stringify({
         name: nftName,
         description: 'Minted on Consilience DAO platform',
@@ -400,7 +400,7 @@ app.post('/api/mint-nft', async (req, res) => {
     })
     
     // Transfer to user
-    await metaplex.nfts().transfer({ nftOrSft: nft, toOwner: userPublicKey })
+    await mintMetaplex.nfts().transfer({ nftOrSft: nft, toOwner: userPublicKey })
     
     res.json({
       success: true,

@@ -4,6 +4,7 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import axios from 'axios'
 
+// Updated profile page with better design - v2
 export default function Profile() {
   const [user, setUser] = useState(null)
   const [profileImage, setProfileImage] = useState(null)

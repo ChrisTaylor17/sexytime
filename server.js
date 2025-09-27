@@ -237,11 +237,21 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Create NFT with minimal required parameters only
+      // Create compact data URI with AI image that fits in transaction
+      const compactMetadata = {
+        name: String(nftName),
+        image: String(imageUrl)
+      }
+      const metadataJson = JSON.stringify(compactMetadata)
+      const dataUri = `data:application/json;base64,${Buffer.from(metadataJson).toString('base64')}`
+      
+      console.log('Creating NFT with AI image data URI (length:', dataUri.length, ')')
+      
+      // Create NFT with AI image in data URI
       let nft
       try {
         const createResult = await nftMetaplex.nfts().create({
-          uri: '', // Empty URI to avoid undefined issues
+          uri: dataUri, // AI image metadata as data URI
           name: String(nftName),
           sellerFeeBasisPoints: 500,
           symbol: String(nftSymbol),
@@ -251,7 +261,7 @@ try {
           }]
         })
         
-        console.log('✅ NFT created with minimal metadata (AI image in response only)')
+        console.log('✅ NFT created with AI image data URI')
         
         nft = createResult.nft
         console.log('✅ Metaplex NFT created successfully:', nft.address.toString())
@@ -294,7 +304,7 @@ try {
       }
       
       const mintAddress = nft.address.toString()
-      const finalMetadataUri = nft.uri || 'Direct metadata'
+      const finalMetadataUri = nft.uri || dataUri
       
       clearTimeout(timeout)
       const duration = Date.now() - startTime

@@ -121,18 +121,8 @@ try {
     }
   })
   
-  // Create real Metaplex NFT with immediate response
+  // Create real Metaplex NFT
   app.post('/api/create-nft', async (req, res) => {
-    // Send immediate response to prevent timeout
-    res.json({
-      success: true,
-      message: '🎨 NFT creation started! Check back in 30 seconds.',
-      status: 'processing',
-      estimatedTime: '30 seconds'
-    })
-    
-    // Process NFT creation in background
-    setTimeout(async () => {
     try {
       const { name, description, walletAddress } = req.body
       
@@ -152,54 +142,15 @@ try {
         .use(keypairIdentity(aiWallet))
         .use(mockStorage())
       
-      let nftMetaplex
-      try {
-        nftMetaplex = Metaplex.make(connection)
-          .use(keypairIdentity(aiWallet))
-          .use(bundlrStorage())
-        console.log('✅ Bundlr storage initialized')
-      } catch (bundlrError) {
-        console.log('⚠️ Bundlr failed, using mock storage:', bundlrError.message)
-        const { mockStorage } = require('@metaplex-foundation/js')
-        nftMetaplex = Metaplex.make(connection)
-          .use(keypairIdentity(aiWallet))
-          .use(mockStorage())
-      }
+      const nftMetaplex = Metaplex.make(connection)
+        .use(keypairIdentity(aiWallet))
+        .use(mockStorage())
       
       const userPublicKey = new PublicKey(walletAddress)
       
-      // Generate AI image from description
-      let imageUrl
-      const hasOpenAI = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'dummy'
-      console.log('🔑 OpenAI API Key available:', !!hasOpenAI)
-      
-      if (hasOpenAI) {
-        try {
-          const OpenAI = require('openai')
-          const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-          
-          const imagePrompt = description || `${name} digital art NFT`
-          console.log('🎨 Generating AI image for prompt:', imagePrompt)
-          
-          const response = await openai.images.generate({
-            model: 'dall-e-3',
-            prompt: imagePrompt,
-            n: 1,
-            size: '1024x1024',
-            quality: 'standard'
-          })
-          
-          imageUrl = response.data[0].url
-          console.log('✅ AI image generated successfully:', imageUrl)
-        } catch (error) {
-          console.log('⚠️ AI generation failed:', error.message)
-          console.log('Error details:', error)
-          imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=ff0000,00ff00,0000ff`
-        }
-      } else {
-        console.log('⚠️ No OpenAI API key, using fallback image')
-        imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=ff0000,00ff00,0000ff`
-      }
+      // Use simple fallback image to avoid AI generation delays
+      const imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
+      console.log('Using fast image:', imageUrl)
       
       console.log('✅ Creating NFT with Metaplex...')
       
@@ -304,10 +255,10 @@ try {
     } catch (error) {
       console.error('❌ Metaplex NFT creation error:')
       console.error('Error message:', error.message)
-      console.error('Error stack:', error.stack)
-      console.error('Error details:', error)
+      res.status(500).json({ 
+        error: 'Real NFT creation failed: ' + error.message
+      })
     }
-    }, 100) // Small delay to ensure response is sent
   })
   
   // Wallet balance endpoint

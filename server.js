@@ -273,7 +273,7 @@ try {
       }
       
       const mintAddress = nft.address.toString()
-      const metadataUri = nft.uri || 'No URI'
+      const finalMetadataUri = nft.uri || metadataUri
       
       clearTimeout(timeout)
       const duration = Date.now() - startTime
@@ -290,7 +290,7 @@ try {
         success: true,
         message: `🎨 NFT CREATED! Mint: ${mintAddress}`,
         mintAddress: mintAddress,
-        metadataUri: metadataUri,
+        metadataUri: finalMetadataUri,
         image: imageUrl,
         explorerUrl: `https://explorer.solana.com/address/${mintAddress}?cluster=devnet`,
         solscanUrl: `https://solscan.io/token/${mintAddress}?cluster=devnet`,

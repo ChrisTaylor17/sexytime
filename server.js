@@ -104,7 +104,7 @@ try {
     }
   })
   
-  // Create real NFT with metadata
+  // Create real NFT with metadata using raw instruction
   app.post('/api/create-nft', async (req, res) => {
     try {
       const { name, description, walletAddress } = req.body
@@ -115,11 +115,8 @@ try {
       
       console.log(`🎨 Creating real NFT "${name}" for ${walletAddress}`)
       
+      const { SystemProgram, Transaction, TransactionInstruction } = require('@solana/web3.js')
       const userPublicKey = new PublicKey(walletAddress)
-      
-      // Import Metaplex for real NFT creation
-      const { createCreateMetadataAccountInstruction, createUpdateMetadataAccountInstruction } = require('@metaplex-foundation/mpl-token-metadata')
-      const { SystemProgram, Transaction } = require('@solana/web3.js')
       
       // Metaplex Token Metadata Program ID
       const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
@@ -135,7 +132,7 @@ try {
       
       console.log('✅ NFT mint created:', mint.toString())
       
-      // Create metadata account
+      // Create metadata PDA
       const [metadataPDA] = PublicKey.findProgramAddressSync(
         [
           Buffer.from('metadata'),
@@ -145,40 +142,33 @@ try {
         TOKEN_METADATA_PROGRAM_ID
       )
       
-      // Create metadata
-      const metadata = {
-        name: name || 'Consilience NFT',
-        symbol: 'CNSL',
-        uri: `https://arweave.net/metadata-${mint.toString().slice(0, 8)}`,
-        sellerFeeBasisPoints: 500, // 5% royalty
-        creators: [
-          {
-            address: aiWallet.publicKey,
-            verified: true,
-            share: 100
-          }
-        ],
-        collection: null,
-        uses: null
-      }
+      // Create metadata instruction manually
+      const metadataData = Buffer.concat([
+        Buffer.from([0]), // instruction discriminator for CreateMetadataAccount
+        Buffer.from(name.padEnd(32, '\0'), 'utf8').slice(0, 32),
+        Buffer.from('CNSL'.padEnd(10, '\0'), 'utf8').slice(0, 10),
+        Buffer.from(`https://arweave.net/${mint.toString().slice(0, 8)}`.padEnd(200, '\0'), 'utf8').slice(0, 200),
+        Buffer.from([244, 1]), // 500 basis points (5%)
+        Buffer.from([1]), // has creators
+        aiWallet.publicKey.toBuffer(),
+        Buffer.from([1]), // verified
+        Buffer.from([100]), // share
+        Buffer.from([1]), // is mutable
+      ])
       
-      const createMetadataInstruction = createCreateMetadataAccountInstruction(
-        {
-          metadata: metadataPDA,
-          mint: mint,
-          mintAuthority: aiWallet.publicKey,
-          payer: aiWallet.publicKey,
-          updateAuthority: aiWallet.publicKey,
-          systemProgram: SystemProgram.programId,
-          rent: new PublicKey('SysvarRent111111111111111111111111111111111')
-        },
-        {
-          createMetadataAccountArgs: {
-            data: metadata,
-            isMutable: true
-          }
-        }
-      )
+      const createMetadataInstruction = new TransactionInstruction({
+        keys: [
+          { pubkey: metadataPDA, isSigner: false, isWritable: true },
+          { pubkey: mint, isSigner: false, isWritable: false },
+          { pubkey: aiWallet.publicKey, isSigner: true, isWritable: false },
+          { pubkey: aiWallet.publicKey, isSigner: true, isWritable: true },
+          { pubkey: aiWallet.publicKey, isSigner: false, isWritable: false },
+          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+          { pubkey: new PublicKey('SysvarRent111111111111111111111111111111111'), isSigner: false, isWritable: false }
+        ],
+        programId: TOKEN_METADATA_PROGRAM_ID,
+        data: metadataData
+      })
       
       // Create and send transaction
       const transaction = new Transaction().add(createMetadataInstruction)
@@ -216,6 +206,7 @@ try {
           mint: mintSignature
         },
         explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
+        magicEdenUrl: `https://magiceden.io/item-details/${mint.toString()}`,
         name: name,
         description: description,
         symbol: 'CNSL'
@@ -404,43 +395,49 @@ app.post('/api/mint-nft', async (req, res) => {
   
   try {
     const { recipient, nftId } = req.body
-    const { createCreateMetadataAccountInstruction } = require('@metaplex-foundation/mpl-token-metadata')
-    const { SystemProgram, Transaction } = require('@solana/web3.js')
+    const { SystemProgram, Transaction, TransactionInstruction } = require('@solana/web3.js')
     
     const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
     const userPublicKey = new PublicKey(recipient)
     
-    // Create mint with metadata
+    // Create mint
     const mint = await createMint(connection, aiWallet, aiWallet.publicKey, aiWallet.publicKey, 0)
     
-    // Create metadata
+    // Create metadata PDA
     const [metadataPDA] = PublicKey.findProgramAddressSync(
       [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer()],
       TOKEN_METADATA_PROGRAM_ID
     )
     
-    const metadata = {
-      name: `Consilience NFT #${nftId || Date.now()}`,
-      symbol: 'CNSL',
-      uri: `https://arweave.net/nft-${mint.toString().slice(0, 8)}`,
-      sellerFeeBasisPoints: 500,
-      creators: [{ address: aiWallet.publicKey, verified: true, share: 100 }],
-      collection: null,
-      uses: null
-    }
+    const nftName = `Consilience NFT #${nftId || Date.now()}`
     
-    const createMetadataInstruction = createCreateMetadataAccountInstruction(
-      {
-        metadata: metadataPDA,
-        mint: mint,
-        mintAuthority: aiWallet.publicKey,
-        payer: aiWallet.publicKey,
-        updateAuthority: aiWallet.publicKey,
-        systemProgram: SystemProgram.programId,
-        rent: new PublicKey('SysvarRent111111111111111111111111111111111')
-      },
-      { createMetadataAccountArgs: { data: metadata, isMutable: true } }
-    )
+    // Create metadata instruction
+    const metadataData = Buffer.concat([
+      Buffer.from([0]),
+      Buffer.from(nftName.padEnd(32, '\0'), 'utf8').slice(0, 32),
+      Buffer.from('CNSL'.padEnd(10, '\0'), 'utf8').slice(0, 10),
+      Buffer.from(`https://arweave.net/${mint.toString().slice(0, 8)}`.padEnd(200, '\0'), 'utf8').slice(0, 200),
+      Buffer.from([244, 1]),
+      Buffer.from([1]),
+      aiWallet.publicKey.toBuffer(),
+      Buffer.from([1]),
+      Buffer.from([100]),
+      Buffer.from([1])
+    ])
+    
+    const createMetadataInstruction = new TransactionInstruction({
+      keys: [
+        { pubkey: metadataPDA, isSigner: false, isWritable: true },
+        { pubkey: mint, isSigner: false, isWritable: false },
+        { pubkey: aiWallet.publicKey, isSigner: true, isWritable: false },
+        { pubkey: aiWallet.publicKey, isSigner: true, isWritable: true },
+        { pubkey: aiWallet.publicKey, isSigner: false, isWritable: false },
+        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        { pubkey: new PublicKey('SysvarRent111111111111111111111111111111111'), isSigner: false, isWritable: false }
+      ],
+      programId: TOKEN_METADATA_PROGRAM_ID,
+      data: metadataData
+    })
     
     const transaction = new Transaction().add(createMetadataInstruction)
     const metadataSignature = await connection.sendTransaction(transaction, [aiWallet])

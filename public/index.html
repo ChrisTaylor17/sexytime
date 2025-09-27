@@ -1167,7 +1167,7 @@
                             <div>Mint: ${nft.mintAddress.slice(0, 8)}...</div>
                             <div>Created: ${new Date(nft.createdAt).toLocaleDateString()}</div>
                         </div>
-                        <button class="btn" style="margin-top: 8px; font-size: 12px; padding: 6px 12px;" onclick="window.open('${nft.explorerUrl}', '_blank')">View on Explorer</button>
+                        <button class="btn" style="margin-top: 8px; font-size: 12px; padding: 6px 12px;" onclick="viewNFTDetails('${nft.mintAddress}', ${nft.isReal})">View Details</button>
                     </div>
                 `).join('');
                 
@@ -1181,6 +1181,14 @@
                         </div>
                     `;
                 }
+            }
+        }
+        
+        function viewNFTDetails(mintAddress, isReal) {
+            if (isReal) {
+                window.open(`https://solscan.io/token/${mintAddress}?cluster=devnet`, '_blank');
+            } else {
+                alert(`Simulated NFT\nMint: ${mintAddress}\n\nFund the wallet with devnet SOL to create real NFTs that appear on blockchain explorers.`);
             }
         }
         

@@ -47,11 +47,27 @@ export default function TokenCreator() {
         </div>
       </div>
       
-      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
-        <p className="text-sm text-orange-800">
-          💡 <strong>Fund the AI wallet above with devnet SOL to enable real token creation!</strong>
-          <br />Visit <a href="https://faucet.solana.com" target="_blank" className="text-blue-600 hover:underline">faucet.solana.com</a> to get free devnet SOL.
-        </p>
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <h4 className="font-semibold text-blue-800 mb-2">💡 How to Enable Real Token Creation</h4>
+        <div className="space-y-2 text-sm text-blue-800">
+          <p><strong>Step 1:</strong> Fund the AI wallet with SOL to pay transaction fees</p>
+          <div className="bg-white rounded p-2 border">
+            <div className="flex justify-between items-center">
+              <code className="text-xs">FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W</code>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText('FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W')
+                  alert('AI wallet address copied!')
+                }}
+                className="text-blue-600 hover:text-blue-800 text-xs"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+          <p><strong>Step 2:</strong> Visit <a href="https://faucet.solana.com" target="_blank" className="text-blue-600 hover:underline font-medium">faucet.solana.com</a> and request 2 SOL</p>
+          <p><strong>Step 3:</strong> Your AI can now mint real tokens to your connected wallet!</p>
+        </div>
       </div>
       
       {result && (

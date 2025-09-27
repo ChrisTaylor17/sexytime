@@ -116,12 +116,11 @@ try {
       console.log(`🎨 Creating real NFT "${name}" for ${walletAddress}`)
       
       // Import Metaplex SDK
-      const { Metaplex, keypairIdentity, bundlrStorage } = require('@metaplex-foundation/js')
+      const { Metaplex, keypairIdentity } = require('@metaplex-foundation/js')
       
-      // Initialize Metaplex
+      // Initialize Metaplex without bundlr
       const metaplex = Metaplex.make(connection)
         .use(keypairIdentity(aiWallet))
-        .use(bundlrStorage())
       
       const userPublicKey = new PublicKey(walletAddress)
       
@@ -393,9 +392,9 @@ app.post('/api/mint-nft', async (req, res) => {
   
   try {
     const { recipient, nftId, name } = req.body
-    const { Metaplex, keypairIdentity, bundlrStorage } = require('@metaplex-foundation/js')
+    const { Metaplex, keypairIdentity } = require('@metaplex-foundation/js')
     
-    const metaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet)).use(bundlrStorage())
+    const metaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet))
     const userPublicKey = new PublicKey(recipient)
     
     const nftName = name || `Consilience NFT #${nftId || Date.now()}`

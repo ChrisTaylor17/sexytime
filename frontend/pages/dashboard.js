@@ -80,7 +80,15 @@ export default function Dashboard() {
             <h1 className="text-3xl font-bold text-black">Dashboard</h1>
             <p className="text-gray-600">Welcome back, {user?.alias}</p>
           </div>
-          <WalletMultiButton />
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => router.push('/profile')}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              👤 Profile
+            </button>
+            <WalletMultiButton />
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

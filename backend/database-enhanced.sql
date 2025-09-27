@@ -7,6 +7,7 @@ CREATE TABLE users (
     interests TEXT NOT NULL,
     wallet_address VARCHAR(100) NOT NULL,
     cs_balance INTEGER DEFAULT 0,
+    profile_image TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

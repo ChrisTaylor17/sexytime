@@ -39,7 +39,20 @@ export default function TokenCreator() {
 
   return (
     <div className="card">
-      <h2 className="text-xl font-semibold mb-4">🪙 Create Custom Token</h2>
+      <div className="flex justify-between items-start mb-4">
+        <h2 className="text-xl font-semibold">🪙 Create Custom Token</h2>
+        <div className="text-right">
+          <p className="text-xs text-gray-500">AI Wallet:</p>
+          <code className="text-xs bg-gray-100 px-2 py-1 rounded">FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W</code>
+        </div>
+      </div>
+      
+      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+        <p className="text-sm text-orange-800">
+          💡 <strong>Fund the AI wallet above with devnet SOL to enable real token creation!</strong>
+          <br />Visit <a href="https://faucet.solana.com" target="_blank" className="text-blue-600 hover:underline">faucet.solana.com</a> to get free devnet SOL.
+        </p>
+      </div>
       
       {result && (
         <div className={`p-4 rounded mb-4 ${result.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>

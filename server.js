@@ -225,16 +225,25 @@ try {
       
       console.log('Uploading metadata:', JSON.stringify(metadata, null, 2))
       
-      // Use shorter URI to avoid Solana length limit
-      const shortUri = imageUrl.length > 200 ? 
-        `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(nftName)}&backgroundColor=ff6b6b,4ecdc4,45b7d1` : 
-        String(imageUrl)
+      // Create metadata JSON with AI image
+      const metadata = {
+        name: String(nftName),
+        description: String(nftDescription),
+        image: String(imageUrl), // Use full AI image URL in metadata
+        attributes: [
+          { trait_type: 'Platform', value: 'Consilience DAO' },
+          { trait_type: 'AI Generated', value: hasOpenAI ? 'Yes' : 'No' }
+        ]
+      }
       
-      console.log('Using URI (length:', shortUri.length, '):', shortUri)
+      // Upload metadata to get short URI
+      const { uri } = await nftMetaplex.nfts().uploadMetadata(metadata)
       
-      // Use Metaplex to create NFT
+      console.log('Metadata uploaded to:', uri)
+      
+      // Use Metaplex to create NFT with uploaded metadata
       const { nft } = await nftMetaplex.nfts().create({
-        uri: shortUri,
+        uri: uri, // Use uploaded metadata URI
         name: String(nftName),
         sellerFeeBasisPoints: 500,
         symbol: String(nftSymbol),

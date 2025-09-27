@@ -694,4 +694,50 @@ router.post('/checkin', (req, res) => {
   )
 })
 
+// Mint NFT
+router.post('/mint-nft', (req, res) => {
+  console.log('Mint NFT called with:', req.body)
+  const { nftId, recipient } = req.body
+  const db = req.app.locals.db
+  
+  if (!nftId || !recipient) {
+    return res.status(400).json({ error: 'Missing required fields' })
+  }
+  
+  // Get NFT collection details
+  db.get('SELECT * FROM nft_collections WHERE id = ?', [nftId], (err, nft) => {
+    if (err) {
+      console.error('Database error:', err)
+      return res.status(500).json({ error: 'Database error: ' + err.message })
+    }
+    
+    if (!nft) {
+      return res.status(404).json({ error: 'NFT collection not found' })
+    }
+    
+    // Simulate minting process
+    const mintAddress = `nft_mint_${Date.now()}${Math.random().toString(36).substr(2, 9)}`
+    
+    // Record the minted NFT
+    db.run(
+      'INSERT INTO nfts (mint_address, owner_alias, name, image_url, metadata_uri) VALUES (?, ?, ?, ?, ?)',
+      [mintAddress, recipient, nft.name, nft.image, JSON.stringify({ collection: nft.name, minted_at: new Date().toISOString() })],
+      function(err) {
+        if (err) {
+          console.error('Mint error:', err)
+          return res.status(500).json({ error: 'Minting failed: ' + err.message })
+        }
+        
+        console.log('NFT minted successfully:', this.lastID)
+        res.json({
+          success: true,
+          message: `NFT "${nft.name}" minted successfully`,
+          mintAddress,
+          nftId: this.lastID
+        })
+      }
+    )
+  })
+})
+
 module.exports = router

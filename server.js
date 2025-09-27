@@ -225,25 +225,7 @@ try {
       
       console.log('Uploading metadata:', JSON.stringify(metadata, null, 2))
       
-      // Create NFT mint first
-      const mint = await createMint(
-        connection,
-        aiWallet,
-        aiWallet.publicKey,
-        aiWallet.publicKey,
-        0
-      )
-      
-      console.log('✅ NFT mint created:', mint.toString())
-      
-      // Create metadata PDA for on-chain storage
-      const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
-      const [metadataPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer()],
-        TOKEN_METADATA_PROGRAM_ID
-      )
-      
-      // Use Metaplex to create NFT with on-chain metadata
+      // Use Metaplex to create NFT with AI image URL as metadata URI
       const { nft } = await nftMetaplex.nfts().create({
         uri: String(imageUrl), // AI image URL stored as metadata URI
         name: String(nftName),
@@ -257,34 +239,13 @@ try {
       
       console.log('✅ NFT created with AI image URL as metadata URI')
       
-      // Override mint with the one from Metaplex
-      const finalMint = nft.address
-      
-      // Mint NFT to user
-      const userTokenAccount = await getOrCreateAssociatedTokenAccount(
-        connection,
-        aiWallet,
-        mint,
-        userPublicKey
-      )
-      
-      await mintTo(
-        connection,
-        aiWallet,
-        mint,
-        userTokenAccount.address,
-        aiWallet,
-        1
-      )
-      
       // Transfer to user
       await nftMetaplex.nfts().transfer({
         nftOrSft: nft,
         toOwner: userPublicKey
       })
       
-      // Use final mint address
-      const mint = finalMint
+      const mint = nft.address
       
       console.log('✅ NFT created:', nft.address.toString())
       

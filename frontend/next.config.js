@@ -4,7 +4,7 @@ const nextConfig = {
   swcMinify: true,
   // Force rebuild
   generateBuildId: async () => {
-    return 'force-rebuild-' + Date.now()
+    return 'manual-deploy-' + Date.now()
   },
   trailingSlash: false,
   async rewrites() {

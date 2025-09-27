@@ -391,6 +391,177 @@ router.post('/distribute-tokens', (req, res) => {
   })
 })
 
+// Get tasks
+router.get('/tasks', (req, res) => {
+  const db = req.app.locals.db
+  
+  db.all('SELECT * FROM tasks ORDER BY created_at DESC', (err, rows) => {
+    if (err) {
+      console.error('Error fetching tasks:', err)
+      res.status(500).json({ error: 'Database error: ' + err.message })
+    } else {
+      // Parse submissions JSON
+      const tasks = rows.map(task => ({
+        ...task,
+        submissions: task.submissions ? JSON.parse(task.submissions) : []
+      }))
+      res.json({ tasks })
+    }
+  })
+})
+
+// Create task
+router.post('/tasks', (req, res) => {
+  console.log('Create task called with:', req.body)
+  const { title, description, reward, requiredVerifications, creator } = req.body
+  const db = req.app.locals.db
+  
+  if (!title || !description || !reward || !creator) {
+    return res.status(400).json({ error: 'Missing required fields' })
+  }
+  
+  db.run(
+    'INSERT INTO tasks (title, description, reward, required_verifications, creator, status, submissions, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime("now"))',
+    [title, description, reward, requiredVerifications || 2, creator, 'open', '[]'],
+    function(err) {
+      if (err) {
+        console.error('Task creation error:', err)
+        return res.status(500).json({ error: 'Task creation failed: ' + err.message })
+      }
+      
+      console.log('Task created successfully:', this.lastID)
+      res.json({
+        success: true,
+        message: `Task "${title}" created successfully`,
+        taskId: this.lastID
+      })
+    }
+  )
+})
+
+// Submit task
+router.post('/task-submissions', (req, res) => {
+  console.log('Task submission called with:', req.body)
+  const { taskId, submitter, proof, description } = req.body
+  const db = req.app.locals.db
+  
+  if (!taskId || !submitter || !proof || !description) {
+    return res.status(400).json({ error: 'Missing required fields' })
+  }
+  
+  // Get task
+  db.get('SELECT * FROM tasks WHERE id = ?', [taskId], (err, task) => {
+    if (err || !task) {
+      return res.status(404).json({ error: 'Task not found' })
+    }
+    
+    const submissions = task.submissions ? JSON.parse(task.submissions) : []
+    const newSubmission = {
+      submitter,
+      proof,
+      description,
+      timestamp: new Date().toISOString(),
+      verifications: [],
+      status: 'pending'
+    }
+    
+    submissions.push(newSubmission)
+    
+    // Update task with new submission
+    db.run(
+      'UPDATE tasks SET submissions = ? WHERE id = ?',
+      [JSON.stringify(submissions), taskId],
+      function(err) {
+        if (err) {
+          console.error('Submission error:', err)
+          return res.status(500).json({ error: 'Submission failed: ' + err.message })
+        }
+        
+        console.log('Task submission recorded')
+        res.json({
+          success: true,
+          message: 'Task submitted for verification'
+        })
+      }
+    )
+  })
+})
+
+// Verify submission
+router.post('/verify-submission', (req, res) => {
+  console.log('Verify submission called with:', req.body)
+  const { taskId, submissionIndex, verification } = req.body
+  const db = req.app.locals.db
+  
+  if (!taskId || submissionIndex === undefined || !verification) {
+    return res.status(400).json({ error: 'Missing required fields' })
+  }
+  
+  // Get task
+  db.get('SELECT * FROM tasks WHERE id = ?', [taskId], (err, task) => {
+    if (err || !task) {
+      return res.status(404).json({ error: 'Task not found' })
+    }
+    
+    const submissions = task.submissions ? JSON.parse(task.submissions) : []
+    if (!submissions[submissionIndex]) {
+      return res.status(404).json({ error: 'Submission not found' })
+    }
+    
+    // Add verification
+    submissions[submissionIndex].verifications.push(verification)
+    
+    // Check if enough approvals
+    const approvals = submissions[submissionIndex].verifications.filter(v => v.approved).length
+    let tokensAwarded = false
+    let recipient = null
+    
+    if (approvals >= task.required_verifications && submissions[submissionIndex].status === 'pending') {
+      submissions[submissionIndex].status = 'approved'
+      tokensAwarded = true
+      recipient = submissions[submissionIndex].submitter
+      
+      // Award tokens (80% to submitter, 20% to platform)
+      const userReward = Math.floor(task.reward * 0.8)
+      const platformFee = task.reward - userReward
+      
+      // Update user balance
+      db.run('UPDATE users SET cs_balance = cs_balance + ? WHERE alias = ?', [userReward, recipient])
+      
+      // Record transaction
+      db.run(
+        'INSERT INTO transactions (from_alias, to_alias, amount, type) VALUES (?, ?, ?, ?)',
+        ['AI_VERIFIER', recipient, userReward, 'task_completion']
+      )
+      
+      db.run(
+        'INSERT INTO transactions (from_alias, to_alias, amount, type) VALUES (?, ?, ?, ?)',
+        ['AI_VERIFIER', 'platform', platformFee, 'platform_fee']
+      )
+    }
+    
+    // Update task
+    db.run(
+      'UPDATE tasks SET submissions = ? WHERE id = ?',
+      [JSON.stringify(submissions), taskId],
+      function(err) {
+        if (err) {
+          console.error('Verification error:', err)
+          return res.status(500).json({ error: 'Verification failed: ' + err.message })
+        }
+        
+        console.log('Verification recorded')
+        res.json({
+          success: true,
+          message: 'Verification recorded',
+          tokensAwarded: tokensAwarded ? task.reward : null,
+          recipient
+        })
+      }
+    )
+  })
+})
+
 // Create project token
 router.post('/create-project-token', async (req, res) => {
   console.log('Create project token called with:', req.body)

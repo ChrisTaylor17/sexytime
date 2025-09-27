@@ -143,14 +143,11 @@ try {
         .use(keypairIdentity(aiWallet))
         .use(mockStorage())
       
-      // Use NFT.Storage for free IPFS metadata storage
-      const { NFTStorage } = require('nft.storage')
-      const nftStorage = new NFTStorage({ token: process.env.NFT_STORAGE_KEY || 'dummy' })
-      
-      console.log('✅ NFT.Storage initialized for IPFS metadata')
-      
+      // Initialize Metaplex for NFT creation
       const nftMetaplex = Metaplex.make(connection)
         .use(keypairIdentity(aiWallet))
+      
+      console.log('✅ Metaplex initialized for NFT creation')
       
       const userPublicKey = new PublicKey(walletAddress)
       
@@ -240,21 +237,14 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Upload AI image metadata to IPFS via NFT.Storage
-      let uri
-      try {
-        const metadataBlob = new Blob([JSON.stringify(nftMetadata)], { type: 'application/json' })
-        const cid = await nftStorage.storeBlob(metadataBlob)
-        uri = `https://nftstorage.link/ipfs/${cid}`
-        console.log('✅ AI image metadata uploaded to IPFS:', uri)
-      } catch (ipfsError) {
-        console.log('⚠️ IPFS upload failed, using data URI:', ipfsError.message)
-        const metadataJson = JSON.stringify({ name: String(nftName), image: String(imageUrl).slice(0, 100) })
-        uri = `data:application/json,${encodeURIComponent(metadataJson)}`
-        console.log('✅ Using data URI fallback (length:', uri.length, ')')
-      }
+      // Create simple data URI with AI image metadata
+      const compactMetadata = { name: String(nftName), image: String(imageUrl) }
+      const metadataJson = JSON.stringify(compactMetadata)
+      const uri = `data:application/json;base64,${Buffer.from(metadataJson).toString('base64')}`
       
-      // Create NFT with IPFS metadata URI
+      console.log('✅ Created metadata URI with AI image (length:', uri.length, ')')
+      
+      // Create NFT with base64 metadata URI
       let nft
       try {
         const createResult = await nftMetaplex.nfts().create({
@@ -270,7 +260,7 @@ try {
           toOwner: userPublicKey
         })
         
-        console.log('✅ NFT created with IPFS metadata containing AI image')
+        console.log('✅ NFT created with base64 metadata containing AI image')
         
         nft = createResult.nft
         console.log('✅ Metaplex NFT created successfully:', nft.address.toString())

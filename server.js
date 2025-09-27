@@ -4,8 +4,14 @@ const cors = require('cors')
 console.log('🚀 Starting Consilience DAO Server...')
 
 const app = express()
-app.use(cors())
-app.use(express.json())
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false
+}))
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
 // Force load Solana dependencies at startup
 let solanaEnabled = false
@@ -125,6 +131,12 @@ try {
       }
       
       console.log(`🎨 Creating Metaplex NFT for ${walletAddress}`)
+      
+      // Add request timeout handling
+      const startTime = Date.now()
+      const timeout = setTimeout(() => {
+        console.log('⚠️ NFT creation taking longer than expected...')
+      }, 30000)
       
       const metaplex = Metaplex.make(connection)
         .use(keypairIdentity(aiWallet))
@@ -253,7 +265,9 @@ try {
       const mintAddress = nft.address.toString()
       const metadataUri = nft.uri
       
-      console.log('✅ NFT Creation Success:')
+      clearTimeout(timeout)
+      const duration = Date.now() - startTime
+      console.log(`✅ NFT Creation Success (${duration}ms):`)
       console.log('  Mint Address:', mintAddress)
       console.log('  Metadata URI:', metadataUri)
       console.log('  Image URL:', imageUrl)

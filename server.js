@@ -128,22 +128,19 @@ try {
       console.log('✅ Creating NFT with Metaplex...')
       
       const { nft } = await nftMetaplex.nfts().create({
-        uri: `data:application/json;base64,${Buffer.from(JSON.stringify({
-          name: name || 'Consilience NFT',
-          description: description || 'Created on Consilience DAO',
-          image: imageUrl,
-          attributes: [
-            { trait_type: 'Platform', value: 'Consilience DAO' },
-            { trait_type: 'Network', value: 'Solana Devnet' }
-          ]
-        })).toString('base64')}`,
         name: name || 'Consilience NFT',
+        description: description || 'Created on Consilience DAO',
+        image: imageUrl,
         sellerFeeBasisPoints: 500,
         symbol: 'CNSL',
         creators: [{
           address: aiWallet.publicKey,
           share: 100
-        }]
+        }],
+        attributes: [
+          { trait_type: 'Platform', value: 'Consilience DAO' },
+          { trait_type: 'Network', value: 'Solana Devnet' }
+        ]
       })
       
       console.log('✅ NFT created:', nft.address.toString())
@@ -387,16 +384,13 @@ app.post('/api/mint-nft', async (req, res) => {
     const nftImage = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(nftName || 'NFT')}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
     
     const { nft } = await mintMetaplex.nfts().create({
-      uri: `data:application/json;base64,${Buffer.from(JSON.stringify({
-        name: nftName,
-        description: 'Minted on Consilience DAO platform',
-        image: nftImage,
-        attributes: [{ trait_type: 'Platform', value: 'Consilience DAO' }]
-      })).toString('base64')}`,
       name: nftName,
+      description: 'Minted on Consilience DAO platform',
+      image: nftImage,
       sellerFeeBasisPoints: 500,
       symbol: 'CNSL',
-      creators: [{ address: aiWallet.publicKey, share: 100 }]
+      creators: [{ address: aiWallet.publicKey, share: 100 }],
+      attributes: [{ trait_type: 'Platform', value: 'Consilience DAO' }]
     })
     
     // Transfer to user

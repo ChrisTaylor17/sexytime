@@ -189,22 +189,32 @@ try {
         creatorAddress: aiWallet.publicKey.toString()
       })
       
-      const createParams = {
+      // Use Metaplex 0.19.4 API format
+      const { nft } = await nftMetaplex.nfts().create({
+        uri: `https://arweave.net/placeholder-${Date.now()}`,
         name: String(nftName),
-        description: String(nftDescription),
-        image: String(imageUrl),
         sellerFeeBasisPoints: 500,
         symbol: String(nftSymbol),
         creators: [{
           address: aiWallet.publicKey,
-          verified: true,
           share: 100
-        }]
-      }
+        }],
+        isMutable: true,
+        maxSupply: null
+      })
       
-      console.log('Final create params:', createParams)
+      console.log('NFT created, now updating with metadata...')
       
-      const { nft } = await nftMetaplex.nfts().create(createParams)
+      // Update with full metadata
+      const updatedNft = await nftMetaplex.nfts().update({
+        nftOrSft: nft,
+        uri: `data:application/json;base64,${Buffer.from(JSON.stringify({
+          name: String(nftName),
+          description: String(nftDescription),
+          image: String(imageUrl),
+          attributes: [{ trait_type: 'Platform', value: 'Consilience DAO' }]
+        })).toString('base64')}`
+      })
       
       console.log('✅ NFT created:', nft.address.toString())
       
@@ -219,8 +229,8 @@ try {
       res.json({
         success: true,
         message: `🎨 Real Metaplex NFT "${name || 'Consilience NFT'}" created!`,
-        mintAddress: nft.address.toString(),
-        metadataUri: nft.uri,
+        mintAddress: (updatedNft || nft).address.toString(),
+        metadataUri: (updatedNft || nft).uri,
         image: imageUrl,
         explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`,
         magicEdenUrl: `https://magiceden.io/item-details/${nft.address.toString()}`,

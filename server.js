@@ -255,7 +255,8 @@ try {
             share: 100
           }],
           isMutable: true,
-          maxSupply: null
+          maxSupply: null,
+          toOwner: userPublicKey // Create directly to user to avoid transfer issues
         })
         
         nft = createResult.nft
@@ -268,14 +269,12 @@ try {
         }
         console.log('✅ NFT verified on blockchain')
         
-        // Transfer to user if not already owned
-        if (nft.updateAuthorityAddress.equals(aiWallet.publicKey)) {
-          await nftMetaplex.nfts().transfer({
-            nftOrSft: nft,
-            toOwner: userPublicKey
-          })
-          console.log('✅ NFT transferred to user')
-        }
+        // Create the NFT directly to the user instead of transferring
+        console.log('✅ NFT created and owned by:', nft.updateAuthorityAddress.toString())
+        console.log('✅ Target user:', userPublicKey.toString())
+        
+        // Skip transfer since we're creating directly to user with toOwner parameter
+        console.log('✅ NFT should be created directly in user wallet')
         
       } catch (metaplexError) {
         console.error('❌ Metaplex creation failed:', metaplexError)

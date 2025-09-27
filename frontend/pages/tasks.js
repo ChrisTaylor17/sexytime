@@ -230,7 +230,7 @@ export default function Tasks() {
             ← Back
           </button>
           <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>
-            AI Task Verification
+            🤖 AI Task Verification
           </h1>
         </div>
         <button

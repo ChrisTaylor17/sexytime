@@ -143,11 +143,17 @@ try {
         .use(keypairIdentity(aiWallet))
         .use(mockStorage())
       
-      // Initialize Metaplex without storage driver (use direct metadata)
+      // Initialize Metaplex with bundlr storage and proper funding
       const nftMetaplex = Metaplex.make(connection)
         .use(keypairIdentity(aiWallet))
+        .use(bundlrStorage({
+          address: 'https://node1.bundlr.network',
+          providerUrl: connection.rpcEndpoint,
+          timeout: 60000,
+          priceMultiplier: 1.1
+        }))
       
-      console.log('✅ Metaplex initialized for direct metadata creation')
+      console.log('✅ Bundlr storage initialized for decentralized metadata')
       
       const userPublicKey = new PublicKey(walletAddress)
       
@@ -237,23 +243,27 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      console.log('Creating NFT with empty URI to avoid transaction size limit')
+      // Upload AI image metadata to Arweave via bundlr
+      const { uri } = await nftMetaplex.nfts().uploadMetadata(nftMetadata)
+      console.log('✅ AI image metadata uploaded to Arweave:', uri)
       
-      // Create NFT with AI image in data URI
+      // Create NFT with Arweave metadata URI
       let nft
       try {
         const createResult = await nftMetaplex.nfts().create({
-          uri: '', // Empty URI to fit transaction limit
+          uri: uri, // Arweave URI with AI image
           name: String(nftName),
           sellerFeeBasisPoints: 500,
           symbol: String(nftSymbol),
           creators: [{
             address: aiWallet.publicKey,
+            verified: true,
             share: 100
-          }]
+          }],
+          toOwner: userPublicKey
         })
         
-        console.log('✅ NFT created (AI image available in API response)')
+        console.log('✅ NFT created with Arweave metadata containing AI image')
         
         nft = createResult.nft
         console.log('✅ Metaplex NFT created successfully:', nft.address.toString())
@@ -296,7 +306,7 @@ try {
       }
       
       const mintAddress = nft.address.toString()
-      const finalMetadataUri = nft.uri || 'Minimal URI'
+      const finalMetadataUri = nft.uri || uri
       
       clearTimeout(timeout)
       const duration = Date.now() - startTime

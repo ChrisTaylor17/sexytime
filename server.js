@@ -116,6 +116,10 @@ try {
       
       console.log(`🎨 Creating Metaplex NFT for ${walletAddress}`)
       
+      const metaplex = Metaplex.make(connection)
+        .use(keypairIdentity(aiWallet))
+        .use(mockStorage())
+      
       const nftMetaplex = Metaplex.make(connection)
         .use(keypairIdentity(aiWallet))
         .use(mockStorage())

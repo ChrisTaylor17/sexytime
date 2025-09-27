@@ -104,7 +104,7 @@ try {
     }
   })
   
-  // Create real NFT with metadata using raw instruction
+  // Create working NFT (0 decimals token that shows as NFT)
   app.post('/api/create-nft', async (req, res) => {
     try {
       const { name, description, walletAddress } = req.body
@@ -113,71 +113,22 @@ try {
         return res.status(400).json({ error: 'Wallet address required' })
       }
       
-      console.log(`🎨 Creating real NFT "${name}" for ${walletAddress}`)
+      console.log(`🎨 Creating NFT "${name}" for ${walletAddress}`)
       
-      const { SystemProgram, Transaction, TransactionInstruction } = require('@solana/web3.js')
       const userPublicKey = new PublicKey(walletAddress)
       
-      // Metaplex Token Metadata Program ID
-      const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
-      
-      // Create mint for NFT
+      // Create NFT mint (0 decimals)
       const mint = await createMint(
         connection,
         aiWallet,
         aiWallet.publicKey,
-        aiWallet.publicKey, // freeze authority
-        0  // 0 decimals = NFT
+        aiWallet.publicKey, // freeze authority for true NFT behavior
+        0  // 0 decimals = NFT standard
       )
       
       console.log('✅ NFT mint created:', mint.toString())
       
-      // Create metadata PDA
-      const [metadataPDA] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from('metadata'),
-          TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-          mint.toBuffer()
-        ],
-        TOKEN_METADATA_PROGRAM_ID
-      )
-      
-      // Create metadata instruction manually
-      const metadataData = Buffer.concat([
-        Buffer.from([0]), // instruction discriminator for CreateMetadataAccount
-        Buffer.from(name.padEnd(32, '\0'), 'utf8').slice(0, 32),
-        Buffer.from('CNSL'.padEnd(10, '\0'), 'utf8').slice(0, 10),
-        Buffer.from(`https://arweave.net/${mint.toString().slice(0, 8)}`.padEnd(200, '\0'), 'utf8').slice(0, 200),
-        Buffer.from([244, 1]), // 500 basis points (5%)
-        Buffer.from([1]), // has creators
-        aiWallet.publicKey.toBuffer(),
-        Buffer.from([1]), // verified
-        Buffer.from([100]), // share
-        Buffer.from([1]), // is mutable
-      ])
-      
-      const createMetadataInstruction = new TransactionInstruction({
-        keys: [
-          { pubkey: metadataPDA, isSigner: false, isWritable: true },
-          { pubkey: mint, isSigner: false, isWritable: false },
-          { pubkey: aiWallet.publicKey, isSigner: true, isWritable: false },
-          { pubkey: aiWallet.publicKey, isSigner: true, isWritable: true },
-          { pubkey: aiWallet.publicKey, isSigner: false, isWritable: false },
-          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-          { pubkey: new PublicKey('SysvarRent111111111111111111111111111111111'), isSigner: false, isWritable: false }
-        ],
-        programId: TOKEN_METADATA_PROGRAM_ID,
-        data: metadataData
-      })
-      
-      // Create and send transaction
-      const transaction = new Transaction().add(createMetadataInstruction)
-      const signature = await connection.sendTransaction(transaction, [aiWallet])
-      await connection.confirmTransaction(signature)
-      
-      console.log('✅ NFT metadata created, signature:', signature)
-      
-      // Create token account and mint NFT to user
+      // Create token account for user
       const userTokenAccount = await getOrCreateAssociatedTokenAccount(
         connection,
         aiWallet,
@@ -185,36 +136,49 @@ try {
         userPublicKey
       )
       
+      // Mint exactly 1 NFT to user
       const mintSignature = await mintTo(
         connection,
         aiWallet,
         mint,
         userTokenAccount.address,
         aiWallet,
-        1
+        1 // Mint exactly 1 NFT
       )
       
       console.log('✅ NFT minted to user, signature:', mintSignature)
       
+      // Disable further minting by removing mint authority
+      const { setAuthority, AuthorityType } = require('@solana/spl-token')
+      await setAuthority(
+        connection,
+        aiWallet,
+        mint,
+        aiWallet.publicKey,
+        AuthorityType.MintTokens,
+        null // Remove mint authority - makes it a true NFT
+      )
+      
+      console.log('✅ Mint authority removed - NFT is now unique')
+      
       res.json({
         success: true,
-        message: `🎨 Real NFT "${name}" with metadata created and sent to your wallet!`,
+        message: `🎨 NFT "${name}" created and sent to your wallet!`,
         mintAddress: mint.toString(),
-        metadataAddress: metadataPDA.toString(),
-        transactions: {
-          metadata: signature,
-          mint: mintSignature
-        },
+        transaction: mintSignature,
         explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
-        magicEdenUrl: `https://magiceden.io/item-details/${mint.toString()}`,
+        solscanUrl: `https://solscan.io/token/${mint.toString()}?cluster=devnet`,
         name: name,
         description: description,
-        symbol: 'CNSL'
+        supply: 1,
+        decimals: 0,
+        isUnique: true,
+        note: 'This is a unique NFT with supply of 1 and no mint authority'
       })
       
     } catch (error) {
       console.error('NFT creation error:', error)
-      res.status(500).json({ error: 'Real NFT creation failed: ' + error.message })
+      res.status(500).json({ error: 'NFT creation failed: ' + error.message })
     }
   })
   
@@ -395,65 +359,27 @@ app.post('/api/mint-nft', async (req, res) => {
   
   try {
     const { recipient, nftId } = req.body
-    const { SystemProgram, Transaction, TransactionInstruction } = require('@solana/web3.js')
-    
-    const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
+    const { setAuthority, AuthorityType } = require('@solana/spl-token')
     const userPublicKey = new PublicKey(recipient)
     
-    // Create mint
+    // Create unique NFT mint
     const mint = await createMint(connection, aiWallet, aiWallet.publicKey, aiWallet.publicKey, 0)
-    
-    // Create metadata PDA
-    const [metadataPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer()],
-      TOKEN_METADATA_PROGRAM_ID
-    )
-    
-    const nftName = `Consilience NFT #${nftId || Date.now()}`
-    
-    // Create metadata instruction
-    const metadataData = Buffer.concat([
-      Buffer.from([0]),
-      Buffer.from(nftName.padEnd(32, '\0'), 'utf8').slice(0, 32),
-      Buffer.from('CNSL'.padEnd(10, '\0'), 'utf8').slice(0, 10),
-      Buffer.from(`https://arweave.net/${mint.toString().slice(0, 8)}`.padEnd(200, '\0'), 'utf8').slice(0, 200),
-      Buffer.from([244, 1]),
-      Buffer.from([1]),
-      aiWallet.publicKey.toBuffer(),
-      Buffer.from([1]),
-      Buffer.from([100]),
-      Buffer.from([1])
-    ])
-    
-    const createMetadataInstruction = new TransactionInstruction({
-      keys: [
-        { pubkey: metadataPDA, isSigner: false, isWritable: true },
-        { pubkey: mint, isSigner: false, isWritable: false },
-        { pubkey: aiWallet.publicKey, isSigner: true, isWritable: false },
-        { pubkey: aiWallet.publicKey, isSigner: true, isWritable: true },
-        { pubkey: aiWallet.publicKey, isSigner: false, isWritable: false },
-        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-        { pubkey: new PublicKey('SysvarRent111111111111111111111111111111111'), isSigner: false, isWritable: false }
-      ],
-      programId: TOKEN_METADATA_PROGRAM_ID,
-      data: metadataData
-    })
-    
-    const transaction = new Transaction().add(createMetadataInstruction)
-    const metadataSignature = await connection.sendTransaction(transaction, [aiWallet])
-    await connection.confirmTransaction(metadataSignature)
     
     // Mint to user
     const userTokenAccount = await getOrCreateAssociatedTokenAccount(connection, aiWallet, mint, userPublicKey)
     const mintSignature = await mintTo(connection, aiWallet, mint, userTokenAccount.address, aiWallet, 1)
     
+    // Remove mint authority to make it unique
+    await setAuthority(connection, aiWallet, mint, aiWallet.publicKey, AuthorityType.MintTokens, null)
+    
     res.json({
       success: true,
-      message: 'Real NFT with metadata minted to your wallet!',
+      message: 'Unique NFT minted to your wallet!',
       mintAddress: mint.toString(),
-      metadataAddress: metadataPDA.toString(),
-      transactions: { metadata: metadataSignature, mint: mintSignature },
-      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`
+      transaction: mintSignature,
+      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
+      supply: 1,
+      isUnique: true
     })
   } catch (error) {
     res.status(500).json({ error: 'NFT minting failed: ' + error.message })

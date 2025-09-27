@@ -1,10 +1,27 @@
 const express = require('express')
 const cors = require('cors')
+const { Connection, PublicKey, Keypair, clusterApiUrl } = require('@solana/web3.js')
+const { createMint, getOrCreateAssociatedTokenAccount, mintTo, getAccount } = require('@solana/spl-token')
+const { Metaplex, keypairIdentity, bundlrStorage } = require('@metaplex-foundation/js')
 
 const app = express()
-
 app.use(cors())
 app.use(express.json())
+
+// Solana connection
+const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
+
+// AI wallet (funded)
+const aiWallet = Keypair.fromSecretKey(new Uint8Array([
+  174, 47, 154, 16, 202, 193, 206, 113, 199, 190, 53, 133, 169, 175, 31, 56, 222, 53, 138, 189, 224, 216, 117, 173, 10, 149, 53, 45, 73, 251, 237, 246, 15, 185, 186, 9, 166, 66, 49, 124, 65, 20, 147, 37, 1, 158, 86, 93, 137, 234, 150, 64, 135, 199, 112, 26, 131, 70, 74, 13, 103, 23, 34, 63
+]))
+
+// Metaplex
+const metaplex = Metaplex.make(connection)
+  .use(keypairIdentity(aiWallet))
+  .use(bundlrStorage())
+
+console.log('AI Wallet:', aiWallet.publicKey.toString())
 
 // Health check
 app.get('/health', (req, res) => {
@@ -17,8 +34,8 @@ app.post('/api/signup', (req, res) => {
   res.json({ 
     alias, 
     interests, 
-    wallet_address: 'demo_wallet_123', 
-    cs_balance: 100 
+    wallet_address: 'connect_wallet', 
+    cs_balance: 0 
   })
 })
 
@@ -27,7 +44,7 @@ app.get('/api/user/:alias', (req, res) => {
   res.json({ 
     alias: req.params.alias, 
     interests: 'AI, Blockchain', 
-    cs_balance: 250 
+    cs_balance: 0 
   })
 })
 
@@ -41,45 +58,220 @@ app.get('/api/projects', (req, res) => {
   })
 })
 
-// Create NFT
-app.post('/api/create-nft', (req, res) => {
-  const { name, description, creator } = req.body
-  res.json({ 
-    message: `NFT "${name}" created successfully!`,
-    nftId: Date.now(),
-    name,
-    description,
-    creator
-  })
+// Create real token
+app.post('/api/create-token', async (req, res) => {
+  try {
+    const { name, symbol, supply, walletAddress } = req.body
+    
+    if (!walletAddress) {
+      return res.status(400).json({ error: 'Wallet address required' })
+    }
+    
+    const userPublicKey = new PublicKey(walletAddress)
+    
+    // Create mint
+    const mint = await createMint(
+      connection,
+      aiWallet,
+      aiWallet.publicKey,
+      null,
+      6
+    )
+    
+    // Create token account for user
+    const tokenAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      aiWallet,
+      mint,
+      userPublicKey
+    )
+    
+    // Mint tokens to user (80% of supply)
+    const userAmount = Math.floor(supply * 0.8) * 1000000
+    await mintTo(
+      connection,
+      aiWallet,
+      mint,
+      tokenAccount.address,
+      aiWallet,
+      userAmount
+    )
+    
+    // Create token account for platform (20%)
+    const platformAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      aiWallet,
+      mint,
+      aiWallet.publicKey
+    )
+    
+    const platformAmount = Math.floor(supply * 0.2) * 1000000
+    await mintTo(
+      connection,
+      aiWallet,
+      mint,
+      platformAccount.address,
+      aiWallet,
+      platformAmount
+    )
+    
+    res.json({
+      success: true,
+      message: `Real token ${symbol} created on Solana!`,
+      mintAddress: mint.toString(),
+      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
+      userTokens: Math.floor(supply * 0.8),
+      platformTokens: Math.floor(supply * 0.2)
+    })
+    
+  } catch (error) {
+    console.error('Token creation error:', error)
+    res.status(500).json({ error: 'Token creation failed: ' + error.message })
+  }
 })
 
-// Mint NFT
-app.post('/api/mint-nft', (req, res) => {
-  res.json({ message: 'NFT minted successfully!' })
+// Create real NFT
+app.post('/api/create-nft', async (req, res) => {
+  try {
+    const { name, description, walletAddress } = req.body
+    
+    if (!walletAddress) {
+      return res.status(400).json({ error: 'Wallet address required' })
+    }
+    
+    const userPublicKey = new PublicKey(walletAddress)
+    
+    // Create NFT
+    const { nft } = await metaplex.nfts().create({
+      uri: `https://arweave.net/placeholder-${Date.now()}`,
+      name: name || 'Consilience NFT',
+      description: description || 'Created on Consilience DAO',
+      sellerFeeBasisPoints: 500,
+      symbol: 'CNSL',
+      creators: [
+        {
+          address: aiWallet.publicKey,
+          share: 100,
+        },
+      ],
+      collection: null,
+      uses: null,
+    })
+    
+    // Transfer NFT to user
+    await metaplex.nfts().transfer({
+      nftOrSft: nft,
+      toOwner: userPublicKey,
+    })
+    
+    res.json({
+      success: true,
+      message: `Real NFT "${name}" created and sent to your wallet!`,
+      mintAddress: nft.address.toString(),
+      explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`,
+      name: nft.name,
+      description: nft.description
+    })
+    
+  } catch (error) {
+    console.error('NFT creation error:', error)
+    res.status(500).json({ error: 'NFT creation failed: ' + error.message })
+  }
+})
+
+// Mint NFT (same as create for now)
+app.post('/api/mint-nft', async (req, res) => {
+  try {
+    const { nftId, recipient } = req.body
+    const userPublicKey = new PublicKey(recipient)
+    
+    const { nft } = await metaplex.nfts().create({
+      uri: `https://arweave.net/nft-${nftId}`,
+      name: `Consilience NFT #${nftId}`,
+      description: 'Minted on Consilience DAO',
+      sellerFeeBasisPoints: 500,
+      symbol: 'CNSL',
+      creators: [
+        {
+          address: aiWallet.publicKey,
+          share: 100,
+        },
+      ],
+    })
+    
+    await metaplex.nfts().transfer({
+      nftOrSft: nft,
+      toOwner: userPublicKey,
+    })
+    
+    res.json({
+      success: true,
+      message: 'Real NFT minted to your wallet!',
+      mintAddress: nft.address.toString(),
+      explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`
+    })
+    
+  } catch (error) {
+    console.error('NFT minting error:', error)
+    res.status(500).json({ error: 'NFT minting failed: ' + error.message })
+  }
+})
+
+// Get real wallet balance
+app.get('/api/wallet-balance/:address', async (req, res) => {
+  try {
+    const publicKey = new PublicKey(req.params.address)
+    const balance = await connection.getBalance(publicKey)
+    res.json({ balance: balance / 1000000000 })
+  } catch (error) {
+    res.status(400).json({ error: 'Invalid wallet address' })
+  }
+})
+
+// Get real wallet tokens
+app.get('/api/wallet-tokens/:address', async (req, res) => {
+  try {
+    const publicKey = new PublicKey(req.params.address)
+    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+      programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
+    })
+    
+    const tokens = tokenAccounts.value.map(account => {
+      const tokenInfo = account.account.data.parsed.info
+      return {
+        symbol: tokenInfo.mint.slice(0, 8) + '...',
+        balance: parseFloat(tokenInfo.tokenAmount.uiAmount) || 0,
+        mint: tokenInfo.mint
+      }
+    }).filter(token => token.balance > 0)
+    
+    res.json({ tokens })
+  } catch (error) {
+    res.json({ tokens: [] })
+  }
+})
+
+// Get real wallet NFTs
+app.get('/api/wallet-nfts/:address', async (req, res) => {
+  try {
+    const publicKey = new PublicKey(req.params.address)
+    const nfts = await metaplex.nfts().findAllByOwner({ owner: publicKey })
+    
+    const nftData = nfts.map(nft => ({
+      mint: nft.address.toString(),
+      name: nft.name,
+      description: nft.description,
+      image: nft.json?.image || null
+    }))
+    
+    res.json({ nfts: nftData })
+  } catch (error) {
+    res.json({ nfts: [] })
+  }
 })
 
 // Get user NFTs
 app.get('/api/user-nfts/:alias', (req, res) => {
-  res.json({ nfts: [] })
-})
-
-// Wallet balance
-app.get('/api/wallet-balance/:address', (req, res) => {
-  res.json({ balance: 1.5 })
-})
-
-// Wallet tokens
-app.get('/api/wallet-tokens/:address', (req, res) => {
-  res.json({ 
-    tokens: [
-      { symbol: 'CS', balance: 250 },
-      { symbol: 'USDC', balance: 100 }
-    ]
-  })
-})
-
-// Wallet NFTs
-app.get('/api/wallet-nfts/:address', (req, res) => {
   res.json({ nfts: [] })
 })
 
@@ -89,11 +281,26 @@ app.post('/api/connect-wallet', (req, res) => {
 })
 
 // Request airdrop
-app.post('/api/request-airdrop', (req, res) => {
-  res.json({ success: true, message: '1 SOL airdropped!' })
+app.post('/api/request-airdrop', async (req, res) => {
+  try {
+    const { walletAddress } = req.body
+    const publicKey = new PublicKey(walletAddress)
+    
+    const signature = await connection.requestAirdrop(publicKey, 1000000000) // 1 SOL
+    await connection.confirmTransaction(signature)
+    
+    res.json({ 
+      success: true, 
+      message: '1 SOL airdropped to your wallet!',
+      signature,
+      explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
+    })
+  } catch (error) {
+    res.status(500).json({ error: 'Airdrop failed: ' + error.message })
+  }
 })
 
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
+  console.log(`Real Solana server running on port ${PORT}`)
 })

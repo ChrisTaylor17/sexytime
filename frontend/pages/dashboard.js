@@ -82,10 +82,10 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => router.push('/profile')}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+              onClick={() => router.push('/user-profile')}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all hover:scale-105 shadow-lg"
             >
-              👤 Profile
+              👤 My Profile
             </button>
             <WalletMultiButton />
           </div>

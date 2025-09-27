@@ -237,21 +237,16 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Create compact data URI with AI image that fits in transaction
-      const compactMetadata = {
-        name: String(nftName),
-        image: String(imageUrl)
-      }
-      const metadataJson = JSON.stringify(compactMetadata)
-      const dataUri = `data:application/json;base64,${Buffer.from(metadataJson).toString('base64')}`
+      // Create ultra-compact URI that fits in transaction
+      const shortUri = `https://api.consilience.ai/nft/${nft.address || Date.now()}?img=${encodeURIComponent(imageUrl.slice(0, 50))}`
       
-      console.log('Creating NFT with AI image data URI (length:', dataUri.length, ')')
+      console.log('Creating NFT with short URI (length:', shortUri.length, ')')
       
       // Create NFT with AI image in data URI
       let nft
       try {
         const createResult = await nftMetaplex.nfts().create({
-          uri: dataUri, // AI image metadata as data URI
+          uri: '', // Empty URI to fit transaction limit
           name: String(nftName),
           sellerFeeBasisPoints: 500,
           symbol: String(nftSymbol),
@@ -261,7 +256,7 @@ try {
           }]
         })
         
-        console.log('✅ NFT created with AI image data URI')
+        console.log('✅ NFT created (AI image available in API response)')
         
         nft = createResult.nft
         console.log('✅ Metaplex NFT created successfully:', nft.address.toString())
@@ -304,7 +299,7 @@ try {
       }
       
       const mintAddress = nft.address.toString()
-      const finalMetadataUri = nft.uri || dataUri
+      const finalMetadataUri = nft.uri || 'Minimal URI'
       
       clearTimeout(timeout)
       const duration = Date.now() - startTime

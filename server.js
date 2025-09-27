@@ -184,27 +184,20 @@ try {
         creatorAddress: aiWallet.publicKey.toString()
       })
       
-      // Upload metadata with AI image
-      const { uri } = await nftMetaplex.nfts().uploadMetadata({
+      const { nft } = await nftMetaplex.nfts().create({
         name: nftName,
         description: nftDescription,
         image: imageUrl,
-        attributes: [
-          { trait_type: 'Platform', value: 'Consilience DAO' },
-          { trait_type: 'Generated', value: 'AI Image' }
-        ]
-      })
-      
-      const { nft } = await nftMetaplex.nfts().create({
-        uri: uri,
-        name: nftName,
         sellerFeeBasisPoints: 500,
         symbol: nftSymbol,
         creators: [{
           address: aiWallet.publicKey,
           share: 100
         }],
-        isMutable: true
+        attributes: [
+          { trait_type: 'Platform', value: 'Consilience DAO' },
+          { trait_type: 'AI Generated', value: 'Yes' }
+        ]
       })
       
       console.log('✅ NFT created:', nft.address.toString())

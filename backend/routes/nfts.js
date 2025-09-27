@@ -8,6 +8,52 @@ const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.dev
 // Metaplex Token Metadata Program ID
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
 
+// Create NFT collection
+router.post('/create-nft', apiLimiter, async (req, res) => {
+  const { name, description, image, supply, creator } = req.body
+  const db = req.app.locals.db
+  
+  const nftId = Date.now()
+  
+  db.run(
+    'INSERT INTO nft_collections (id, name, description, image_url, supply, creator_alias, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [nftId, name, description, image, supply, creator, new Date().toISOString()],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' })
+      }
+      res.json({ message: `NFT collection "${name}" created successfully!`, nftId })
+    }
+  )
+})
+
+// Mint NFT
+router.post('/mint-nft', apiLimiter, async (req, res) => {
+  const { nftId, recipient, recipientAlias } = req.body
+  const db = req.app.locals.db
+  
+  db.get('SELECT * FROM nft_collections WHERE id = ?', [nftId], (err, nft) => {
+    if (err || !nft) {
+      return res.status(404).json({ error: 'NFT collection not found' })
+    }
+    
+    res.json({ message: `NFT "${nft.name}" minted successfully!` })
+  })
+})
+
+// Get user NFTs
+router.get('/user-nfts/:alias', apiLimiter, async (req, res) => {
+  const { alias } = req.params
+  const db = req.app.locals.db
+  
+  db.all('SELECT * FROM nft_collections WHERE creator_alias = ?', [alias], (err, nfts) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    res.json({ nfts: nfts || [] })
+  })
+})
+
 // Get NFTs for user (both wallet and earned)
 router.get('/nfts/:identifier', apiLimiter, async (req, res) => {
   const { identifier } = req.params

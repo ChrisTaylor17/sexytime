@@ -189,16 +189,32 @@ try {
         creatorAddress: aiWallet.publicKey.toString()
       })
       
-      // Upload metadata first using Metaplex storage
-      const { uri } = await nftMetaplex.nfts().uploadMetadata({
+      console.log('Final image URL for metadata:', imageUrl)
+      
+      // Create metadata object
+      const metadata = {
         name: String(nftName),
         description: String(nftDescription),
         image: String(imageUrl),
+        external_url: 'https://consilience-dao.com',
         attributes: [
           { trait_type: 'Platform', value: 'Consilience DAO' },
-          { trait_type: 'AI Generated', value: 'Yes' }
-        ]
-      })
+          { trait_type: 'AI Generated', value: hasOpenAI ? 'Yes' : 'No' },
+          { trait_type: 'Image Type', value: hasOpenAI ? 'DALL-E 3' : 'Generated SVG' }
+        ],
+        properties: {
+          files: [{
+            uri: String(imageUrl),
+            type: imageUrl.includes('openai') ? 'image/png' : 'image/svg+xml'
+          }],
+          category: 'image'
+        }
+      }
+      
+      console.log('Uploading metadata:', JSON.stringify(metadata, null, 2))
+      
+      // Upload metadata using Metaplex storage
+      const { uri } = await nftMetaplex.nfts().uploadMetadata(metadata)
       
       console.log('Metadata uploaded to:', uri)
       

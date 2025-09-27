@@ -46,35 +46,33 @@ export default function NFTs() {
   };
 
   const createNFT = async () => {
+    if (!connected || !publicKey) {
+      alert('❌ Please connect your Solana wallet first!');
+      return;
+    }
+
     try {
       const response = await fetch('https://sexytime-production.up.railway.app/api/create-nft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...newNFT,
-          creator: userAlias,
-          aiWallet: 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W'
+          name: newNFT.name,
+          description: newNFT.description,
+          walletAddress: publicKey.toString()
         })
       });
       
-      if (!response.ok) {
-        alert(`Backend error: ${response.status}`);
-        return;
-      }
+      const data = await response.json();
       
-      const text = await response.text();
-      if (text.startsWith('<!DOCTYPE')) {
-        alert('Backend is down - returning HTML instead of API response');
-        return;
+      if (data.success) {
+        alert(`✅ ${data.message}\n\n🔗 Mint: ${data.mintAddress}\n🔍 Explorer: ${data.explorerUrl}`);
+        setShowCreateForm(false);
+        setNewNFT({ name: '', description: '', image: '', supply: 100, projectId: '' });
+      } else {
+        alert(`❌ ${data.error}`);
       }
-      
-      const data = JSON.parse(text);
-      alert(data.message || 'NFT collection created!');
-      setShowCreateForm(false);
-      setNewNFT({ name: '', description: '', image: '', supply: 100, projectId: '' });
-      fetchUserNFTs();
     } catch (error) {
-      alert('Backend unavailable: ' + error.message);
+      alert('❌ Error: ' + error.message);
     }
   };
 

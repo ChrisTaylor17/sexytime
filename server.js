@@ -1,79 +1,69 @@
 const express = require('express')
-const http = require('http')
-const socketIo = require('socket.io')
 const cors = require('cors')
-const sqlite3 = require('sqlite3').verbose()
-const { signupLimiter, apiLimiter } = require('./middleware/security')
-require('dotenv').config()
 
 const app = express()
-const server = http.createServer(app)
-const io = socketIo(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
-})
 
-// Database connection
-const db = new sqlite3.Database('./consilience.db')
-app.locals.db = db
-
-// Middleware
 app.use(cors())
 app.use(express.json())
 
-// Basic health check
+// Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() })
+  res.json({ status: 'OK' })
 })
 
-// Test endpoint
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'API is working' })
+// Signup
+app.post('/api/signup', (req, res) => {
+  const { alias, interests } = req.body
+  res.json({ 
+    alias, 
+    interests, 
+    wallet_address: 'demo_wallet_123', 
+    cs_balance: 100 
+  })
 })
 
-app.use(apiLimiter)
+// Get user
+app.get('/api/user/:alias', (req, res) => {
+  res.json({ 
+    alias: req.params.alias, 
+    interests: 'AI, Blockchain', 
+    cs_balance: 250 
+  })
+})
 
-// Routes with error handling
-try {
-  app.use('/api', require('./routes/auth'))
-  app.use('/api', require('./routes/projects'))
-  app.use('/api', require('./routes/ai'))
-  app.use('/api', require('./routes/messages'))
-  app.use('/api', require('./routes/nfts'))
-  app.use('/api', require('./routes/transparency'))
-  app.use('/api', require('./routes/wallet'))
-  app.use('/api', require('./routes/profile'))
-} catch (error) {
-  console.error('Route loading error:', error)
-}
+// Projects
+app.get('/api/projects', (req, res) => {
+  res.json({
+    projects: [
+      { id: 1, name: 'Mars Colony DAO', description: 'Building on Mars', owner_alias: 'mars.builder' },
+      { id: 2, name: 'Ocean Cleanup', description: 'Clean the oceans', owner_alias: 'ocean.saver' }
+    ]
+  })
+})
 
-// Socket.io for real-time chat
-io.on('connection', (socket) => {
-  console.log('User connected:', socket.id)
-  
-  socket.on('join-room', ({ alias, projectId }) => {
-    socket.join(`project-${projectId}`)
-    console.log(`${alias} joined project ${projectId}`)
+// Create NFT
+app.post('/api/create-nft', (req, res) => {
+  const { name, description, creator } = req.body
+  res.json({ 
+    message: `NFT "${name}" created successfully!`,
+    nftId: Date.now(),
+    name,
+    description,
+    creator
   })
-  
-  socket.on('send-message', ({ alias, projectId, message }) => {
-    const messageData = {
-      alias,
-      message,
-      timestamp: new Date().toISOString()
-    }
-    
-    io.to(`project-${projectId}`).emit('message', messageData)
-  })
-  
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id)
-  })
+})
+
+// Mint NFT
+app.post('/api/mint-nft', (req, res) => {
+  res.json({ message: 'NFT minted successfully!' })
+})
+
+// Get user NFTs
+app.get('/api/user-nfts/:alias', (req, res) => {
+  res.json({ nfts: [] })
 })
 
 const PORT = process.env.PORT || 5000
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} with NFT endpoints`)
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
 })

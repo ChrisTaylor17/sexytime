@@ -25,7 +25,7 @@ export default function Profile() {
 
   const fetchUserData = async (alias) => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sexytime-production.up.railway.app'
       const response = await axios.get(`${backendUrl}/api/user/${alias}`)
       setUser(response.data)
       setFormData({ interests: response.data.interests })
@@ -47,7 +47,7 @@ export default function Profile() {
         setProfileImage(imageData)
         
         // Save to backend
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sexytime-production.up.railway.app'
         await axios.post(`${backendUrl}/api/update-profile`, {
           alias: user.alias,
           profileImage: imageData
@@ -62,7 +62,7 @@ export default function Profile() {
 
   const updateProfile = async () => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sexytime-production.up.railway.app'
       await axios.post(`${backendUrl}/api/update-profile`, {
         alias: user.alias,
         interests: formData.interests

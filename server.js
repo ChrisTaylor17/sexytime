@@ -148,9 +148,37 @@ try {
       
       const userPublicKey = new PublicKey(walletAddress)
       
-      // Use simple fallback image to avoid AI generation delays
-      const imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
-      console.log('Using fast image:', imageUrl)
+      // Generate AI image from description
+      let imageUrl
+      const hasOpenAI = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'dummy'
+      console.log('🔑 OpenAI API Key available:', !!hasOpenAI)
+      
+      if (hasOpenAI) {
+        try {
+          const OpenAI = require('openai')
+          const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+          
+          const imagePrompt = description || `${name} digital art NFT`
+          console.log('🎨 Generating AI image for prompt:', imagePrompt)
+          
+          const response = await openai.images.generate({
+            model: 'dall-e-3',
+            prompt: imagePrompt,
+            n: 1,
+            size: '1024x1024',
+            quality: 'standard'
+          })
+          
+          imageUrl = response.data[0].url
+          console.log('✅ AI image generated successfully:', imageUrl)
+        } catch (error) {
+          console.log('⚠️ AI generation failed:', error.message)
+          imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
+        }
+      } else {
+        console.log('⚠️ No OpenAI API key, using fallback image')
+        imageUrl = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(description || name || 'nft')}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
+      }
       
       console.log('✅ Creating NFT with Metaplex...')
       

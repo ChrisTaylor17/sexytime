@@ -104,7 +104,7 @@ export default function Tokens() {
       existingTokens.push(mockToken);
       localStorage.setItem(`tokens_${userAlias}`, JSON.stringify(existingTokens));
       
-      alert(`Token "${newToken.name}" (${newToken.symbol}) created successfully!`);
+      alert(`✅ Token "${newToken.name}" (${newToken.symbol}) created successfully!\n\n⚠️ Note: This is a simulated token for demo purposes. To create real Solana tokens, connect your wallet.`);
       setShowCreateForm(false);
       setNewToken({ name: '', symbol: '', description: '', supply: 1000000, projectId: '' });
       fetchUserTokens();
@@ -114,20 +114,68 @@ export default function Tokens() {
     }
   };
 
-  const distributeTokens = async (tokenId) => {
+  const distributeTokens = async (token) => {
+    const recipients = prompt('Enter wallet addresses (comma separated):');
+    if (!recipients) return;
+    
+    const addresses = recipients.split(',').map(addr => addr.trim()).filter(addr => addr);
+    if (addresses.length === 0) {
+      alert('No valid addresses provided');
+      return;
+    }
+    
+    const amountPerRecipient = prompt(`Enter amount per recipient (max ${token.balance?.toLocaleString() || 0}):`);
+    if (!amountPerRecipient || isNaN(amountPerRecipient)) {
+      alert('Invalid amount');
+      return;
+    }
+    
+    const amount = parseInt(amountPerRecipient);
+    const totalAmount = amount * addresses.length;
+    
+    if (totalAmount > (token.balance || 0)) {
+      alert('Insufficient balance');
+      return;
+    }
+    
     try {
-      await fetch('https://sexytime-production.up.railway.app/api/distribute-tokens', {
+      // Try backend first
+      const response = await fetch('https://sexytime-production.up.railway.app/api/distribute-tokens', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tokenId,
-          distributor: userAlias
+          tokenId: token.id,
+          distributor: userAlias,
+          recipients: addresses,
+          amount: amount
         })
       });
-      fetchUserTokens();
+      
+      if (response.ok) {
+        alert(`Distributed ${amount.toLocaleString()} ${token.symbol} to ${addresses.length} recipients`);
+      } else {
+        throw new Error('Backend failed');
+      }
     } catch (error) {
-      console.error('Error distributing tokens:', error);
+      // Fallback to localStorage simulation
+      const updatedTokens = userTokens.map(t => {
+        if (t.id === token.id) {
+          return { ...t, balance: (t.balance || 0) - totalAmount };
+        }
+        return t;
+      });
+      
+      setUserTokens(updatedTokens);
+      localStorage.setItem(`tokens_${userAlias}`, JSON.stringify(updatedTokens));
+      
+      alert(`✅ Distributed ${amount.toLocaleString()} ${token.symbol} to ${addresses.length} recipients\n\n⚠️ Note: These are simulated tokens for demo purposes. For real Solana tokens, connect your wallet.`);
     }
+  };
+  
+  const viewTokenDetails = (token) => {
+    const details = `Token Details:\n\nName: ${token.name}\nSymbol: ${token.symbol}\nTotal Supply: ${token.supply?.toLocaleString() || 'N/A'}\nYour Balance: ${token.balance?.toLocaleString() || '0'}\nCreated: ${new Date(token.created_at).toLocaleDateString()}\n\n${token.description || 'No description'}\n\n⚠️ Note: This is a simulated token for demo purposes. To create real Solana tokens, connect your wallet and use the Solana Token Program.`;
+    
+    alert(details);
   };
 
   return (
@@ -163,23 +211,60 @@ export default function Tokens() {
             Token Manager
           </h1>
         </div>
-        <button
-          onClick={() => setShowCreateForm(true)}
-          style={{
-            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '10px 20px',
-            color: 'white',
-            cursor: 'pointer',
-            fontWeight: '500'
-          }}
-        >
-          + Create Token
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={() => alert('🔗 Wallet Connection\n\nTo create real Solana tokens:\n1. Install Phantom or Solflare wallet\n2. Connect to devnet\n3. Use Solana Token Program\n\nCurrent tokens are simulated for demo.')}
+            style={{
+              background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '10px 20px',
+              color: 'white',
+              cursor: 'pointer',
+              fontWeight: '500'
+            }}
+          >
+            🔗 Connect Wallet
+          </button>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            style={{
+              background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '10px 20px',
+              color: 'white',
+              cursor: 'pointer',
+              fontWeight: '500'
+            }}
+          >
+            + Create Token
+          </button>
+        </div>
       </div>
 
       <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Demo Notice */}
+        <div style={{
+          background: 'rgba(251, 191, 36, 0.1)',
+          border: '1px solid rgba(251, 191, 36, 0.3)',
+          borderRadius: '12px',
+          padding: '15px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px'
+        }}>
+          <span style={{ fontSize: '20px' }}>⚠️</span>
+          <div>
+            <div style={{ fontWeight: '600', color: '#fbbf24', marginBottom: '5px' }}>
+              Demo Mode - Simulated Tokens
+            </div>
+            <div style={{ fontSize: '14px', opacity: 0.8 }}>
+              These tokens are simulated for demonstration. To create real Solana tokens, connect your wallet and use the Solana Token Program.
+            </div>
+          </div>
+        </div>
         {/* Create Token Modal */}
         {showCreateForm && (
           <div style={{
@@ -419,7 +504,7 @@ export default function Tokens() {
                 gap: '10px'
               }}>
                 <button
-                  onClick={() => distributeTokens(token.id)}
+                  onClick={() => distributeTokens(token)}
                   style={{
                     flex: 1,
                     background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
@@ -435,6 +520,7 @@ export default function Tokens() {
                   Distribute
                 </button>
                 <button
+                  onClick={() => viewTokenDetails(token)}
                   style={{
                     flex: 1,
                     background: 'rgba(255,255,255,0.1)',

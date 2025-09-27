@@ -22,17 +22,32 @@ app.locals.db = db
 // Middleware
 app.use(cors())
 app.use(express.json())
+
+// Basic health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() })
+})
+
+// Test endpoint
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API is working' })
+})
+
 app.use(apiLimiter)
 
-// Routes
-app.use('/api', require('./routes/auth'))
-app.use('/api', require('./routes/projects'))
-app.use('/api', require('./routes/ai'))
-app.use('/api', require('./routes/messages'))
-app.use('/api', require('./routes/nfts'))
-app.use('/api', require('./routes/transparency'))
-app.use('/api', require('./routes/wallet'))
-app.use('/api', require('./routes/profile'))
+// Routes with error handling
+try {
+  app.use('/api', require('./routes/auth'))
+  app.use('/api', require('./routes/projects'))
+  app.use('/api', require('./routes/ai'))
+  app.use('/api', require('./routes/messages'))
+  app.use('/api', require('./routes/nfts'))
+  app.use('/api', require('./routes/transparency'))
+  app.use('/api', require('./routes/wallet'))
+  app.use('/api', require('./routes/profile'))
+} catch (error) {
+  console.error('Route loading error:', error)
+}
 
 // Socket.io for real-time chat
 io.on('connection', (socket) => {

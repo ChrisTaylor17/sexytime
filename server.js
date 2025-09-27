@@ -176,7 +176,12 @@ try {
       const nftDescription = String(description || 'Created on Consilience DAO')
       const nftSymbol = String('CNSL')
       
-      console.log('Creating NFT with params:', {
+      // Validate all parameters before Metaplex call
+      if (!nftName || !nftDescription || !imageUrl || !nftSymbol || !aiWallet?.publicKey) {
+        throw new Error(`Missing required parameters: name=${!!nftName}, desc=${!!nftDescription}, image=${!!imageUrl}, symbol=${!!nftSymbol}, wallet=${!!aiWallet?.publicKey}`)
+      }
+      
+      console.log('Creating NFT with validated params:', {
         name: nftName,
         description: nftDescription,
         image: imageUrl,
@@ -184,18 +189,22 @@ try {
         creatorAddress: aiWallet.publicKey.toString()
       })
       
-      const { nft } = await nftMetaplex.nfts().create({
-        name: nftName,
-        description: nftDescription,
-        image: imageUrl,
+      const createParams = {
+        name: String(nftName),
+        description: String(nftDescription),
+        image: String(imageUrl),
         sellerFeeBasisPoints: 500,
-        symbol: nftSymbol,
+        symbol: String(nftSymbol),
         creators: [{
           address: aiWallet.publicKey,
           verified: true,
           share: 100
         }]
-      })
+      }
+      
+      console.log('Final create params:', createParams)
+      
+      const { nft } = await nftMetaplex.nfts().create(createParams)
       
       console.log('✅ NFT created:', nft.address.toString())
       

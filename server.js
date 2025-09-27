@@ -228,9 +228,22 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Create NFT with validated parameters
+      // Create compact metadata URI with AI image
+      const compactMetadata = JSON.stringify({
+        name: String(nftName),
+        description: String(nftDescription),
+        image: String(imageUrl)
+      })
+      
+      const metadataUri = compactMetadata.length < 200 ? 
+        `data:application/json,${encodeURIComponent(compactMetadata)}` :
+        `data:application/json;base64,${Buffer.from(compactMetadata).toString('base64').slice(0, 150)}`
+      
+      console.log('Using metadata URI (length:', metadataUri.length, '):', metadataUri.slice(0, 100) + '...')
+      
+      // Create NFT with AI image metadata
       const { nft } = await nftMetaplex.nfts().create({
-        uri: '', // Empty URI to avoid undefined issues
+        uri: metadataUri,
         name: String(nftName),
         sellerFeeBasisPoints: 500,
         symbol: String(nftSymbol),

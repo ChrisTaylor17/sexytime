@@ -1,7 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 
-console.log('🚀 Starting Consilience DAO Server v2.1...')
+console.log('🚀 Starting Consilience DAO Server v2.2 with Bundlr...')
 
 const app = express()
 app.use(cors({

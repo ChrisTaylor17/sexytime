@@ -46,39 +46,47 @@ export default function NFTs() {
   };
 
   const createNFT = async () => {
-    const response = await fetch('https://sexytime-production.up.railway.app/api/create-nft', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...newNFT,
-        creator: userAlias,
-        aiWallet: 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W'
-      })
-    });
-    
-    const data = await response.json();
-    alert(data.message || 'NFT collection created!');
-    setShowCreateForm(false);
-    setNewNFT({ name: '', description: '', image: '', supply: 100, projectId: '' });
-    fetchUserNFTs();
+    try {
+      const response = await fetch('https://sexytime-production.up.railway.app/api/create-nft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newNFT,
+          creator: userAlias,
+          aiWallet: 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W'
+        })
+      });
+      
+      const data = await response.json();
+      alert(data.message || 'NFT collection created!');
+      setShowCreateForm(false);
+      setNewNFT({ name: '', description: '', image: '', supply: 100, projectId: '' });
+      fetchUserNFTs();
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
   };
 
   const mintNFT = async (nft) => {
-    const response = await fetch('https://sexytime-production.up.railway.app/api/mint-nft', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nftId: nft.id,
-        recipient: connected && publicKey ? publicKey.toString() : userAlias,
-        recipientAlias: userAlias,
-        walletConnected: connected,
-        aiWallet: 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W'
-      })
-    });
-    
-    const data = await response.json();
-    alert(data.message || 'NFT minted successfully!');
-    fetchUserNFTs();
+    try {
+      const response = await fetch('https://sexytime-production.up.railway.app/api/mint-nft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nftId: nft.id,
+          recipient: connected && publicKey ? publicKey.toString() : userAlias,
+          recipientAlias: userAlias,
+          walletConnected: connected,
+          aiWallet: 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W'
+        })
+      });
+      
+      const data = await response.json();
+      alert(data.message || 'NFT minted successfully!');
+      fetchUserNFTs();
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
   };
 
   return (

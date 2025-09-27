@@ -128,29 +128,34 @@ try {
       let nftImage = image
       
       if (!nftImage) {
-        try {
-          // Use OpenAI DALL-E to generate image
-          const OpenAI = require('openai')
-          const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || 'dummy' })
-          
-          const imagePrompt = description || `${name} - vibrant digital art NFT`
-          
-          console.log('🎨 Generating AI image with prompt:', imagePrompt)
-          
-          const response = await openai.images.generate({
-            model: 'dall-e-3',
-            prompt: imagePrompt,
-            n: 1,
-            size: '1024x1024',
-            quality: 'standard'
-          })
-          
-          nftImage = response.data[0].url
-          console.log('✅ AI image generated:', nftImage)
-          
-        } catch (aiError) {
-          console.log('⚠️ AI image generation failed, using fallback:', aiError.message)
-          // Fallback to descriptive generated image
+        if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'dummy') {
+          try {
+            // Use OpenAI DALL-E to generate image
+            const OpenAI = require('openai')
+            const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+            
+            const imagePrompt = description || `${name} - vibrant digital art NFT`
+            
+            console.log('🎨 Generating AI image with prompt:', imagePrompt)
+            
+            const response = await openai.images.generate({
+              model: 'dall-e-3',
+              prompt: imagePrompt,
+              n: 1,
+              size: '1024x1024',
+              quality: 'standard'
+            })
+            
+            nftImage = response.data[0].url
+            console.log('✅ AI image generated:', nftImage)
+            
+          } catch (aiError) {
+            console.log('⚠️ AI image generation failed:', aiError.message)
+            const seed = encodeURIComponent(`${name} ${description}`)
+            nftImage = `https://api.dicebear.com/7.x/shapes/svg?seed=${seed}&backgroundColor=00ff88,ff6b6b,4ecdc4,45b7d1,96ceb4,feca57,ff9ff3,54a0ff`
+          }
+        } else {
+          console.log('⚠️ No OpenAI API key, using fallback image')
           const seed = encodeURIComponent(`${name} ${description}`)
           nftImage = `https://api.dicebear.com/7.x/shapes/svg?seed=${seed}&backgroundColor=00ff88,ff6b6b,4ecdc4,45b7d1,96ceb4,feca57,ff9ff3,54a0ff`
         }
@@ -451,22 +456,26 @@ app.post('/api/mint-nft', async (req, res) => {
     
     // Generate AI image for minted NFT too
     let nftImage
-    try {
-      const OpenAI = require('openai')
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || 'dummy' })
-      
-      const imagePrompt = `${nftName} - digital art NFT`
-      
-      const response = await openai.images.generate({
-        model: 'dall-e-3',
-        prompt: imagePrompt,
-        n: 1,
-        size: '1024x1024',
-        quality: 'standard'
-      })
-      
-      nftImage = response.data[0].url
-    } catch (error) {
+    if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'dummy') {
+      try {
+        const OpenAI = require('openai')
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+        
+        const imagePrompt = `${nftName} - digital art NFT`
+        
+        const response = await openai.images.generate({
+          model: 'dall-e-3',
+          prompt: imagePrompt,
+          n: 1,
+          size: '1024x1024',
+          quality: 'standard'
+        })
+        
+        nftImage = response.data[0].url
+      } catch (error) {
+        nftImage = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(nftName)}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
+      }
+    } else {
       nftImage = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(nftName)}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
     }
     

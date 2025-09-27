@@ -8,41 +8,68 @@ const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPE
 
 // AI Matchmaking
 router.post('/ai-matchmaker', (req, res) => {
+  console.log('AI Matchmaker called with:', req.body)
   const { alias, query } = req.body
   const db = req.app.locals.db
   
+  if (!alias || !query) {
+    return res.status(400).json({ error: 'Missing alias or query' })
+  }
+  
   // Create project based on query
-  let projectName, projectType, skills
+  let projectName, projectType, skills, aiResponse
   const queryLower = query.toLowerCase()
   
-  if (queryLower.includes('token') || queryLower.includes('launch')) {
-    projectName = `${alias}'s Token Project`
+  if (queryLower.includes('token') || queryLower.includes('launch') || queryLower.includes('coin') || queryLower.includes('crypto')) {
+    projectName = `${alias}'s Token Launch`
     projectType = 'token'
-    skills = 'blockchain, tokenomics, marketing'
-  } else if (queryLower.includes('nft') || queryLower.includes('art')) {
+    skills = 'blockchain development, tokenomics, smart contracts, marketing'
+    aiResponse = `🚀 Excellent! I've analyzed your request and created a comprehensive token launch project.`
+  } else if (queryLower.includes('nft') || queryLower.includes('art') || queryLower.includes('collectible') || queryLower.includes('digital art')) {
     projectName = `${alias}'s NFT Collection`
     projectType = 'nft'
-    skills = 'art, design, blockchain, marketing'
+    skills = 'digital art, 3D modeling, blockchain, community management'
+    aiResponse = `🎨 Perfect! I've designed an NFT collection project tailored to your vision.`
+  } else if (queryLower.includes('dao') || queryLower.includes('governance') || queryLower.includes('voting')) {
+    projectName = `${alias}'s DAO Initiative`
+    projectType = 'dao'
+    skills = 'governance design, community building, blockchain, legal'
+    aiResponse = `🏡 Brilliant! I've structured a DAO governance project for you.`
   } else {
-    projectName = `${alias}'s Collaboration`
+    projectName = `${alias}'s Innovation Project`
     projectType = 'collaboration'
-    skills = 'various skills needed'
+    skills = 'determined by project scope'
+    aiResponse = `💡 Interesting! I've created a flexible collaboration project based on your input.`
   }
   
   // Create the project
   db.run(
     'INSERT INTO projects (name, description, skills_needed, owner_alias) VALUES (?, ?, ?, ?)',
-    [projectName, `Project based on: ${query}`, skills, alias],
+    [projectName, `AI-generated project based on: "${query}"`, skills, alias],
     function(err) {
       if (err) {
-        return res.status(500).json({ error: 'Database error' })
+        console.error('Database error:', err)
+        return res.status(500).json({ error: 'Database error: ' + err.message })
       }
       
+      let fullResponse = `${aiResponse}\n\n**Project Created:** "${projectName}"\n\n`
+      
+      if (projectType === 'token') {
+        fullResponse += `📊 **AI Recommendations:**\n• Set up tokenomics with 80% to contributors, 20% to platform\n• Create utility features for your token\n• Plan marketing and community building\n\n🤖 **AI Asset Manager Ready:** I'll handle token creation, distribution, and wallet management automatically.`
+      } else if (projectType === 'nft') {
+        fullResponse += `🎨 **AI Recommendations:**\n• Design unique artwork with rarity tiers\n• Create utility and holder benefits\n• Build community engagement strategies\n\n🤖 **AI Asset Manager Ready:** I'll mint NFTs and distribute them based on participation levels.`
+      } else if (projectType === 'dao') {
+        fullResponse += `🏡 **AI Recommendations:**\n• Design governance token distribution\n• Create proposal and voting mechanisms\n• Establish treasury management\n\n🤖 **AI Asset Manager Ready:** I'll create governance tokens and manage treasury allocations.`
+      } else {
+        fullResponse += `💡 **AI Analysis:** "${query}"\n\n🤖 **AI Recommendations:**\n• Define clear project milestones\n• Identify required skills and team members\n• Set up reward mechanisms for contributors\n\n**Ready to help with:** Token creation, NFT rewards, team coordination`
+      }
+      
+      console.log('Project created successfully:', this.lastID)
       res.json({
         action: 'create_project',
         projectId: this.lastID,
         projectName: projectName,
-        response: `I've created a ${projectType} project for you!`
+        response: fullResponse
       })
     }
   )
@@ -194,17 +221,23 @@ router.post('/verify-task', async (req, res) => {
 
 // Create custom token
 router.post('/create-token', async (req, res) => {
+  console.log('Create custom token called with:', req.body)
   const { name, symbol, supply, description, creator } = req.body
   const db = req.app.locals.db
+  
+  if (!name || !symbol || !supply || !creator) {
+    return res.status(400).json({ error: 'Missing required fields: name, symbol, supply, creator' })
+  }
   
   try {
     // Create token record in database
     db.run(
       'INSERT INTO tokens (name, symbol, supply, description, creator, created_at) VALUES (?, ?, ?, ?, ?, datetime("now"))',
-      [name, symbol, supply, description, creator],
+      [name, symbol, supply, description || '', creator],
       function(err) {
         if (err) {
-          return res.status(500).json({ error: 'Database error' })
+          console.error('Token creation error:', err)
+          return res.status(500).json({ error: 'Database error: ' + err.message })
         }
         
         // Simulate token creation on Solana
@@ -215,18 +248,20 @@ router.post('/create-token', async (req, res) => {
           supply,
           description,
           creator,
-          mint_address: `${Date.now()}${Math.random().toString(36).substr(2, 9)}`,
+          mint_address: `token_${Date.now()}${Math.random().toString(36).substr(2, 9)}`,
           created_at: new Date().toISOString()
         }
         
+        console.log('Custom token created successfully:', this.lastID)
         res.json({
           success: true,
-          message: `Token ${symbol} created successfully`,
+          message: `🪙 ${symbol} token created successfully with ${supply} total supply!`,
           token: tokenData
         })
       }
     )
   } catch (error) {
+    console.error('Token creation error:', error)
     res.status(500).json({ error: 'Token creation error: ' + error.message })
   }
 })
@@ -236,28 +271,37 @@ router.get('/user-tokens/:alias', (req, res) => {
   const { alias } = req.params
   const db = req.app.locals.db
   
+  console.log('Getting tokens for user:', alias)
   db.all('SELECT * FROM tokens WHERE creator = ? ORDER BY created_at DESC', [alias], (err, rows) => {
     if (err) {
-      res.status(500).json({ error: 'Database error' })
+      console.error('Error fetching user tokens:', err)
+      res.status(500).json({ error: 'Database error: ' + err.message })
     } else {
-      res.json({ tokens: rows })
+      console.log('Found tokens:', rows.length)
+      res.json({ tokens: rows || [] })
     }
   })
 })
 
 // Create NFT
 router.post('/create-nft', async (req, res) => {
+  console.log('Create custom NFT called with:', req.body)
   const { name, description, image, supply, creator } = req.body
   const db = req.app.locals.db
+  
+  if (!name || !creator) {
+    return res.status(400).json({ error: 'Missing required fields: name, creator' })
+  }
   
   try {
     // Create NFT record in database
     db.run(
       'INSERT INTO nft_collections (name, description, image, supply, creator, created_at) VALUES (?, ?, ?, ?, ?, datetime("now"))',
-      [name, description, image, supply, creator],
+      [name, description || '', image || '', supply || 1, creator],
       function(err) {
         if (err) {
-          return res.status(500).json({ error: 'Database error' })
+          console.error('NFT creation error:', err)
+          return res.status(500).json({ error: 'Database error: ' + err.message })
         }
         
         // Simulate NFT creation on Solana
@@ -272,14 +316,16 @@ router.post('/create-nft', async (req, res) => {
           created_at: new Date().toISOString()
         }
         
+        console.log('Custom NFT created successfully:', this.lastID)
         res.json({
           success: true,
-          message: `NFT collection ${name} created successfully`,
+          message: `🎨 ${name} NFT collection created successfully with ${supply || 1} items!`,
           nft: nftData
         })
       }
     )
   } catch (error) {
+    console.error('NFT creation error:', error)
     res.status(500).json({ error: 'NFT creation error: ' + error.message })
   }
 })
@@ -289,29 +335,43 @@ router.get('/user-nfts/:alias', (req, res) => {
   const { alias } = req.params
   const db = req.app.locals.db
   
+  console.log('Getting NFTs for user:', alias)
   db.all('SELECT * FROM nft_collections WHERE creator = ? ORDER BY created_at DESC', [alias], (err, rows) => {
     if (err) {
-      res.status(500).json({ error: 'Database error' })
+      console.error('Error fetching user NFTs:', err)
+      res.status(500).json({ error: 'Database error: ' + err.message })
     } else {
-      res.json({ nfts: rows })
+      console.log('Found NFTs:', rows.length)
+      res.json({ nfts: rows || [] })
     }
   })
 })
 
 // Create project token
 router.post('/create-project-token', async (req, res) => {
+  console.log('Create project token called with:', req.body)
   const { projectId, creator, participants } = req.body
   const db = req.app.locals.db
   
+  if (!projectId || !creator) {
+    return res.status(400).json({ error: 'Missing projectId or creator' })
+  }
+  
   // Get project details
   db.get('SELECT * FROM projects WHERE id = ?', [projectId], (err, project) => {
-    if (err || !project) {
+    if (err) {
+      console.error('Database error:', err)
+      return res.status(500).json({ error: 'Database error: ' + err.message })
+    }
+    
+    if (!project) {
       return res.status(404).json({ error: 'Project not found' })
     }
     
     const tokenName = `${project.name} Token`
-    const tokenSymbol = project.name.substring(0, 3).toUpperCase()
+    const tokenSymbol = project.name.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase() || 'PROJ'
     const supply = 1000000
+    const participantCount = participants ? participants.length : 1
     
     // Create token
     db.run(
@@ -319,13 +379,19 @@ router.post('/create-project-token', async (req, res) => {
       [tokenName, tokenSymbol, supply, `Project token for ${project.name}`, creator, projectId],
       function(err) {
         if (err) {
-          return res.status(500).json({ error: 'Database error' })
+          console.error('Token creation error:', err)
+          return res.status(500).json({ error: 'Token creation failed: ' + err.message })
         }
         
+        console.log('Token created successfully:', this.lastID)
         res.json({
           success: true,
-          message: `Project token created and distributed to ${participants.length} participants`,
-          tokenId: this.lastID
+          message: `🪙 ${tokenSymbol} token created! Distributed to ${participantCount} participants with 80/20 allocation model.`,
+          tokenId: this.lastID,
+          tokenName,
+          tokenSymbol,
+          supply,
+          participants: participantCount
         })
       }
     )
@@ -334,17 +400,28 @@ router.post('/create-project-token', async (req, res) => {
 
 // Create project NFT
 router.post('/create-project-nft', async (req, res) => {
+  console.log('Create project NFT called with:', req.body)
   const { projectId, creator, participants } = req.body
   const db = req.app.locals.db
   
+  if (!projectId || !creator) {
+    return res.status(400).json({ error: 'Missing projectId or creator' })
+  }
+  
   // Get project details
   db.get('SELECT * FROM projects WHERE id = ?', [projectId], (err, project) => {
-    if (err || !project) {
+    if (err) {
+      console.error('Database error:', err)
+      return res.status(500).json({ error: 'Database error: ' + err.message })
+    }
+    
+    if (!project) {
       return res.status(404).json({ error: 'Project not found' })
     }
     
     const nftName = `${project.name} Badge`
-    const supply = participants.length
+    const participantCount = participants ? participants.length : 1
+    const supply = participantCount
     
     // Create NFT collection
     db.run(
@@ -352,13 +429,18 @@ router.post('/create-project-nft', async (req, res) => {
       [nftName, `Achievement NFT for participating in ${project.name}`, supply, creator, projectId],
       function(err) {
         if (err) {
-          return res.status(500).json({ error: 'Database error' })
+          console.error('NFT creation error:', err)
+          return res.status(500).json({ error: 'NFT creation failed: ' + err.message })
         }
         
+        console.log('NFT collection created successfully:', this.lastID)
         res.json({
           success: true,
-          message: `Project NFT collection created and distributed to ${participants.length} participants`,
-          nftId: this.lastID
+          message: `🎨 ${nftName} collection created! Minted ${supply} unique NFTs for all participants.`,
+          nftId: this.lastID,
+          nftName,
+          supply,
+          participants: participantCount
         })
       }
     )

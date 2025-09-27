@@ -23,6 +23,7 @@ export default function Tasks() {
   useEffect(() => {
     const alias = localStorage.getItem('userAlias');
     if (!alias) {
+      console.log('No userAlias found, redirecting to home');
       router.push('/');
       return;
     }

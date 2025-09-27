@@ -846,4 +846,101 @@ router.post('/mint-nft', async (req, res) => {
   })
 })
 
+// Connect wallet endpoint
+router.post('/connect-wallet', (req, res) => {
+  const { alias, walletAddress } = req.body
+  const db = req.app.locals.db
+  
+  if (!alias || !walletAddress) {
+    return res.status(400).json({ error: 'Missing alias or walletAddress' })
+  }
+  
+  // Update user's wallet address
+  db.run(
+    'UPDATE users SET wallet_address = ? WHERE alias = ?',
+    [walletAddress, alias],
+    function(err) {
+      if (err) {
+        console.error('Wallet connection error:', err)
+        return res.status(500).json({ error: 'Failed to connect wallet' })
+      }
+      
+      console.log(`Wallet connected: ${alias} -> ${walletAddress}`)
+      res.json({ success: true, message: 'Wallet connected successfully' })
+    }
+  )
+})
+
+// Get wallet balance
+router.get('/wallet-balance/:address', async (req, res) => {
+  const { address } = req.params
+  const { realSolanaManager } = require('../utils/realSolana')
+  
+  try {
+    const balance = await realSolanaManager.getWalletBalance(address)
+    res.json({ balance })
+  } catch (error) {
+    console.error('Balance check failed:', error)
+    res.status(500).json({ error: 'Failed to get balance' })
+  }
+})
+
+// Request SOL airdrop
+router.post('/request-airdrop', async (req, res) => {
+  const { walletAddress, amount } = req.body
+  const { realSolanaManager } = require('../utils/realSolana')
+  
+  try {
+    const result = await realSolanaManager.sendSOL(walletAddress, amount || 1)
+    if (result.success) {
+      res.json({ success: true, signature: result.signature })
+    } else {
+      res.status(500).json({ error: result.error })
+    }
+  } catch (error) {
+    console.error('Airdrop failed:', error)
+    res.status(500).json({ error: 'Airdrop failed' })
+  }
+})
+
+// Get wallet tokens
+router.get('/wallet-tokens/:address', (req, res) => {
+  const { address } = req.params
+  const db = req.app.locals.db
+  
+  // Get tokens created by this wallet owner
+  db.all(
+    'SELECT t.* FROM tokens t JOIN users u ON t.creator = u.alias WHERE u.wallet_address = ?',
+    [address],
+    (err, rows) => {
+      if (err) {
+        console.error('Error fetching wallet tokens:', err)
+        res.status(500).json({ error: 'Database error' })
+      } else {
+        res.json({ tokens: rows || [] })
+      }
+    }
+  )
+})
+
+// Get wallet NFTs
+router.get('/wallet-nfts/:address', (req, res) => {
+  const { address } = req.params
+  const db = req.app.locals.db
+  
+  // Get NFTs owned by this wallet
+  db.all(
+    'SELECT n.* FROM nfts n JOIN users u ON n.owner_alias = u.alias WHERE u.wallet_address = ?',
+    [address],
+    (err, rows) => {
+      if (err) {
+        console.error('Error fetching wallet NFTs:', err)
+        res.status(500).json({ error: 'Database error' })
+      } else {
+        res.json({ nfts: rows || [] })
+      }
+    }
+  )
+})
+
 module.exports = router

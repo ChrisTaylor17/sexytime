@@ -118,7 +118,7 @@ try {
       const userPublicKey = new PublicKey(walletAddress)
       
       // Import Metaplex for real NFT creation
-      const { createCreateMetadataAccountV3Instruction } = require('@metaplex-foundation/mpl-token-metadata')
+      const { createCreateMetadataAccountInstruction, createUpdateMetadataAccountInstruction } = require('@metaplex-foundation/mpl-token-metadata')
       const { SystemProgram, Transaction } = require('@solana/web3.js')
       
       // Metaplex Token Metadata Program ID
@@ -162,19 +162,20 @@ try {
         uses: null
       }
       
-      const createMetadataInstruction = createCreateMetadataAccountV3Instruction(
+      const createMetadataInstruction = createCreateMetadataAccountInstruction(
         {
           metadata: metadataPDA,
           mint: mint,
           mintAuthority: aiWallet.publicKey,
           payer: aiWallet.publicKey,
-          updateAuthority: aiWallet.publicKey
+          updateAuthority: aiWallet.publicKey,
+          systemProgram: SystemProgram.programId,
+          rent: new PublicKey('SysvarRent111111111111111111111111111111111')
         },
         {
-          createMetadataAccountArgsV3: {
+          createMetadataAccountArgs: {
             data: metadata,
-            isMutable: true,
-            collectionDetails: null
+            isMutable: true
           }
         }
       )
@@ -403,7 +404,7 @@ app.post('/api/mint-nft', async (req, res) => {
   
   try {
     const { recipient, nftId } = req.body
-    const { createCreateMetadataAccountV3Instruction } = require('@metaplex-foundation/mpl-token-metadata')
+    const { createCreateMetadataAccountInstruction } = require('@metaplex-foundation/mpl-token-metadata')
     const { SystemProgram, Transaction } = require('@solana/web3.js')
     
     const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
@@ -428,15 +429,17 @@ app.post('/api/mint-nft', async (req, res) => {
       uses: null
     }
     
-    const createMetadataInstruction = createCreateMetadataAccountV3Instruction(
+    const createMetadataInstruction = createCreateMetadataAccountInstruction(
       {
         metadata: metadataPDA,
         mint: mint,
         mintAuthority: aiWallet.publicKey,
         payer: aiWallet.publicKey,
-        updateAuthority: aiWallet.publicKey
+        updateAuthority: aiWallet.publicKey,
+        systemProgram: SystemProgram.programId,
+        rent: new PublicKey('SysvarRent111111111111111111111111111111111')
       },
-      { createMetadataAccountArgsV3: { data: metadata, isMutable: true, collectionDetails: null } }
+      { createMetadataAccountArgs: { data: metadata, isMutable: true } }
     )
     
     const transaction = new Transaction().add(createMetadataInstruction)

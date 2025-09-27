@@ -151,10 +151,11 @@ router.post('/find-match', (req, res) => {
   })
 })
 
-// Task verification with AI Asset Manager
+// Task verification with REAL blockchain rewards
 router.post('/verify-task', async (req, res) => {
   const { alias, projectId, proof } = req.body
   const db = req.app.locals.db
+  const { realSolanaManager } = require('../utils/realSolana')
   
   const verified = true // AI verification (simplified)
   
@@ -169,97 +170,147 @@ router.post('/verify-task', async (req, res) => {
         const taskName = project?.name || 'DAO Task'
         const userWallet = user.wallet_address
         
-        // AI Asset Manager creates collectible NFT for user's wallet
-        let nftData = await createMetaplexNFT(userWallet, taskName, alias)
-        
-        // Fallback to regular NFT if Metaplex fails
-        if (!nftData) {
-          nftData = await createNFT(alias, taskName, userWallet)
-        }
-        
-        if (nftData) {
-          // Store NFT metadata
-          db.run(
-            'INSERT INTO nfts (mint_address, owner_alias, name, image_url, metadata_uri) VALUES (?, ?, ?, ?, ?)',
-            [nftData.mint, alias, nftData.name, nftData.image, JSON.stringify(nftData)]
+        try {
+          // Create REAL NFT achievement badge
+          const nftResult = await realSolanaManager.createRealNFT(
+            `${taskName} Achievement`,
+            `🏆 Awarded to ${alias} for completing: ${taskName}`,
+            `https://api.dicebear.com/7.x/bottts/svg?seed=${alias}-${Date.now()}&backgroundColor=gradient`,
+            userWallet
           )
+          
+          if (nftResult.success) {
+            // Store NFT in database
+            db.run(
+              'INSERT INTO nfts (mint_address, owner_alias, name, image_url, metadata_uri) VALUES (?, ?, ?, ?, ?)',
+              [nftResult.mint, alias, nftResult.name, nftResult.image, JSON.stringify(nftResult)]
+            )
+          }
+          
+          // Create REAL CS token if it doesn't exist
+          let csTokenMint = process.env.CS_TOKEN_MINT
+          if (!csTokenMint) {
+            const tokenResult = await realSolanaManager.createRealToken(
+              'Consilience Token',
+              'CS',
+              1000000, // 1M supply
+              2, // 2 decimals
+              userWallet
+            )
+            if (tokenResult.success) {
+              csTokenMint = tokenResult.mint
+              // Store token mint address for future use
+              process.env.CS_TOKEN_MINT = csTokenMint
+            }
+          }
+          
+          // Distribute REAL tokens (80/20 split)
+          if (csTokenMint) {
+            const distributionResult = await realSolanaManager.distributeTokens(csTokenMint, [
+              { wallet: userWallet, amount: 8000 }, // 80.00 CS tokens
+              { wallet: process.env.FOUNDER_WALLET_ADDRESS || realSolanaManager.aiWallet.toString(), amount: 2000 } // 20.00 CS tokens
+            ])
+            
+            if (distributionResult.success) {
+              // Update database balances
+              db.run('UPDATE users SET cs_balance = cs_balance + 80 WHERE alias = ?', [alias])
+              
+              // Record transactions
+              db.run(
+                'INSERT INTO transactions (from_alias, to_alias, amount, type) VALUES (?, ?, ?, ?)',
+                ['REAL_BLOCKCHAIN', alias, 80, 'task_reward']
+              )
+            }
+          }
+          
+          res.json({ 
+            verified: true,
+            message: `🎉 REAL BLOCKCHAIN REWARDS SENT!\n\n✅ NFT Achievement Badge: ${nftResult.success ? 'Minted' : 'Failed'}\n💰 80 CS Tokens: Sent to wallet\n🏆 Task: ${taskName} completed`,
+            nft: nftResult,
+            tokens: csTokenMint ? '80 CS tokens sent' : 'Token creation failed',
+            userWallet,
+            realBlockchain: true
+          })
+          
+        } catch (error) {
+          console.error('Blockchain reward error:', error)
+          res.status(500).json({ error: 'Blockchain reward failed: ' + error.message })
         }
-        
-        // AI Asset Manager allocates tokens transparently
-        const allocation = await require('../utils/solana').aiManager.allocateTokens([
-          { wallet: userWallet, alias, amount: 80 },
-          { wallet: process.env.FOUNDER_WALLET_ADDRESS, alias: 'founder', amount: 20 }
-        ], 100, `Task completion: ${taskName}`)
-        
-        // Update balances
-        db.run('UPDATE users SET cs_balance = cs_balance + 80 WHERE alias = ?', [alias])
-        
-        // Record transactions
-        db.run(
-          'INSERT INTO transactions (from_alias, to_alias, amount, type) VALUES (?, ?, ?, ?)',
-          ['AI_MANAGER', alias, 80, 'task_reward']
-        )
-        
-        db.run(
-          'INSERT INTO transactions (from_alias, to_alias, amount, type) VALUES (?, ?, ?, ?)',
-          ['AI_MANAGER', 'founder', 20, 'founder_fee']
-        )
-        
-        res.json({ 
-          verified, 
-          message: `AI VERIFIED ✅ NFT minted to your wallet: ${userWallet.slice(0,8)}...`,
-          nft: nftData,
-          allocation,
-          userWallet
-        })
       })
     })
   } else {
-    res.json({ verified, message: 'AI verification failed' })
+    res.json({ verified: false, message: 'AI verification failed' })
   }
 })
 
-// Create custom token
+// Create REAL custom token
 router.post('/create-token', async (req, res) => {
-  console.log('Create custom token called with:', req.body)
+  console.log('Create REAL custom token called with:', req.body)
   const { name, symbol, supply, description, creator } = req.body
   const db = req.app.locals.db
+  const { realSolanaManager } = require('../utils/realSolana')
   
   if (!name || !symbol || !supply || !creator) {
     return res.status(400).json({ error: 'Missing required fields: name, symbol, supply, creator' })
   }
   
   try {
-    // Create token record in database
-    db.run(
-      'INSERT INTO tokens (name, symbol, supply, description, creator, created_at) VALUES (?, ?, ?, ?, ?, datetime("now"))',
-      [name, symbol, supply, description || '', creator],
-      function(err) {
-        if (err) {
-          console.error('Token creation error:', err)
-          return res.status(500).json({ error: 'Database error: ' + err.message })
-        }
-        
-        // Simulate token creation on Solana
-        const tokenData = {
-          id: this.lastID,
+    // Get creator's wallet address
+    db.get('SELECT wallet_address FROM users WHERE alias = ?', [creator], async (err, user) => {
+      if (err || !user) {
+        return res.status(404).json({ error: 'Creator wallet not found' })
+      }
+      
+      try {
+        // Create REAL SPL token on Solana
+        const tokenResult = await realSolanaManager.createRealToken(
           name,
           symbol,
           supply,
-          description,
-          creator,
-          mint_address: `token_${Date.now()}${Math.random().toString(36).substr(2, 9)}`,
-          created_at: new Date().toISOString()
-        }
+          2, // 2 decimals for most tokens
+          user.wallet_address
+        )
         
-        console.log('Custom token created successfully:', this.lastID)
-        res.json({
-          success: true,
-          message: `🪙 ${symbol} token created successfully with ${supply} total supply!`,
-          token: tokenData
-        })
+        if (tokenResult.success) {
+          // Store in database with real mint address
+          db.run(
+            'INSERT INTO tokens (name, symbol, supply, description, creator, mint_address, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime("now"))',
+            [name, symbol, supply, description || '', creator, tokenResult.mint],
+            function(err) {
+              if (err) {
+                console.error('Database error:', err)
+                return res.status(500).json({ error: 'Database error: ' + err.message })
+              }
+              
+              console.log('REAL token created successfully:', tokenResult.mint)
+              res.json({
+                success: true,
+                message: `🚀 REAL ${symbol} TOKEN CREATED ON SOLANA!\n\n💰 ${supply} tokens minted to your wallet\n🔗 Mint Address: ${tokenResult.mint}`,
+                token: {
+                  id: this.lastID,
+                  name,
+                  symbol,
+                  supply,
+                  description,
+                  creator,
+                  mint_address: tokenResult.mint,
+                  created_at: new Date().toISOString(),
+                  realBlockchain: true
+                }
+              })
+            }
+          )
+        } else {
+          res.status(500).json({ 
+            error: 'Real token creation failed: ' + tokenResult.error,
+            fallback: 'Check wallet has SOL for transaction fees'
+          })
+        }
+      } catch (blockchainError) {
+        console.error('Blockchain error:', blockchainError)
+        res.status(500).json({ error: 'Blockchain error: ' + blockchainError.message })
       }
-    )
+    })
   } catch (error) {
     console.error('Token creation error:', error)
     res.status(500).json({ error: 'Token creation error: ' + error.message })
@@ -283,47 +334,75 @@ router.get('/user-tokens/:alias', (req, res) => {
   })
 })
 
-// Create NFT
+// Create REAL NFT
 router.post('/create-nft', async (req, res) => {
-  console.log('Create custom NFT called with:', req.body)
+  console.log('Create REAL custom NFT called with:', req.body)
   const { name, description, image, supply, creator } = req.body
   const db = req.app.locals.db
+  const { realSolanaManager } = require('../utils/realSolana')
   
   if (!name || !creator) {
     return res.status(400).json({ error: 'Missing required fields: name, creator' })
   }
   
   try {
-    // Create NFT record in database
-    db.run(
-      'INSERT INTO nft_collections (name, description, image, supply, creator, created_at) VALUES (?, ?, ?, ?, ?, datetime("now"))',
-      [name, description || '', image || '', supply || 1, creator],
-      function(err) {
-        if (err) {
-          console.error('NFT creation error:', err)
-          return res.status(500).json({ error: 'Database error: ' + err.message })
-        }
-        
-        // Simulate NFT creation on Solana
-        const nftData = {
-          id: this.lastID,
-          name,
-          description,
-          image,
-          supply,
-          creator,
-          mint_address: `nft_${Date.now()}${Math.random().toString(36).substr(2, 9)}`,
-          created_at: new Date().toISOString()
-        }
-        
-        console.log('Custom NFT created successfully:', this.lastID)
-        res.json({
-          success: true,
-          message: `🎨 ${name} NFT collection created successfully with ${supply || 1} items!`,
-          nft: nftData
-        })
+    // Get creator's wallet address
+    db.get('SELECT wallet_address FROM users WHERE alias = ?', [creator], async (err, user) => {
+      if (err || !user) {
+        return res.status(404).json({ error: 'Creator wallet not found' })
       }
-    )
+      
+      try {
+        // Create REAL NFT on Solana with Metaplex
+        const imageUrl = image || `https://api.dicebear.com/7.x/bottts/svg?seed=${name}&backgroundColor=gradient`
+        
+        const nftResult = await realSolanaManager.createRealNFT(
+          name,
+          description || `NFT created by ${creator}`,
+          imageUrl,
+          user.wallet_address
+        )
+        
+        if (nftResult.success) {
+          // Store in database with real mint address
+          db.run(
+            'INSERT INTO nft_collections (name, description, image, supply, creator, mint_address, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime("now"))',
+            [name, description || '', imageUrl, 1, creator, nftResult.mint],
+            function(err) {
+              if (err) {
+                console.error('Database error:', err)
+                return res.status(500).json({ error: 'Database error: ' + err.message })
+              }
+              
+              console.log('REAL NFT created successfully:', nftResult.mint)
+              res.json({
+                success: true,
+                message: `🎨 REAL ${name} NFT CREATED ON SOLANA!\n\n🖼️ NFT minted to your wallet\n🔗 Mint Address: ${nftResult.mint}\n📱 View in Phantom/Solflare wallet`,
+                nft: {
+                  id: this.lastID,
+                  name,
+                  description,
+                  image: imageUrl,
+                  supply: 1,
+                  creator,
+                  mint_address: nftResult.mint,
+                  created_at: new Date().toISOString(),
+                  realBlockchain: true
+                }
+              })
+            }
+          )
+        } else {
+          res.status(500).json({ 
+            error: 'Real NFT creation failed: ' + nftResult.error,
+            fallback: 'Check wallet has SOL for transaction fees'
+          })
+        }
+      } catch (blockchainError) {
+        console.error('Blockchain error:', blockchainError)
+        res.status(500).json({ error: 'Blockchain error: ' + blockchainError.message })
+      }
+    })
   } catch (error) {
     console.error('NFT creation error:', error)
     res.status(500).json({ error: 'NFT creation error: ' + error.message })
@@ -694,17 +773,18 @@ router.post('/checkin', (req, res) => {
   )
 })
 
-// Mint NFT
-router.post('/mint-nft', (req, res) => {
-  console.log('Mint NFT called with:', req.body)
+// Mint REAL NFT
+router.post('/mint-nft', async (req, res) => {
+  console.log('Mint REAL NFT called with:', req.body)
   const { nftId, recipient } = req.body
   const db = req.app.locals.db
+  const { realSolanaManager } = require('../utils/realSolana')
   
   if (!nftId || !recipient) {
     return res.status(400).json({ error: 'Missing required fields' })
   }
   
-  // Get NFT collection details
+  // Get NFT collection details and recipient wallet
   db.get('SELECT * FROM nft_collections WHERE id = ?', [nftId], (err, nft) => {
     if (err) {
       console.error('Database error:', err)
@@ -715,28 +795,54 @@ router.post('/mint-nft', (req, res) => {
       return res.status(404).json({ error: 'NFT collection not found' })
     }
     
-    // Simulate minting process
-    const mintAddress = `nft_mint_${Date.now()}${Math.random().toString(36).substr(2, 9)}`
-    
-    // Record the minted NFT
-    db.run(
-      'INSERT INTO nfts (mint_address, owner_alias, name, image_url, metadata_uri) VALUES (?, ?, ?, ?, ?)',
-      [mintAddress, recipient, nft.name, nft.image, JSON.stringify({ collection: nft.name, minted_at: new Date().toISOString() })],
-      function(err) {
-        if (err) {
-          console.error('Mint error:', err)
-          return res.status(500).json({ error: 'Minting failed: ' + err.message })
-        }
-        
-        console.log('NFT minted successfully:', this.lastID)
-        res.json({
-          success: true,
-          message: `NFT "${nft.name}" minted successfully`,
-          mintAddress,
-          nftId: this.lastID
-        })
+    // Get recipient wallet address
+    db.get('SELECT wallet_address FROM users WHERE alias = ?', [recipient], async (err, user) => {
+      if (err || !user) {
+        return res.status(404).json({ error: 'Recipient wallet not found' })
       }
-    )
+      
+      try {
+        // Create REAL NFT and send to recipient wallet
+        const nftResult = await realSolanaManager.createRealNFT(
+          nft.name,
+          nft.description || `${nft.name} collectible`,
+          nft.image || `https://api.dicebear.com/7.x/bottts/svg?seed=${nft.name}&backgroundColor=gradient`,
+          user.wallet_address
+        )
+        
+        if (nftResult.success) {
+          // Record the REAL minted NFT
+          db.run(
+            'INSERT INTO nfts (mint_address, owner_alias, name, image_url, metadata_uri) VALUES (?, ?, ?, ?, ?)',
+            [nftResult.mint, recipient, nft.name, nftResult.image, JSON.stringify(nftResult)],
+            function(err) {
+              if (err) {
+                console.error('Database error:', err)
+                return res.status(500).json({ error: 'Database error: ' + err.message })
+              }
+              
+              console.log('REAL NFT minted successfully:', nftResult.mint)
+              res.json({
+                success: true,
+                message: `🎉 REAL NFT MINTED TO YOUR WALLET!\n\n🎨 ${nft.name}\n📱 Check Phantom/Solflare wallet\n🔗 Mint: ${nftResult.mint}`,
+                mintAddress: nftResult.mint,
+                nftId: this.lastID,
+                realBlockchain: true,
+                wallet: user.wallet_address
+              })
+            }
+          )
+        } else {
+          res.status(500).json({ 
+            error: 'Real NFT minting failed: ' + nftResult.error,
+            fallback: 'Check wallet has SOL for transaction fees'
+          })
+        }
+      } catch (blockchainError) {
+        console.error('Blockchain error:', blockchainError)
+        res.status(500).json({ error: 'Blockchain error: ' + blockchainError.message })
+      }
+    })
   })
 })
 

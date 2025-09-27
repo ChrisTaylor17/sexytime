@@ -5,6 +5,7 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import axios from 'axios'
 import NFTGallery from '../components/NFTGallery'
 import TransparencyDashboard from '../components/TransparencyDashboard'
+import TokenCreator from '../components/TokenCreator'
 
 export default function Dashboard() {
   const [user, setUser] = useState(null)
@@ -75,6 +76,11 @@ export default function Dashboard() {
             <button onClick={findMatches} className="btn-primary w-full mt-4">
               Find Matches
             </button>
+          </div>
+          
+          {/* Token Creator */}
+          <div className="lg:col-span-2">
+            <TokenCreator />
           </div>
 
           {/* Projects */}

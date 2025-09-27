@@ -55,12 +55,10 @@ export default function ChatRoom() {
     newSocket.emit('join-room', { alias, projectId })
     
     newSocket.on('message', (message) => {
-      // Only add if not already in messages (avoid duplicates)
-      setMessages(prev => {
-        const exists = prev.some(m => m.id === message.id || 
-          (m.alias === message.alias && m.message === message.message && m.timestamp === message.timestamp))
-        return exists ? prev : [...prev, message]
-      })
+      // Only add messages from other users (not our own)
+      if (message.alias !== alias) {
+        setMessages(prev => [...prev, message])
+      }
     })
     
     setSocket(newSocket)
@@ -90,20 +88,23 @@ export default function ChatRoom() {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
         const response = await axios.post(`${backendUrl}/api/messages`, messageData)
         
-        // Add to local state immediately
+        // Add our message to local state immediately
         const savedMessage = response.data
         setMessages(prev => [...prev, savedMessage])
         
-        // Send via socket to other users
+        // Send via socket to other users only
         socket.emit('send-message', savedMessage)
         
       } catch (error) {
         console.error('Failed to save message:', error)
-        // Still send via socket as fallback
-        socket.emit('send-message', {
+        // Add message locally even if save failed
+        const fallbackMessage = {
           ...messageData,
-          timestamp: new Date().toISOString()
-        })
+          timestamp: new Date().toISOString(),
+          id: Date.now()
+        }
+        setMessages(prev => [...prev, fallbackMessage])
+        socket.emit('send-message', fallbackMessage)
       }
       
       setNewMessage('')

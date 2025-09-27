@@ -144,6 +144,44 @@ router.post('/verify-task', async (req, res) => {
   }
 })
 
+// Create custom token
+router.post('/create-token', async (req, res) => {
+  const { name, symbol, supply, decimals, alias } = req.body
+  const db = req.app.locals.db
+  
+  try {
+    // Get user wallet
+    db.get('SELECT wallet_address FROM users WHERE alias = ?', [alias], async (err, user) => {
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' })
+      }
+      
+      // Create token using AI Asset Manager
+      const tokenData = await require('../utils/solana').aiManager.createCustomToken(
+        name, symbol, supply, decimals, user.wallet_address, alias
+      )
+      
+      if (tokenData) {
+        // Store token in database
+        db.run(
+          'INSERT INTO nfts (mint_address, owner_alias, name, image_url, metadata_uri) VALUES (?, ?, ?, ?, ?)',
+          [tokenData.mint, alias, tokenData.name, tokenData.image, JSON.stringify(tokenData)]
+        )
+        
+        res.json({
+          success: true,
+          message: `Token ${symbol} created and minted to wallet ${user.wallet_address}`,
+          token: tokenData
+        })
+      } else {
+        res.status(500).json({ error: 'Token creation failed' })
+      }
+    })
+  } catch (error) {
+    res.status(500).json({ error: 'Token creation error: ' + error.message })
+  }
+})
+
 // QR Check-in
 router.post('/checkin', (req, res) => {
   const { alias, projectId } = req.body

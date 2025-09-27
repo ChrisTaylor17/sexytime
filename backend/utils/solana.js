@@ -41,6 +41,34 @@ class AIAssetManager {
     }
   }
   
+  // Create custom token
+  async createCustomToken(name, symbol, supply, decimals, userWallet, alias) {
+    try {
+      console.log(`AI: Creating token ${symbol} for ${alias}`)
+      
+      const tokenId = Date.now().toString()
+      const tokenData = {
+        mint: `token_${tokenId}`,
+        name: name,
+        symbol: symbol,
+        supply: supply,
+        decimals: decimals,
+        description: `Custom token ${symbol} created by ${alias}`,
+        image: `https://api.dicebear.com/7.x/icons/svg?seed=${symbol}&backgroundColor=gradient`,
+        wallet: userWallet,
+        creator: alias,
+        created: new Date().toISOString()
+      }
+      
+      console.log(`AI: Token ${symbol} created for wallet ${userWallet}`)
+      return tokenData
+      
+    } catch (error) {
+      console.error('AI Token creation failed:', error)
+      return null
+    }
+  }
+  
   // Allocate CS tokens with transparent distribution
   async allocateTokens(recipients, totalAmount, reason) {
     const allocation = {

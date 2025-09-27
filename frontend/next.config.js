@@ -4,7 +4,16 @@ const nextConfig = {
   swcMinify: true,
   // Force rebuild
   generateBuildId: async () => {
-    return 'profile-v3-' + Date.now()
+    return 'tasks-v1-' + Date.now()
+  },
+  trailingSlash: false,
+  async rewrites() {
+    return [
+      {
+        source: '/tasks',
+        destination: '/tasks'
+      }
+    ]
   }
 }
 

@@ -96,11 +96,9 @@ export default function Dashboard() {
           </div>
 
           {/* NFT Gallery */}
-          {connected && user?.alias && (
-            <div className="lg:col-span-3">
-              <NFTGallery alias={user.alias} />
-            </div>
-          )}
+          <div className="lg:col-span-3">
+            <NFTGallery />
+          </div>
 
           {/* Leaderboard */}
           <div className="card lg:col-span-3">

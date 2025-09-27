@@ -5,64 +5,60 @@ const { apiLimiter } = require('../middleware/security')
 const router = express.Router()
 const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com')
 
-// Get NFTs for a user
-router.get('/nfts/:alias', apiLimiter, async (req, res) => {
-  const { alias } = req.params
-  const db = req.app.locals.db
+// Get NFTs for connected wallet
+router.get('/nfts/:walletAddress', apiLimiter, async (req, res) => {
+  const { walletAddress } = req.params
   
   try {
-    // Get user's wallet address
-    db.get('SELECT wallet_address FROM users WHERE alias = ?', [alias], async (err, user) => {
-      if (err || !user) {
-        return res.status(404).json({ error: 'User not found' })
-      }
-      
-      try {
-        // Fetch NFTs from Solana (simplified - in production use Metaplex)
-        const publicKey = new PublicKey(user.wallet_address)
-        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
-          programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
-        })
-        
-        const nfts = tokenAccounts.value
-          .filter(account => account.account.data.parsed.info.tokenAmount.decimals === 0)
-          .map(account => ({
-            mint: account.account.data.parsed.info.mint,
-            amount: account.account.data.parsed.info.tokenAmount.uiAmount
-          }))
-        
-        // Get stored NFT metadata
-        db.all('SELECT * FROM nfts WHERE owner_alias = ?', [alias], (err, storedNfts) => {
-          res.json({
-            onChain: nfts,
-            metadata: storedNfts || []
-          })
-        })
-      } catch (error) {
-        res.json({ onChain: [], metadata: [] })
-      }
+    const publicKey = new PublicKey(walletAddress)
+    
+    // Get all token accounts
+    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+      programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
     })
+    
+    // Filter for NFTs (tokens with 0 decimals and supply of 1)
+    const nftAccounts = tokenAccounts.value.filter(account => {
+      const tokenInfo = account.account.data.parsed.info
+      return tokenInfo.tokenAmount.decimals === 0 && tokenInfo.tokenAmount.uiAmount === 1
+    })
+    
+    // Fetch metadata for each NFT
+    const nfts = await Promise.all(
+      nftAccounts.map(async (account) => {
+        const mint = account.account.data.parsed.info.mint
+        try {
+          // Try to fetch metadata from common metadata URI patterns
+          const response = await fetch(`https://api.solana.fm/v1/tokens/${mint}`)
+          if (response.ok) {
+            const data = await response.json()
+            return {
+              mint,
+              name: data.name || 'Unknown NFT',
+              image: data.image || null,
+              description: data.description || null
+            }
+          }
+        } catch (error) {
+          console.log('Metadata fetch failed for', mint)
+        }
+        
+        return {
+          mint,
+          name: `NFT ${mint.slice(0, 8)}...`,
+          image: null,
+          description: null
+        }
+      })
+    )
+    
+    res.json({ nfts })
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch NFTs' })
+    console.error('NFT fetch error:', error)
+    res.json({ nfts: [] })
   }
 })
 
-// Store NFT metadata
-router.post('/nfts', apiLimiter, (req, res) => {
-  const { mintAddress, ownerAlias, name, imageUrl, metadataUri } = req.body
-  const db = req.app.locals.db
-  
-  db.run(
-    'INSERT OR REPLACE INTO nfts (mint_address, owner_alias, name, image_url, metadata_uri) VALUES (?, ?, ?, ?, ?)',
-    [mintAddress, ownerAlias, name, imageUrl, metadataUri],
-    function(err) {
-      if (err) {
-        res.status(500).json({ error: 'Failed to store NFT metadata' })
-      } else {
-        res.json({ success: true, id: this.lastID })
-      }
-    }
-  )
-})
+
 
 module.exports = router

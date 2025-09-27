@@ -1,24 +1,40 @@
 import { useState, useEffect } from 'react'
+import { useWallet } from '@solana/wallet-adapter-react'
 import axios from 'axios'
 
-export default function NFTGallery({ alias }) {
-  const [nfts, setNfts] = useState({ onChain: [], metadata: [] })
+export default function NFTGallery() {
+  const [nfts, setNfts] = useState([])
   const [loading, setLoading] = useState(true)
+  const { publicKey, connected } = useWallet()
 
   useEffect(() => {
-    if (alias) {
+    if (connected && publicKey) {
       fetchNFTs()
+    } else {
+      setNfts([])
+      setLoading(false)
     }
-  }, [alias])
+  }, [connected, publicKey])
 
   const fetchNFTs = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/nfts/${alias}`)
-      setNfts(response.data)
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
+      const response = await axios.get(`${backendUrl}/api/nfts/${publicKey.toString()}`)
+      setNfts(response.data.nfts || [])
     } catch (error) {
       console.error('Failed to fetch NFTs:', error)
+      setNfts([])
     }
     setLoading(false)
+  }
+
+  if (!connected) {
+    return (
+      <div className="card">
+        <h2 className="text-xl font-semibold mb-4">Your NFT Collection</h2>
+        <p className="text-gray-500">Connect your wallet to view your NFTs</p>
+      </div>
+    )
   }
 
   if (loading) return <div className="text-center">Loading NFTs...</div>
@@ -27,31 +43,31 @@ export default function NFTGallery({ alias }) {
     <div className="card">
       <h2 className="text-xl font-semibold mb-4">Your NFT Collection</h2>
       
-      {nfts.onChain.length === 0 && nfts.metadata.length === 0 ? (
+      {nfts.length === 0 ? (
         <p className="text-gray-500">No NFTs found in your wallet</p>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {nfts.metadata.map(nft => (
-            <div key={nft.mint_address} className="border rounded-lg p-3">
-              {nft.image_url && (
+          {nfts.map(nft => (
+            <div key={nft.mint} className="border rounded-lg p-3">
+              {nft.image ? (
                 <img 
-                  src={nft.image_url} 
+                  src={nft.image} 
                   alt={nft.name} 
                   className="w-full h-32 object-cover rounded mb-2"
+                  onError={(e) => {
+                    e.target.style.display = 'none'
+                  }}
                 />
+              ) : (
+                <div className="w-full h-32 bg-gradient-to-br from-purple-400 to-blue-500 rounded mb-2 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">NFT</span>
+                </div>
               )}
-              <h3 className="font-medium text-sm">{nft.name || 'Unnamed NFT'}</h3>
-              <p className="text-xs text-gray-500 truncate">{nft.mint_address}</p>
-            </div>
-          ))}
-          
-          {nfts.onChain.map(nft => (
-            <div key={nft.mint} className="border rounded-lg p-3">
-              <div className="w-full h-32 bg-gray-200 rounded mb-2 flex items-center justify-center">
-                <span className="text-gray-500 text-xs">NFT</span>
-              </div>
-              <h3 className="font-medium text-sm">Token</h3>
+              <h3 className="font-medium text-sm">{nft.name}</h3>
               <p className="text-xs text-gray-500 truncate">{nft.mint}</p>
+              {nft.description && (
+                <p className="text-xs text-gray-400 mt-1 truncate">{nft.description}</p>
+              )}
             </div>
           ))}
         </div>

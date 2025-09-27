@@ -39,20 +39,28 @@ export default function ChatRoom() {
 
   const loadMessages = async (projectId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/messages/${projectId}`)
-      setMessages(response.data)
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
+      const response = await axios.get(`${backendUrl}/api/messages/${projectId}`)
+      setMessages(response.data || [])
     } catch (error) {
       console.error('Failed to load messages:', error)
+      setMessages([])
     }
   }
 
   const initializeChat = (alias, projectId) => {
-    const newSocket = io('http://localhost:5000')
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
+    const newSocket = io(backendUrl)
     
     newSocket.emit('join-room', { alias, projectId })
     
     newSocket.on('message', (message) => {
-      setMessages(prev => [...prev, message])
+      // Only add if not already in messages (avoid duplicates)
+      setMessages(prev => {
+        const exists = prev.some(m => m.id === message.id || 
+          (m.alias === message.alias && m.message === message.message && m.timestamp === message.timestamp))
+        return exists ? prev : [...prev, message]
+      })
     })
     
     setSocket(newSocket)
@@ -71,24 +79,33 @@ export default function ChatRoom() {
     e.preventDefault()
     if (newMessage.trim() && socket) {
       const alias = localStorage.getItem('userAlias')
-      
-      // Save to database
-      try {
-        await axios.post('http://localhost:5000/api/messages', {
-          projectId,
-          alias,
-          message: newMessage
-        })
-      } catch (error) {
-        console.error('Failed to save message:', error)
+      const messageData = {
+        projectId,
+        alias,
+        message: newMessage
       }
       
-      // Send via socket
-      socket.emit('send-message', {
-        alias,
-        projectId,
-        message: newMessage
-      })
+      // Save to database first
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
+        const response = await axios.post(`${backendUrl}/api/messages`, messageData)
+        
+        // Add to local state immediately
+        const savedMessage = response.data
+        setMessages(prev => [...prev, savedMessage])
+        
+        // Send via socket to other users
+        socket.emit('send-message', savedMessage)
+        
+      } catch (error) {
+        console.error('Failed to save message:', error)
+        // Still send via socket as fallback
+        socket.emit('send-message', {
+          ...messageData,
+          timestamp: new Date().toISOString()
+        })
+      }
+      
       setNewMessage('')
     }
   }

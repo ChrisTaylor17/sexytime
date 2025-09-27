@@ -347,6 +347,50 @@ router.get('/user-nfts/:alias', (req, res) => {
   })
 })
 
+// Distribute tokens
+router.post('/distribute-tokens', (req, res) => {
+  console.log('Distribute tokens called with:', req.body)
+  const { tokenId, distributor, recipients, amount } = req.body
+  const db = req.app.locals.db
+  
+  if (!tokenId || !distributor || !recipients || !amount) {
+    return res.status(400).json({ error: 'Missing required fields' })
+  }
+  
+  // Get token details
+  db.get('SELECT * FROM tokens WHERE id = ? AND creator = ?', [tokenId, distributor], (err, token) => {
+    if (err) {
+      console.error('Database error:', err)
+      return res.status(500).json({ error: 'Database error: ' + err.message })
+    }
+    
+    if (!token) {
+      return res.status(404).json({ error: 'Token not found or unauthorized' })
+    }
+    
+    const totalAmount = amount * recipients.length
+    
+    // Record distribution
+    db.run(
+      'INSERT INTO transactions (from_alias, to_alias, amount, type) VALUES (?, ?, ?, ?)',
+      [distributor, recipients.join(','), totalAmount, 'token_distribution'],
+      function(err) {
+        if (err) {
+          console.error('Distribution error:', err)
+          return res.status(500).json({ error: 'Distribution failed: ' + err.message })
+        }
+        
+        console.log('Token distribution recorded:', this.lastID)
+        res.json({
+          success: true,
+          message: `Distributed ${amount.toLocaleString()} ${token.symbol} to ${recipients.length} recipients`,
+          distributionId: this.lastID
+        })
+      }
+    )
+  })
+})
+
 // Create project token
 router.post('/create-project-token', async (req, res) => {
   console.log('Create project token called with:', req.body)

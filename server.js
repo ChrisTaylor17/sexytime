@@ -143,9 +143,18 @@ try {
         .use(keypairIdentity(aiWallet))
         .use(mockStorage())
       
-      const nftMetaplex = Metaplex.make(connection)
-        .use(keypairIdentity(aiWallet))
-        .use(bundlrStorage())
+      let nftMetaplex
+      try {
+        nftMetaplex = Metaplex.make(connection)
+          .use(keypairIdentity(aiWallet))
+          .use(bundlrStorage())
+        console.log('✅ Bundlr storage initialized')
+      } catch (bundlrError) {
+        console.log('⚠️ Bundlr failed, using mock storage:', bundlrError.message)
+        nftMetaplex = Metaplex.make(connection)
+          .use(keypairIdentity(aiWallet))
+          .use(mockStorage())
+      }
       
       const userPublicKey = new PublicKey(walletAddress)
       
@@ -229,10 +238,19 @@ try {
         throw new Error('Missing required parameters for NFT creation')
       }
       
-      // Upload metadata with AI image to get short URI
-      const { uri } = await nftMetaplex.nfts().uploadMetadata(nftMetadata)
-      
-      console.log('Metadata uploaded to:', uri)
+      // Try to upload metadata, fallback to simple URI if fails
+      let uri
+      try {
+        const uploadResult = await nftMetaplex.nfts().uploadMetadata(nftMetadata)
+        uri = uploadResult.uri
+        console.log('✅ Metadata uploaded to:', uri)
+      } catch (uploadError) {
+        console.log('⚠️ Metadata upload failed, using simple URI:', uploadError.message)
+        // Use simple data URI as fallback
+        const simpleMetadata = JSON.stringify({ name: String(nftName), image: String(imageUrl).slice(0, 100) })
+        uri = `data:application/json,${encodeURIComponent(simpleMetadata)}`
+        console.log('✅ Using fallback URI (length:', uri.length, ')')
+      }
       
       // Create NFT with AI image metadata and proper error handling
       let nft

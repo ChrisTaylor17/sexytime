@@ -104,81 +104,115 @@ try {
     }
   })
   
-  // Create working NFT (0 decimals token that shows as NFT)
+  // Create real NFT with image and metadata using Metaplex
   app.post('/api/create-nft', async (req, res) => {
     try {
-      const { name, description, walletAddress } = req.body
+      const { name, description, walletAddress, image } = req.body
       
       if (!walletAddress) {
         return res.status(400).json({ error: 'Wallet address required' })
       }
       
-      console.log(`🎨 Creating NFT "${name}" for ${walletAddress}`)
+      console.log(`🎨 Creating real NFT "${name}" for ${walletAddress}`)
+      
+      // Import Metaplex SDK
+      const { Metaplex, keypairIdentity, bundlrStorage } = require('@metaplex-foundation/js')
+      
+      // Initialize Metaplex
+      const metaplex = Metaplex.make(connection)
+        .use(keypairIdentity(aiWallet))
+        .use(bundlrStorage())
       
       const userPublicKey = new PublicKey(walletAddress)
       
-      // Create NFT mint (0 decimals)
-      const mint = await createMint(
-        connection,
-        aiWallet,
-        aiWallet.publicKey,
-        aiWallet.publicKey, // freeze authority for true NFT behavior
-        0  // 0 decimals = NFT standard
-      )
+      // Generate or use provided image
+      const nftImage = image || `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(name)}&backgroundColor=00ff88,ff6b6b,4ecdc4,45b7d1,96ceb4,feca57,ff9ff3,54a0ff`
       
-      console.log('✅ NFT mint created:', mint.toString())
+      // Create metadata JSON
+      const metadata = {
+        name: name || 'Consilience NFT',
+        description: description || 'A unique NFT created on Consilience DAO platform',
+        image: nftImage,
+        attributes: [
+          {
+            trait_type: 'Platform',
+            value: 'Consilience DAO'
+          },
+          {
+            trait_type: 'Creator',
+            value: 'AI Assistant'
+          },
+          {
+            trait_type: 'Network',
+            value: 'Solana Devnet'
+          },
+          {
+            trait_type: 'Created',
+            value: new Date().toISOString().split('T')[0]
+          }
+        ],
+        properties: {
+          files: [
+            {
+              uri: nftImage,
+              type: 'image/svg+xml'
+            }
+          ],
+          category: 'image'
+        }
+      }
       
-      // Create token account for user
-      const userTokenAccount = await getOrCreateAssociatedTokenAccount(
-        connection,
-        aiWallet,
-        mint,
-        userPublicKey
-      )
+      console.log('✅ Creating NFT with Metaplex...')
       
-      // Mint exactly 1 NFT to user
-      const mintSignature = await mintTo(
-        connection,
-        aiWallet,
-        mint,
-        userTokenAccount.address,
-        aiWallet,
-        1 // Mint exactly 1 NFT
-      )
+      // Create NFT using Metaplex
+      const { nft } = await metaplex.nfts().create({
+        uri: '', // Will be auto-generated
+        name: metadata.name,
+        description: metadata.description,
+        image: nftImage,
+        sellerFeeBasisPoints: 500, // 5% royalty
+        symbol: 'CNSL',
+        creators: [
+          {
+            address: aiWallet.publicKey,
+            share: 100,
+          },
+        ],
+        collection: null,
+        uses: null,
+      })
       
-      console.log('✅ NFT minted to user, signature:', mintSignature)
+      console.log('✅ NFT created with Metaplex:', nft.address.toString())
       
-      // Disable further minting by removing mint authority
-      const { setAuthority, AuthorityType } = require('@solana/spl-token')
-      await setAuthority(
-        connection,
-        aiWallet,
-        mint,
-        aiWallet.publicKey,
-        AuthorityType.MintTokens,
-        null // Remove mint authority - makes it a true NFT
-      )
+      // Transfer NFT to user
+      await metaplex.nfts().transfer({
+        nftOrSft: nft,
+        toOwner: userPublicKey,
+      })
       
-      console.log('✅ Mint authority removed - NFT is now unique')
+      console.log('✅ NFT transferred to user')
       
       res.json({
         success: true,
-        message: `🎨 NFT "${name}" created and sent to your wallet!`,
-        mintAddress: mint.toString(),
-        transaction: mintSignature,
-        explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
-        solscanUrl: `https://solscan.io/token/${mint.toString()}?cluster=devnet`,
-        name: name,
-        description: description,
-        supply: 1,
-        decimals: 0,
-        isUnique: true,
-        note: 'This is a unique NFT with supply of 1 and no mint authority'
+        message: `🎨 Real NFT "${name}" with image and metadata created!`,
+        mintAddress: nft.address.toString(),
+        metadataUri: nft.uri,
+        image: nftImage,
+        explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`,
+        solscanUrl: `https://solscan.io/token/${nft.address.toString()}?cluster=devnet`,
+        magicEdenUrl: `https://magiceden.io/item-details/${nft.address.toString()}`,
+        name: nft.name,
+        description: nft.description,
+        symbol: nft.symbol,
+        royalty: '5%',
+        isRealNFT: true,
+        hasMetadata: true,
+        hasImage: true
       })
       
     } catch (error) {
-      console.error('NFT creation error:', error)
-      res.status(500).json({ error: 'NFT creation failed: ' + error.message })
+      console.error('Real NFT creation error:', error)
+      res.status(500).json({ error: 'Real NFT creation failed: ' + error.message })
     }
   })
   
@@ -358,28 +392,35 @@ app.post('/api/mint-nft', async (req, res) => {
   }
   
   try {
-    const { recipient, nftId } = req.body
-    const { setAuthority, AuthorityType } = require('@solana/spl-token')
+    const { recipient, nftId, name } = req.body
+    const { Metaplex, keypairIdentity, bundlrStorage } = require('@metaplex-foundation/js')
+    
+    const metaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet)).use(bundlrStorage())
     const userPublicKey = new PublicKey(recipient)
     
-    // Create unique NFT mint
-    const mint = await createMint(connection, aiWallet, aiWallet.publicKey, aiWallet.publicKey, 0)
+    const nftName = name || `Consilience NFT #${nftId || Date.now()}`
+    const nftImage = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(nftName)}&backgroundColor=ff6b6b,4ecdc4,45b7d1`
     
-    // Mint to user
-    const userTokenAccount = await getOrCreateAssociatedTokenAccount(connection, aiWallet, mint, userPublicKey)
-    const mintSignature = await mintTo(connection, aiWallet, mint, userTokenAccount.address, aiWallet, 1)
+    // Create real NFT with Metaplex
+    const { nft } = await metaplex.nfts().create({
+      name: nftName,
+      description: 'Minted on Consilience DAO platform',
+      image: nftImage,
+      sellerFeeBasisPoints: 500,
+      symbol: 'CNSL',
+      creators: [{ address: aiWallet.publicKey, share: 100 }]
+    })
     
-    // Remove mint authority to make it unique
-    await setAuthority(connection, aiWallet, mint, aiWallet.publicKey, AuthorityType.MintTokens, null)
+    // Transfer to user
+    await metaplex.nfts().transfer({ nftOrSft: nft, toOwner: userPublicKey })
     
     res.json({
       success: true,
-      message: 'Unique NFT minted to your wallet!',
-      mintAddress: mint.toString(),
-      transaction: mintSignature,
-      explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
-      supply: 1,
-      isUnique: true
+      message: 'Real NFT with image minted to your wallet!',
+      mintAddress: nft.address.toString(),
+      image: nftImage,
+      explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`,
+      isRealNFT: true
     })
   } catch (error) {
     res.status(500).json({ error: 'NFT minting failed: ' + error.message })

@@ -31,6 +31,12 @@ export default function Tokens() {
     fetchProjects();
   }, [router]);
 
+  useEffect(() => {
+    if (connected && publicKey) {
+      fetchUserTokens();
+    }
+  }, [connected, publicKey]);
+
   const fetchUserTokens = async () => {
     if (!connected || !publicKey) return;
     try {

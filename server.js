@@ -71,7 +71,7 @@ try {
   // Create token endpoint
   app.post('/api/create-token', async (req, res) => {
     try {
-      const { name, symbol, supply, walletAddress } = req.body
+      const { name, symbol, supply, walletAddress, description } = req.body
       
       if (!walletAddress) {
         return res.status(400).json({ error: 'Wallet address required' })
@@ -81,6 +81,7 @@ try {
       
       const userPublicKey = new PublicKey(walletAddress)
       
+      // Create mint with metadata
       const mint = await createMint(
         connection,
         aiWallet,
@@ -88,6 +89,28 @@ try {
         null,
         6
       )
+      
+      // Create metadata for the token
+      try {
+        const metaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet))
+        
+        await metaplex.nfts().create({
+          uri: `data:application/json,${encodeURIComponent(JSON.stringify({
+            name: name,
+            symbol: symbol,
+            description: description || `${name} token created on Consilience DAO`,
+            image: `https://api.dicebear.com/7.x/shapes/svg?seed=${symbol}&backgroundColor=22c55e`
+          }))}`,
+          name: name,
+          symbol: symbol,
+          sellerFeeBasisPoints: 0,
+          useNewMint: mint
+        })
+        
+        console.log('✅ Token metadata created')
+      } catch (metaError) {
+        console.log('⚠️ Metadata creation failed:', metaError.message)
+      }
       
       const userTokenAccount = await getOrCreateAssociatedTokenAccount(
         connection,
@@ -113,7 +136,10 @@ try {
         message: `Real token ${symbol} created on Solana!`,
         mintAddress: mint.toString(),
         explorerUrl: `https://explorer.solana.com/address/${mint.toString()}?cluster=devnet`,
-        userTokens: Math.floor(supply * 0.8)
+        userTokens: Math.floor(supply * 0.8),
+        name,
+        symbol,
+        description
       })
       
     } catch (error) {
@@ -635,21 +661,40 @@ app.get('/api/user-tokens/:walletAddress', async (req, res) => {
       programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
     })
     
-    const tokens = tokenAccounts.value.map(account => {
-      const tokenInfo = account.account.data.parsed.info
-      return {
-        id: tokenInfo.mint,
-        name: `Token ${tokenInfo.mint.slice(0, 8)}`,
-        symbol: tokenInfo.mint.slice(0, 4).toUpperCase(),
-        supply: 1000000,
-        balance: Math.floor(parseFloat(tokenInfo.tokenAmount.uiAmount) || 0),
-        description: `SPL Token on Solana`,
-        mint: tokenInfo.mint,
-        created_at: new Date().toISOString()
-      }
-    }).filter(token => token.balance > 0)
+    const tokens = await Promise.all(
+      tokenAccounts.value.map(async (account) => {
+        const tokenInfo = account.account.data.parsed.info
+        let tokenName = `Token ${tokenInfo.mint.slice(0, 8)}`
+        let tokenSymbol = tokenInfo.mint.slice(0, 4).toUpperCase()
+        let tokenDescription = 'SPL Token on Solana'
+        
+        // Try to fetch metadata
+        try {
+          const metaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet))
+          const nft = await metaplex.nfts().findByMint({ mintAddress: new PublicKey(tokenInfo.mint) })
+          if (nft.name) tokenName = nft.name
+          if (nft.symbol) tokenSymbol = nft.symbol
+          if (nft.json?.description) tokenDescription = nft.json.description
+        } catch (e) {
+          // No metadata found, use defaults
+        }
+        
+        return {
+          id: tokenInfo.mint,
+          name: tokenName,
+          symbol: tokenSymbol,
+          supply: 1000000,
+          balance: Math.floor(parseFloat(tokenInfo.tokenAmount.uiAmount) || 0),
+          description: tokenDescription,
+          mint: tokenInfo.mint,
+          created_at: new Date().toISOString()
+        }
+      })
+    )
     
-    res.json({ tokens })
+    const filteredTokens = tokens.filter(token => token.balance > 0)
+    
+    res.json({ tokens: filteredTokens })
   } catch (error) {
     console.error('Error fetching user tokens:', error)
     res.json({ tokens: [] })

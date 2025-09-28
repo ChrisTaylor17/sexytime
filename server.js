@@ -117,7 +117,58 @@ try {
       }
       userTokens[walletAddress].push(tokenData)
       
-      console.log('✅ SPL Token created successfully - metadata stored in app only')
+      // Create metadata account using Token Metadata program
+      try {
+        const { SystemProgram, SYSVAR_RENT_PUBKEY } = web3
+        const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
+        
+        const [metadataAccount] = PublicKey.findProgramAddressSync(
+          [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+          TOKEN_METADATA_PROGRAM_ID
+        )
+        
+        // Create metadata instruction manually
+        const keys = [
+          { pubkey: metadataAccount, isSigner: false, isWritable: true },
+          { pubkey: mint, isSigner: false, isWritable: false },
+          { pubkey: aiWallet.publicKey, isSigner: true, isWritable: false },
+          { pubkey: aiWallet.publicKey, isSigner: true, isWritable: true },
+          { pubkey: aiWallet.publicKey, isSigner: false, isWritable: false },
+          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+          { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false }
+        ]
+        
+        // Serialize metadata
+        const nameBuffer = Buffer.alloc(32)
+        nameBuffer.write(name)
+        const symbolBuffer = Buffer.alloc(10)
+        symbolBuffer.write(symbol)
+        
+        const data = Buffer.concat([
+          Buffer.from([33]), // CreateMetadataAccountV3 instruction
+          Buffer.from([name.length]), nameBuffer.slice(0, name.length),
+          Buffer.from([symbol.length]), symbolBuffer.slice(0, symbol.length),
+          Buffer.from([0]), // uri length 0
+          Buffer.from([0, 0]), // seller fee basis points
+          Buffer.from([0]), // creators null
+          Buffer.from([1]), // is mutable
+          Buffer.from([0]) // collection details null
+        ])
+        
+        const instruction = new web3.TransactionInstruction({
+          keys,
+          programId: TOKEN_METADATA_PROGRAM_ID,
+          data
+        })
+        
+        const transaction = new web3.Transaction().add(instruction)
+        const signature = await connection.sendTransaction(transaction, [aiWallet])
+        await connection.confirmTransaction(signature)
+        
+        console.log('✅ Token metadata created on blockchain:', name, symbol, signature)
+      } catch (error) {
+        console.log('⚠️ Metadata creation failed:', error.message)
+      }
       
       console.log('✅ SPL Token created:', name, symbol, mint.toString())
       

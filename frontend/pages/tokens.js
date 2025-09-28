@@ -237,7 +237,7 @@ export default function Tokens() {
           <span style={{ fontSize: '20px' }}>✅</span>
           <div>
             <div style={{ fontWeight: '600', color: '#22c55e', marginBottom: '5px' }}>
-              Real Solana Token Creation
+              🚀 Real Solana Token Creation
             </div>
             <div style={{ fontSize: '14px', opacity: 0.8 }}>
               Creates actual SPL tokens on Solana devnet blockchain. Tokens will appear in Solana explorers and wallets.

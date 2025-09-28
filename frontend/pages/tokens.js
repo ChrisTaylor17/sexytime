@@ -147,12 +147,12 @@ export default function Tokens() {
       setUserTokens(updatedTokens);
       localStorage.setItem(`tokens_${userAlias}`, JSON.stringify(updatedTokens));
       
-      alert(`✅ Distributed ${amount.toLocaleString()} ${token.symbol} to ${addresses.length} recipients\n\n⚠️ Note: These are simulated tokens for demo purposes. For real Solana tokens, connect your wallet.`);
+      alert(`✅ Distributed ${amount.toLocaleString()} ${token.symbol} to ${addresses.length} recipients`);
     }
   };
   
   const viewTokenDetails = (token) => {
-    const details = `Token Details:\n\nName: ${token.name}\nSymbol: ${token.symbol}\nTotal Supply: ${token.supply?.toLocaleString() || 'N/A'}\nYour Balance: ${token.balance?.toLocaleString() || '0'}\nCreated: ${new Date(token.created_at).toLocaleDateString()}\n\n${token.description || 'No description'}\n\n⚠️ Note: This is a simulated token for demo purposes. To create real Solana tokens, connect your wallet and use the Solana Token Program.`;
+    const details = `Token Details:\n\nName: ${token.name}\nSymbol: ${token.symbol}\nTotal Supply: ${token.supply?.toLocaleString() || 'N/A'}\nYour Balance: ${token.balance?.toLocaleString() || '0'}\nCreated: ${new Date(token.created_at).toLocaleDateString()}\n\n${token.description || 'No description'}`;
     
     alert(details);
   };

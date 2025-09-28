@@ -117,22 +117,7 @@ try {
       }
       userTokens[walletAddress].push(tokenData)
       
-      // Create SPL token metadata using Metaplex
-      try {
-        const metaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet))
-        
-        const { nft } = await metaplex.nfts().create({
-          name: name,
-          symbol: symbol,
-          uri: '',
-          sellerFeeBasisPoints: 0,
-          useNewMint: mint
-        })
-        
-        console.log('✅ SPL Token metadata created on-chain with name:', name, 'symbol:', symbol, 'mint:', nft.address.toString())
-      } catch (error) {
-        console.log('⚠️ Metadata failed:', error.message)
-      }
+      console.log('✅ SPL Token created successfully - metadata stored in app only')
       
       console.log('✅ SPL Token created:', name, symbol, mint.toString())
       

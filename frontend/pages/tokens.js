@@ -262,10 +262,10 @@ export default function Tokens() {
       </div>
 
       <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-        {/* Real Token Notice */}
+        {/* Token Status */}
         <div style={{
-          background: 'rgba(34, 197, 94, 0.1)',
-          border: '1px solid rgba(34, 197, 94, 0.3)',
+          background: walletAddress ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+          border: walletAddress ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)',
           borderRadius: '12px',
           padding: '15px',
           marginBottom: '20px',
@@ -273,13 +273,15 @@ export default function Tokens() {
           alignItems: 'center',
           gap: '10px'
         }}>
-          <span style={{ fontSize: '20px' }}>✅</span>
+          <span style={{ fontSize: '20px' }}>{walletAddress ? '🚀' : '⚠️'}</span>
           <div>
-            <div style={{ fontWeight: '600', color: '#22c55e', marginBottom: '5px' }}>
-              🚀 Real Solana Token Creation
+            <div style={{ fontWeight: '600', color: walletAddress ? '#22c55e' : '#f59e0b', marginBottom: '5px' }}>
+              {walletAddress ? 'Ready to Create Real Solana Tokens' : 'Connect Wallet to Create Tokens'}
             </div>
             <div style={{ fontSize: '14px', opacity: 0.8 }}>
-              Creates actual SPL tokens on Solana devnet blockchain. Tokens will appear in Solana explorers and wallets.
+              {walletAddress 
+                ? 'Creates actual SPL tokens on Solana devnet blockchain. Tokens appear in explorers and wallets.' 
+                : 'Connect your wallet to create real SPL tokens on Solana blockchain.'}
             </div>
           </div>
         </div>

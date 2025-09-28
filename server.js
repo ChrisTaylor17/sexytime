@@ -668,6 +668,34 @@ app.post('/api/distribute-tokens', (req, res) => {
   })
 })
 
+// AI token allocation endpoint
+app.post('/api/allocate-tokens', async (req, res) => {
+  const { userAlias, amount, reason, tokenSymbol } = req.body
+  
+  if (!userAlias || !amount || amount <= 0) {
+    return res.status(400).json({ error: 'Invalid allocation request' })
+  }
+  
+  try {
+    console.log(`🤖 AI allocating ${amount} ${tokenSymbol || 'tokens'} to ${userAlias} for: ${reason}`)
+    
+    res.json({
+      success: true,
+      message: `Allocated ${amount} ${tokenSymbol || 'tokens'} to ${userAlias}`,
+      allocation: {
+        recipient: userAlias,
+        amount: amount,
+        reason: reason,
+        timestamp: new Date().toISOString(),
+        transactionId: `alloc_${Date.now()}`
+      }
+    })
+  } catch (error) {
+    console.error('Token allocation error:', error)
+    res.status(500).json({ error: 'Token allocation failed: ' + error.message })
+  }
+})
+
 const PORT = process.env.PORT || 5000
 
 app.listen(PORT, () => {

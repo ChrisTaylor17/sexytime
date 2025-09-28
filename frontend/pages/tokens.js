@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 export default function Tokens() {
   const [userTokens, setUserTokens] = useState([]);
   const [userAlias, setUserAlias] = useState('');
-  const [walletAddress, setWalletAddress] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const { connected, publicKey } = useWallet();
   const [newToken, setNewToken] = useState({
     name: '',
     symbol: '',
@@ -23,10 +25,6 @@ export default function Tokens() {
       return;
     }
     setUserAlias(alias);
-    
-    const wallet = localStorage.getItem('walletAddress') || '';
-    setWalletAddress(wallet);
-    
     fetchUserTokens(alias);
     fetchProjects();
   }, [router]);
@@ -61,7 +59,7 @@ export default function Tokens() {
       return;
     }
 
-    if (!walletAddress) {
+    if (!connected || !publicKey) {
       alert('Please connect your wallet first!');
       return;
     }
@@ -76,7 +74,7 @@ export default function Tokens() {
           supply: newToken.supply,
           description: newToken.description,
           projectId: newToken.projectId,
-          walletAddress: walletAddress
+          walletAddress: publicKey.toString()
         })
       });
       
@@ -150,12 +148,7 @@ export default function Tokens() {
     alert(details);
   };
 
-  const connectWallet = () => {
-    const demoWallet = 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W';
-    localStorage.setItem('walletAddress', demoWallet);
-    setWalletAddress(demoWallet);
-    alert('Wallet connected! You can now create real Solana tokens.');
-  };
+
 
   return (
     <div style={{
@@ -190,47 +183,28 @@ export default function Tokens() {
           </h1>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          {walletAddress ? (
-            <div style={{
-              background: 'rgba(34, 197, 94, 0.1)',
-              border: '1px solid rgba(34, 197, 94, 0.3)',
-              borderRadius: '8px',
-              padding: '8px 12px',
-              fontSize: '12px',
-              color: '#22c55e'
-            }}>
-              🟢 {walletAddress.slice(0, 8)}...{walletAddress.slice(-4)}
-            </div>
-          ) : (
-            <button
-              onClick={connectWallet}
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                color: 'white',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
-            >
-              Connect Wallet
-            </button>
-          )}
+          <WalletMultiButton style={{
+            background: connected ? 'rgba(34, 197, 94, 0.1)' : 'linear-gradient(135deg, #f59e0b, #d97706)',
+            border: connected ? '1px solid rgba(34, 197, 94, 0.3)' : 'none',
+            borderRadius: '8px',
+            padding: '8px 12px',
+            fontSize: '12px',
+            color: connected ? '#22c55e' : 'white'
+          }} />
           <button
             onClick={() => setShowCreateForm(true)}
-            disabled={!walletAddress}
+            disabled={!connected}
             style={{
-              background: !walletAddress 
+              background: !connected 
                 ? 'rgba(255,255,255,0.1)' 
                 : 'linear-gradient(135deg, #22c55e, #16a34a)',
               border: 'none',
               borderRadius: '8px',
               padding: '10px 20px',
               color: 'white',
-              cursor: !walletAddress ? 'not-allowed' : 'pointer',
+              cursor: !connected ? 'not-allowed' : 'pointer',
               fontWeight: '500',
-              opacity: !walletAddress ? 0.5 : 1
+              opacity: !connected ? 0.5 : 1
             }}
           >
             + Create Token
@@ -240,8 +214,8 @@ export default function Tokens() {
 
       <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{
-          background: walletAddress ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-          border: walletAddress ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)',
+          background: connected ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+          border: connected ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)',
           borderRadius: '12px',
           padding: '15px',
           marginBottom: '20px',
@@ -249,13 +223,13 @@ export default function Tokens() {
           alignItems: 'center',
           gap: '10px'
         }}>
-          <span style={{ fontSize: '20px' }}>{walletAddress ? '🚀' : '⚠️'}</span>
+          <span style={{ fontSize: '20px' }}>{connected ? '🚀' : '⚠️'}</span>
           <div>
-            <div style={{ fontWeight: '600', color: walletAddress ? '#22c55e' : '#f59e0b', marginBottom: '5px' }}>
-              {walletAddress ? 'Ready to Create Real Solana Tokens' : 'Connect Wallet to Create Tokens'}
+            <div style={{ fontWeight: '600', color: connected ? '#22c55e' : '#f59e0b', marginBottom: '5px' }}>
+              {connected ? 'Ready to Create Real Solana Tokens' : 'Connect Wallet to Create Tokens'}
             </div>
             <div style={{ fontSize: '14px', opacity: 0.8 }}>
-              {walletAddress 
+              {connected 
                 ? 'Creates actual SPL tokens on Solana devnet blockchain. Tokens appear in explorers and wallets.' 
                 : 'Connect your wallet to create real SPL tokens on Solana blockchain.'}
             </div>
@@ -543,7 +517,7 @@ export default function Tokens() {
             <div style={{ fontSize: '48px', marginBottom: '20px' }}>🪙</div>
             <h3 style={{ margin: '0 0 10px 0', fontSize: '20px' }}>Ready to Create Tokens</h3>
             <p style={{ margin: 0, fontSize: '14px' }}>
-              {walletAddress ? 'Create your first real Solana token!' : 'Connect wallet to create real Solana tokens!'}
+              {connected ? 'Create your first real Solana token!' : 'Connect wallet to create real Solana tokens!'}
             </p>
           </div>
         )}

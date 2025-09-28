@@ -13,8 +13,8 @@ export default function NFTGallery() {
     setLoading(true)
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sexytime-production.up.railway.app'
-      const response = await axios.get(`${backendUrl}/api/nfts/${publicKey.toString()}`)
-      setNfts(response.data || [])
+      const response = await axios.get(`${backendUrl}/api/wallet-nfts/${publicKey.toString()}`)
+      setNfts(response.data.nfts || [])
     } catch (error) {
       console.error('Failed to fetch NFTs:', error)
       setNfts([])

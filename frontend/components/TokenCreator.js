@@ -23,12 +23,16 @@ export default function TokenCreator() {
       const response = await axios.post(`${backendUrl}/api/create-token`, {
         name: tokenName,
         symbol: tokenSymbol,
-        totalSupply: parseInt(totalSupply),
+        supply: parseInt(totalSupply),
         decimals: parseInt(decimals),
         walletAddress: publicKey.toString()
       })
       
-      alert(`Token created successfully! Mint address: ${response.data.mintAddress}`)
+      if (response.data.success) {
+        alert(`🎉 Real Solana Token Created!\n\nToken: ${tokenName} (${tokenSymbol})\nMint Address: ${response.data.mintAddress}\nExplorer: ${response.data.explorerUrl}\nYour Tokens: ${response.data.userTokens}`)
+      } else {
+        alert(`Token created! Mint address: ${response.data.mintAddress}`)
+      }
       
       // Reset form
       setTokenName('')

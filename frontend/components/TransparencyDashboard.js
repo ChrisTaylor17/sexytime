@@ -12,7 +12,7 @@ export default function TransparencyDashboard() {
 
   const fetchTransparencyData = async () => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sexytime-production.up.railway.app'
       const response = await axios.get(`${backendUrl}/api/transparency`)
       setTransactions(response.data.transactions || [])
       setAiAllocations(response.data.allocations || [])

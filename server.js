@@ -621,6 +621,53 @@ app.post('/api/mint-nft', async (req, res) => {
   }
 })
 
+// Token management endpoints
+app.get('/api/user-tokens/:alias', (req, res) => {
+  const { alias } = req.params
+  const tokens = [
+    {
+      id: 1,
+      name: 'Mars Colony Token',
+      symbol: 'MCT',
+      supply: 1000000,
+      balance: 50000,
+      description: 'Token for Mars Colony Planning project',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 2,
+      name: 'Ocean Token',
+      symbol: 'OCEAN',
+      supply: 500000,
+      balance: 25000,
+      description: 'Token for Ocean Cleanup Initiative',
+      created_at: new Date().toISOString()
+    }
+  ]
+  res.json({ tokens })
+})
+
+app.post('/api/distribute-tokens', (req, res) => {
+  const { tokenId, distributor, recipients, amount } = req.body
+  
+  if (!recipients || recipients.length === 0) {
+    return res.status(400).json({ error: 'No recipients provided' })
+  }
+  
+  if (!amount || amount <= 0) {
+    return res.status(400).json({ error: 'Invalid amount' })
+  }
+  
+  // Simulate token distribution
+  console.log(`Distributing ${amount} tokens from ${distributor} to ${recipients.length} recipients`)
+  
+  res.json({
+    success: true,
+    message: `Successfully distributed ${amount} tokens to ${recipients.length} recipients`,
+    transactionId: `tx_${Date.now()}`
+  })
+})
+
 const PORT = process.env.PORT || 5000
 
 app.listen(PORT, () => {

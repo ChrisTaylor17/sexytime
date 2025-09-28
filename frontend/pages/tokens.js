@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 export default function Tokens() {
   const [userTokens, setUserTokens] = useState([]);
   const [userAlias, setUserAlias] = useState('');
+  const [walletAddress, setWalletAddress] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newToken, setNewToken] = useState({
     name: '',
@@ -22,13 +23,19 @@ export default function Tokens() {
       return;
     }
     setUserAlias(alias);
-    fetchUserTokens();
+    
+    // Get wallet address from localStorage
+    const wallet = localStorage.getItem('walletAddress') || '';
+    setWalletAddress(wallet);
+    
+    fetchUserTokens(alias);
     fetchProjects();
   }, [router]);
 
-  const fetchUserTokens = async () => {
+  const fetchUserTokens = async (alias) => {
+    if (!alias) return;
     try {
-      const response = await fetch(`https://sexytime-production.up.railway.app/api/user-tokens/${userAlias}`);
+      const response = await fetch(`https://sexytime-production.up.railway.app/api/user-tokens/${alias}`);
       if (response.ok) {
         const data = await response.json();
         setUserTokens(data.tokens || []);
@@ -58,6 +65,12 @@ export default function Tokens() {
       return;
     }
 
+    // Check if wallet is connected
+    if (!walletAddress) {
+      alert('Please connect your wallet first!');
+      return;
+    }
+
     try {
       // Create real Solana token
       const response = await fetch('https://sexytime-production.up.railway.app/api/create-token', {
@@ -67,7 +80,9 @@ export default function Tokens() {
           name: newToken.name,
           symbol: newToken.symbol,
           supply: newToken.supply,
-          walletAddress: 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W' // Use a dummy wallet for now
+          description: newToken.description,
+          projectId: newToken.projectId,
+          walletAddress: walletAddress
         })
       });
       
@@ -76,7 +91,7 @@ export default function Tokens() {
         alert(`🎉 Real Solana Token Created!\n\nToken: ${newToken.name} (${newToken.symbol})\nMint Address: ${data.mintAddress}\nExplorer: ${data.explorerUrl}`);
         setShowCreateForm(false);
         setNewToken({ name: '', symbol: '', description: '', supply: 1000000, projectId: '' });
-        fetchUserTokens();
+        fetchUserTokens(userAlias);
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Token creation failed');
@@ -125,7 +140,7 @@ export default function Tokens() {
       
       if (response.ok) {
         alert(`✅ Distributed ${amount.toLocaleString()} ${token.symbol} to ${addresses.length} recipients`);
-        fetchUserTokens(); // Refresh tokens
+        fetchUserTokens(userAlias); // Refresh tokens
       } else {
         const errorData = await response.json();
         alert(`❌ Distribution failed: ${errorData.error || 'Unknown error'}`);
@@ -140,6 +155,14 @@ export default function Tokens() {
     const details = `Token Details:\n\nName: ${token.name}\nSymbol: ${token.symbol}\nTotal Supply: ${token.supply?.toLocaleString() || 'N/A'}\nYour Balance: ${token.balance?.toLocaleString() || '0'}\nCreated: ${new Date(token.created_at).toLocaleDateString()}\n\n${token.description || 'No description'}`;
     
     alert(details);
+  };
+
+  const connectWallet = () => {
+    // Simple wallet connection simulation
+    const demoWallet = 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W';
+    localStorage.setItem('walletAddress', demoWallet);
+    setWalletAddress(demoWallet);
+    alert('Demo wallet connected! You can now create tokens.');
   };
 
   return (
@@ -175,7 +198,34 @@ export default function Tokens() {
             Token Manager
           </h1>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {walletAddress ? (
+            <div style={{
+              background: 'rgba(34, 197, 94, 0.1)',
+              border: '1px solid rgba(34, 197, 94, 0.3)',
+              borderRadius: '8px',
+              padding: '8px 12px',
+              fontSize: '12px',
+              color: '#22c55e'
+            }}>
+              🟢 {walletAddress.slice(0, 8)}...{walletAddress.slice(-4)}
+            </div>
+          ) : (
+            <button
+              onClick={connectWallet}
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              Connect Wallet
+            </button>
+          )}
           <button
             onClick={() => router.push('/nfts')}
             style={{
@@ -192,14 +242,18 @@ export default function Tokens() {
           </button>
           <button
             onClick={() => setShowCreateForm(true)}
+            disabled={!walletAddress}
             style={{
-              background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+              background: !walletAddress 
+                ? 'rgba(255,255,255,0.1)' 
+                : 'linear-gradient(135deg, #22c55e, #16a34a)',
               border: 'none',
               borderRadius: '8px',
               padding: '10px 20px',
               color: 'white',
-              cursor: 'pointer',
-              fontWeight: '500'
+              cursor: !walletAddress ? 'not-allowed' : 'pointer',
+              fontWeight: '500',
+              opacity: !walletAddress ? 0.5 : 1
             }}
           >
             + Create Token

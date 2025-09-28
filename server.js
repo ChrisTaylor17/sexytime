@@ -142,9 +142,10 @@ try {
         
         const { Transaction } = web3
         const transaction = new Transaction().add(metadataInstruction)
-        await connection.sendTransaction(transaction, [aiWallet])
+        const signature = await connection.sendTransaction(transaction, [aiWallet])
+        await connection.confirmTransaction(signature)
         
-        console.log('✅ Token metadata added to blockchain:', name, symbol)
+        console.log('✅ Token metadata added to blockchain:', name, symbol, signature)
       } catch (metaError) {
         console.log('⚠️ Metadata creation failed:', metaError.message)
       }
@@ -718,6 +719,7 @@ app.post('/api/distribute-tokens', async (req, res) => {
   }
   
   try {
+    const { PublicKey } = web3
     const mint = new PublicKey(tokenId)
     
     for (const recipient of recipients) {

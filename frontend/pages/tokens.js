@@ -78,18 +78,22 @@ export default function Tokens() {
       return;
     }
 
+    const tokenData = {
+      name: newToken.name,
+      symbol: newToken.symbol,
+      supply: newToken.supply,
+      description: newToken.description,
+      projectId: newToken.projectId,
+      walletAddress: publicKey.toString()
+    };
+    
+    console.log('Sending token creation request:', tokenData);
+    
     try {
       const response = await fetch('https://sexytime-production.up.railway.app/api/create-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newToken.name,
-          symbol: newToken.symbol,
-          supply: newToken.supply,
-          description: newToken.description,
-          projectId: newToken.projectId,
-          walletAddress: publicKey.toString()
-        })
+        body: JSON.stringify(tokenData)
       });
       
       if (response.ok) {

@@ -77,7 +77,17 @@ try {
         return res.status(400).json({ error: 'Wallet address required' })
       }
       
-      console.log(`🪙 Creating token ${symbol} for ${walletAddress}`)
+      console.log(`🪙 Creating token with inputs:`, {
+        name: name,
+        symbol: symbol,
+        supply: supply,
+        description: description,
+        walletAddress: walletAddress
+      })
+      
+      if (!name || !symbol) {
+        return res.status(400).json({ error: 'Name and symbol are required' })
+      }
       
       const userPublicKey = new PublicKey(walletAddress)
       
@@ -147,7 +157,7 @@ try {
         const sig = await connection.sendTransaction(tx, [aiWallet])
         await connection.confirmTransaction(sig)
         
-        console.log('✅ SPL Token metadata created on-chain:', name, symbol, sig)
+        console.log('✅ SPL Token metadata created on-chain with name:', name, 'symbol:', symbol, 'signature:', sig)
       } catch (error) {
         console.log('⚠️ Metadata failed:', error.message)
         console.log('Full error:', error)

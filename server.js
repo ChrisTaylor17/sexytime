@@ -107,29 +107,7 @@ try {
       }
       userTokens[walletAddress].push(tokenData)
       
-      // Add metadata to blockchain using Metaplex
-      try {
-        const metaplex = Metaplex.make(connection)
-          .use(keypairIdentity(aiWallet))
-          .use(bundlrStorage())
-        
-        await metaplex.nfts().create({
-          uri: `data:application/json,${encodeURIComponent(JSON.stringify({
-            name: name,
-            symbol: symbol,
-            description: description || `${name} token`
-          }))}`,
-          name: name,
-          symbol: symbol,
-          sellerFeeBasisPoints: 0,
-          useNewMint: mint
-        })
-        
-        console.log('✅ Token metadata added to blockchain:', name, symbol)
-      } catch (metaError) {
-        console.log('⚠️ Metadata creation failed:', metaError.message)
-        console.log('Error details:', metaError)
-      }
+      console.log('✅ SPL Token created (metadata stored locally):', name, symbol)
       
       console.log('✅ Token saved to user collection:', name, symbol)
       

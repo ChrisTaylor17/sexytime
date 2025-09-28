@@ -107,22 +107,50 @@ try {
       }
       userTokens[walletAddress].push(tokenData)
       
-      // Create proper SPL token metadata
+      // Create SPL token metadata directly
       try {
-        const metaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet))
+        const TOKEN_METADATA_PROGRAM = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
         
-        const { nft } = await metaplex.nfts().create({
-          name: name,
-          symbol: symbol,
-          uri: '',
-          sellerFeeBasisPoints: 0,
-          tokenStandard: 0, // Fungible token
-          useNewMint: mint
-        })
+        const [metadataPDA] = PublicKey.findProgramAddressSync(
+          [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM.toBuffer(), mint.toBuffer()],
+          TOKEN_METADATA_PROGRAM
+        )
         
-        console.log('✅ SPL Token metadata created:', name, symbol, nft.address.toString())
+        const createMetadataIx = createCreateMetadataAccountV3Instruction(
+          {
+            metadata: metadataPDA,
+            mint: mint,
+            mintAuthority: aiWallet.publicKey,
+            payer: aiWallet.publicKey,
+            updateAuthority: aiWallet.publicKey,
+            systemProgram: web3.SystemProgram.programId,
+            rent: web3.SYSVAR_RENT_PUBKEY
+          },
+          {
+            createMetadataAccountArgsV3: {
+              data: {
+                name: name,
+                symbol: symbol,
+                uri: '',
+                sellerFeeBasisPoints: 0,
+                creators: null,
+                collection: null,
+                uses: null
+              },
+              isMutable: true,
+              collectionDetails: null
+            }
+          }
+        )
+        
+        const tx = new web3.Transaction().add(createMetadataIx)
+        const sig = await connection.sendTransaction(tx, [aiWallet])
+        await connection.confirmTransaction(sig)
+        
+        console.log('✅ SPL Token metadata created on-chain:', name, symbol, sig)
       } catch (error) {
         console.log('⚠️ Metadata failed:', error.message)
+        console.log('Full error:', error)
       }
       
       console.log('✅ SPL Token created:', name, symbol, mint.toString())

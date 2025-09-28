@@ -567,9 +567,9 @@ export default function Tokens() {
             opacity: 0.6
           }}>
             <div style={{ fontSize: '48px', marginBottom: '20px' }}>🪙</div>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '20px' }}>No tokens yet</h3>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '20px' }}>Ready to Create Tokens</h3>
             <p style={{ margin: 0, fontSize: '14px' }}>
-              Create your first token to get started!
+              {walletAddress ? 'Create your first real Solana token!' : 'Connect wallet to create real Solana tokens!'}
             </p>
           </div>
         )}

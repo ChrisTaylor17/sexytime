@@ -107,47 +107,28 @@ try {
       }
       userTokens[walletAddress].push(tokenData)
       
-      // Add metadata to blockchain
+      // Add metadata to blockchain using Metaplex
       try {
-        const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
-        const [metadataAddress] = PublicKey.findProgramAddressSync(
-          [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer()],
-          TOKEN_METADATA_PROGRAM_ID
-        )
+        const metaplex = Metaplex.make(connection)
+          .use(keypairIdentity(aiWallet))
+          .use(bundlrStorage())
         
-        const metadataInstruction = createCreateMetadataAccountV3Instruction(
-          {
-            metadata: metadataAddress,
-            mint: mint,
-            mintAuthority: aiWallet.publicKey,
-            payer: aiWallet.publicKey,
-            updateAuthority: aiWallet.publicKey
-          },
-          {
-            createMetadataAccountArgsV3: {
-              data: {
-                name: name,
-                symbol: symbol,
-                uri: '',
-                sellerFeeBasisPoints: 0,
-                creators: null,
-                collection: null,
-                uses: null
-              },
-              isMutable: true,
-              collectionDetails: null
-            }
-          }
-        )
+        await metaplex.nfts().create({
+          uri: `data:application/json,${encodeURIComponent(JSON.stringify({
+            name: name,
+            symbol: symbol,
+            description: description || `${name} token`
+          }))}`,
+          name: name,
+          symbol: symbol,
+          sellerFeeBasisPoints: 0,
+          useNewMint: mint
+        })
         
-        const { Transaction } = web3
-        const transaction = new Transaction().add(metadataInstruction)
-        const signature = await connection.sendTransaction(transaction, [aiWallet])
-        await connection.confirmTransaction(signature)
-        
-        console.log('✅ Token metadata added to blockchain:', name, symbol, signature)
+        console.log('✅ Token metadata added to blockchain:', name, symbol)
       } catch (metaError) {
         console.log('⚠️ Metadata creation failed:', metaError.message)
+        console.log('Error details:', metaError)
       }
       
       console.log('✅ Token saved to user collection:', name, symbol)

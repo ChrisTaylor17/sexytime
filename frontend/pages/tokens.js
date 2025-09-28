@@ -65,52 +65,31 @@ export default function Tokens() {
     }
 
     try {
-      try {
-        // Try backend first
-        const response = await fetch('https://sexytime-production.up.railway.app/api/create-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...newToken,
-            creator: userAlias,
-            aiWallet: 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W'
-          })
-        });
-        
-        if (response.ok) {
-          alert(`Token "${newToken.name}" (${newToken.symbol}) created successfully!`);
-          setShowCreateForm(false);
-          setNewToken({ name: '', symbol: '', description: '', supply: 1000000, projectId: '' });
-          fetchUserTokens();
-          return;
-        }
-      } catch (backendError) {
-        console.log('Backend unavailable, using localStorage');
+      // Create real Solana token
+      const response = await fetch('https://sexytime-production.up.railway.app/api/create-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newToken.name,
+          symbol: newToken.symbol,
+          supply: newToken.supply,
+          walletAddress: 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W' // Use a dummy wallet for now
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        alert(`🎉 Real Solana Token Created!\n\nToken: ${newToken.name} (${newToken.symbol})\nMint Address: ${data.mintAddress}\nExplorer: ${data.explorerUrl}`);
+        setShowCreateForm(false);
+        setNewToken({ name: '', symbol: '', description: '', supply: 1000000, projectId: '' });
+        fetchUserTokens();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Token creation failed');
       }
-      
-      // Fallback to localStorage
-      const mockToken = {
-        id: Date.now(),
-        name: newToken.name,
-        symbol: newToken.symbol,
-        description: newToken.description,
-        supply: newToken.supply,
-        creator: userAlias,
-        balance: Math.floor(newToken.supply * 0.8),
-        created_at: new Date().toISOString()
-      };
-      
-      const existingTokens = JSON.parse(localStorage.getItem(`tokens_${userAlias}`) || '[]');
-      existingTokens.push(mockToken);
-      localStorage.setItem(`tokens_${userAlias}`, JSON.stringify(existingTokens));
-      
-      alert(`✅ Token "${newToken.name}" (${newToken.symbol}) created successfully!\n\n⚠️ Note: This is a simulated token for demo purposes. To create real Solana tokens, connect your wallet.`);
-      setShowCreateForm(false);
-      setNewToken({ name: '', symbol: '', description: '', supply: 1000000, projectId: '' });
-      fetchUserTokens();
     } catch (error) {
       console.error('Error creating token:', error);
-      alert('Failed to create token. Please try again.');
+      alert(`❌ Token creation failed: ${error.message}\n\nMake sure the AI wallet has enough SOL for transaction fees.`);
     }
   };
 
@@ -244,10 +223,10 @@ export default function Tokens() {
       </div>
 
       <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-        {/* Demo Notice */}
+        {/* Real Token Notice */}
         <div style={{
-          background: 'rgba(251, 191, 36, 0.1)',
-          border: '1px solid rgba(251, 191, 36, 0.3)',
+          background: 'rgba(34, 197, 94, 0.1)',
+          border: '1px solid rgba(34, 197, 94, 0.3)',
           borderRadius: '12px',
           padding: '15px',
           marginBottom: '20px',
@@ -255,13 +234,13 @@ export default function Tokens() {
           alignItems: 'center',
           gap: '10px'
         }}>
-          <span style={{ fontSize: '20px' }}>⚠️</span>
+          <span style={{ fontSize: '20px' }}>✅</span>
           <div>
-            <div style={{ fontWeight: '600', color: '#fbbf24', marginBottom: '5px' }}>
-              Demo Mode - Simulated Tokens
+            <div style={{ fontWeight: '600', color: '#22c55e', marginBottom: '5px' }}>
+              Real Solana Token Creation
             </div>
             <div style={{ fontSize: '14px', opacity: 0.8 }}>
-              These tokens are simulated for demonstration. To create real Solana tokens, connect your wallet and use the Solana Token Program.
+              Creates actual SPL tokens on Solana devnet blockchain. Tokens will appear in Solana explorers and wallets.
             </div>
           </div>
         </div>

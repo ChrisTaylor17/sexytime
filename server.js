@@ -107,6 +107,48 @@ try {
       }
       userTokens[walletAddress].push(tokenData)
       
+      // Add metadata to blockchain
+      try {
+        const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
+        const [metadataAddress] = PublicKey.findProgramAddressSync(
+          [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+          TOKEN_METADATA_PROGRAM_ID
+        )
+        
+        const metadataInstruction = createCreateMetadataAccountV3Instruction(
+          {
+            metadata: metadataAddress,
+            mint: mint,
+            mintAuthority: aiWallet.publicKey,
+            payer: aiWallet.publicKey,
+            updateAuthority: aiWallet.publicKey
+          },
+          {
+            createMetadataAccountArgsV3: {
+              data: {
+                name: name,
+                symbol: symbol,
+                uri: '',
+                sellerFeeBasisPoints: 0,
+                creators: null,
+                collection: null,
+                uses: null
+              },
+              isMutable: true,
+              collectionDetails: null
+            }
+          }
+        )
+        
+        const { Transaction } = web3
+        const transaction = new Transaction().add(metadataInstruction)
+        await connection.sendTransaction(transaction, [aiWallet])
+        
+        console.log('✅ Token metadata added to blockchain:', name, symbol)
+      } catch (metaError) {
+        console.log('⚠️ Metadata creation failed:', metaError.message)
+      }
+      
       console.log('✅ Token saved to user collection:', name, symbol)
       
       const userTokenAccount = await getOrCreateAssociatedTokenAccount(
@@ -660,7 +702,7 @@ app.post('/api/save-token', (req, res) => {
   res.json({ success: true })
 })
 
-app.post('/api/distribute-tokens', (req, res) => {
+app.post('/api/distribute-tokens', async (req, res) => {
   const { tokenId, distributor, recipients, amount } = req.body
   
   if (!recipients || recipients.length === 0) {
@@ -671,14 +713,47 @@ app.post('/api/distribute-tokens', (req, res) => {
     return res.status(400).json({ error: 'Invalid amount' })
   }
   
-  // Simulate token distribution
-  console.log(`Distributing ${amount} tokens from ${distributor} to ${recipients.length} recipients`)
+  if (!solanaEnabled) {
+    return res.status(503).json({ error: 'Solana not available' })
+  }
   
-  res.json({
-    success: true,
-    message: `Successfully distributed ${amount} tokens to ${recipients.length} recipients`,
-    transactionId: `tx_${Date.now()}`
-  })
+  try {
+    const mint = new PublicKey(tokenId)
+    
+    for (const recipient of recipients) {
+      const recipientKey = new PublicKey(recipient.trim())
+      
+      // Get or create recipient token account
+      const recipientTokenAccount = await getOrCreateAssociatedTokenAccount(
+        connection,
+        aiWallet,
+        mint,
+        recipientKey
+      )
+      
+      // Transfer tokens from AI wallet to recipient
+      await mintTo(
+        connection,
+        aiWallet,
+        mint,
+        recipientTokenAccount.address,
+        aiWallet,
+        amount * 1000000 // 6 decimals
+      )
+      
+      console.log(`✅ Distributed ${amount} tokens to ${recipient}`)
+    }
+    
+    res.json({
+      success: true,
+      message: `Successfully distributed ${amount} tokens to ${recipients.length} recipients`,
+      transactionId: `tx_${Date.now()}`
+    })
+    
+  } catch (error) {
+    console.error('Token distribution error:', error)
+    res.status(500).json({ error: 'Distribution failed: ' + error.message })
+  }
 })
 
 // AI token allocation endpoint

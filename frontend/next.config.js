@@ -2,9 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  // Force rebuild
+  // Force rebuild - remove demo mode
   generateBuildId: async () => {
-    return 'fix-nav-' + Date.now()
+    return 'remove-demo-' + Date.now()
   },
   trailingSlash: false,
   async rewrites() {

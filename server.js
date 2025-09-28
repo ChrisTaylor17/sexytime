@@ -90,24 +90,49 @@ try {
         6
       )
       
-      // Create metadata for the token
+      // Create token metadata using SPL Token Metadata
       try {
-        const metaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet))
+        const { createCreateMetadataAccountV3Instruction } = require('@metaplex-foundation/mpl-token-metadata')
+        const { SystemProgram, Transaction } = web3
         
-        await metaplex.nfts().create({
-          uri: `data:application/json,${encodeURIComponent(JSON.stringify({
-            name: name,
-            symbol: symbol,
-            description: description || `${name} token created on Consilience DAO`,
-            image: `https://api.dicebear.com/7.x/shapes/svg?seed=${symbol}&backgroundColor=22c55e`
-          }))}`,
-          name: name,
-          symbol: symbol,
-          sellerFeeBasisPoints: 0,
-          useNewMint: mint
-        })
+        const metadataAddress = PublicKey.findProgramAddressSync(
+          [
+            Buffer.from('metadata'),
+            new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s').toBuffer(),
+            mint.toBuffer()
+          ],
+          new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
+        )[0]
         
-        console.log('✅ Token metadata created')
+        const metadataInstruction = createCreateMetadataAccountV3Instruction(
+          {
+            metadata: metadataAddress,
+            mint: mint,
+            mintAuthority: aiWallet.publicKey,
+            payer: aiWallet.publicKey,
+            updateAuthority: aiWallet.publicKey
+          },
+          {
+            createMetadataAccountArgsV3: {
+              data: {
+                name: name,
+                symbol: symbol,
+                uri: '',
+                sellerFeeBasisPoints: 0,
+                creators: null,
+                collection: null,
+                uses: null
+              },
+              isMutable: true,
+              collectionDetails: null
+            }
+          }
+        )
+        
+        const transaction = new Transaction().add(metadataInstruction)
+        await connection.sendTransaction(transaction, [aiWallet])
+        
+        console.log('✅ Token metadata created on-chain')
       } catch (metaError) {
         console.log('⚠️ Metadata creation failed:', metaError.message)
       }
@@ -657,9 +682,13 @@ app.get('/api/user-tokens/:walletAddress', async (req, res) => {
   
   try {
     const publicKey = new PublicKey(walletAddress)
+    console.log(`🔍 Fetching tokens for wallet: ${walletAddress}`)
+    
     const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
       programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
     })
+    
+    console.log(`📊 Found ${tokenAccounts.value.length} token accounts`)
     
     const tokens = await Promise.all(
       tokenAccounts.value.map(async (account) => {
@@ -693,6 +722,7 @@ app.get('/api/user-tokens/:walletAddress', async (req, res) => {
     )
     
     const filteredTokens = tokens.filter(token => token.balance > 0)
+    console.log(`✅ Returning ${filteredTokens.length} tokens with balance > 0`)
     
     res.json({ tokens: filteredTokens })
   } catch (error) {

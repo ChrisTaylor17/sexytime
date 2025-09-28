@@ -28,23 +28,17 @@ export default function Tokens() {
 
   const fetchUserTokens = async () => {
     try {
-      // Try backend first, fallback to localStorage
-      try {
-        const response = await fetch(`https://sexytime-production.up.railway.app/api/user-tokens/${userAlias}`);
-        if (response.ok) {
-          const data = await response.json();
-          setUserTokens(data.tokens || []);
-          return;
-        }
-      } catch (backendError) {
-        console.log('Backend unavailable, using localStorage');
+      const response = await fetch(`https://sexytime-production.up.railway.app/api/user-tokens/${userAlias}`);
+      if (response.ok) {
+        const data = await response.json();
+        setUserTokens(data.tokens || []);
+      } else {
+        console.error('Failed to fetch tokens from backend');
+        setUserTokens([]);
       }
-      
-      // Fallback to localStorage
-      const storedTokens = JSON.parse(localStorage.getItem(`tokens_${userAlias}`) || '[]');
-      setUserTokens(storedTokens);
     } catch (error) {
       console.error('Error fetching tokens:', error);
+      setUserTokens([]);
     }
   };
 
@@ -118,7 +112,6 @@ export default function Tokens() {
     }
     
     try {
-      // Try backend first
       const response = await fetch('https://sexytime-production.up.railway.app/api/distribute-tokens', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -131,23 +124,15 @@ export default function Tokens() {
       });
       
       if (response.ok) {
-        alert(`Distributed ${amount.toLocaleString()} ${token.symbol} to ${addresses.length} recipients`);
+        alert(`✅ Distributed ${amount.toLocaleString()} ${token.symbol} to ${addresses.length} recipients`);
+        fetchUserTokens(); // Refresh tokens
       } else {
-        throw new Error('Backend failed');
+        const errorData = await response.json();
+        alert(`❌ Distribution failed: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
-      // Fallback to localStorage simulation
-      const updatedTokens = userTokens.map(t => {
-        if (t.id === token.id) {
-          return { ...t, balance: (t.balance || 0) - totalAmount };
-        }
-        return t;
-      });
-      
-      setUserTokens(updatedTokens);
-      localStorage.setItem(`tokens_${userAlias}`, JSON.stringify(updatedTokens));
-      
-      alert(`✅ Distributed ${amount.toLocaleString()} ${token.symbol} to ${addresses.length} recipients`);
+      console.error('Error distributing tokens:', error);
+      alert(`❌ Distribution failed: ${error.message}`);
     }
   };
   

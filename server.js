@@ -90,51 +90,13 @@ try {
         6
       )
       
-      // Create token metadata using SPL Token Metadata
-      try {
-        const { createCreateMetadataAccountV3Instruction } = require('@metaplex-foundation/mpl-token-metadata')
-        const { SystemProgram, Transaction } = web3
-        
-        const metadataAddress = PublicKey.findProgramAddressSync(
-          [
-            Buffer.from('metadata'),
-            new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s').toBuffer(),
-            mint.toBuffer()
-          ],
-          new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
-        )[0]
-        
-        const metadataInstruction = createCreateMetadataAccountV3Instruction(
-          {
-            metadata: metadataAddress,
-            mint: mint,
-            mintAuthority: aiWallet.publicKey,
-            payer: aiWallet.publicKey,
-            updateAuthority: aiWallet.publicKey
-          },
-          {
-            createMetadataAccountArgsV3: {
-              data: {
-                name: name,
-                symbol: symbol,
-                uri: '',
-                sellerFeeBasisPoints: 0,
-                creators: null,
-                collection: null,
-                uses: null
-              },
-              isMutable: true,
-              collectionDetails: null
-            }
-          }
-        )
-        
-        const transaction = new Transaction().add(metadataInstruction)
-        await connection.sendTransaction(transaction, [aiWallet])
-        
-        console.log('✅ Token metadata created on-chain')
-      } catch (metaError) {
-        console.log('⚠️ Metadata creation failed:', metaError.message)
+      // Store token info in memory for display
+      global.tokenRegistry = global.tokenRegistry || {}
+      global.tokenRegistry[mint.toString()] = {
+        name,
+        symbol,
+        description: description || `${name} token`,
+        creator: walletAddress
       }
       
       const userTokenAccount = await getOrCreateAssociatedTokenAccount(
@@ -612,12 +574,7 @@ app.get('/api/user/:alias', (req, res) => {
 })
 
 app.get('/api/projects', (req, res) => {
-  res.json({
-    projects: [
-      { id: 1, name: 'Mars Colony DAO', description: 'Building on Mars', owner_alias: 'mars.builder' },
-      { id: 2, name: 'Ocean Cleanup', description: 'Clean the oceans', owner_alias: 'ocean.saver' }
-    ]
-  })
+  res.json({ projects: [] })
 })
 
 app.get('/api/user-nfts/:alias', (req, res) => {
@@ -697,15 +654,12 @@ app.get('/api/user-tokens/:walletAddress', async (req, res) => {
         let tokenSymbol = tokenInfo.mint.slice(0, 4).toUpperCase()
         let tokenDescription = 'SPL Token on Solana'
         
-        // Try to fetch metadata
-        try {
-          const metaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet))
-          const nft = await metaplex.nfts().findByMint({ mintAddress: new PublicKey(tokenInfo.mint) })
-          if (nft.name) tokenName = nft.name
-          if (nft.symbol) tokenSymbol = nft.symbol
-          if (nft.json?.description) tokenDescription = nft.json.description
-        } catch (e) {
-          // No metadata found, use defaults
+        // Get token info from registry
+        const tokenData = global.tokenRegistry?.[tokenInfo.mint]
+        if (tokenData) {
+          tokenName = tokenData.name
+          tokenSymbol = tokenData.symbol
+          tokenDescription = tokenData.description
         }
         
         return {

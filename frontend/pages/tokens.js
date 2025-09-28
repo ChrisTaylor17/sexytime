@@ -336,27 +336,7 @@ export default function Tokens() {
                 }}
               />
               
-              <select
-                value={newToken.projectId}
-                onChange={(e) => setNewToken({...newToken, projectId: e.target.value})}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  marginBottom: '20px',
-                  background: 'rgba(255,255,255,0.1)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '8px',
-                  color: 'white',
-                  fontSize: '14px'
-                }}
-              >
-                <option value="">Select Project (Optional)</option>
-                {projects.map(project => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
+
               
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button

@@ -24,7 +24,6 @@ export default function Tokens() {
     }
     setUserAlias(alias);
     
-    // Get wallet address from localStorage
     const wallet = localStorage.getItem('walletAddress') || '';
     setWalletAddress(wallet);
     
@@ -39,9 +38,6 @@ export default function Tokens() {
       if (response.ok) {
         const data = await response.json();
         setUserTokens(data.tokens || []);
-      } else {
-        console.error('Failed to fetch tokens from backend');
-        setUserTokens([]);
       }
     } catch (error) {
       console.error('Error fetching tokens:', error);
@@ -65,14 +61,12 @@ export default function Tokens() {
       return;
     }
 
-    // Check if wallet is connected
     if (!walletAddress) {
       alert('Please connect your wallet first!');
       return;
     }
 
     try {
-      // Create real Solana token
       const response = await fetch('https://sexytime-production.up.railway.app/api/create-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,7 +82,7 @@ export default function Tokens() {
       
       if (response.ok) {
         const data = await response.json();
-        alert(`🎉 Real Solana Token Created!\n\nToken: ${newToken.name} (${newToken.symbol})\nMint Address: ${data.mintAddress}\nExplorer: ${data.explorerUrl}`);
+        alert(`🎉 Real Solana Token Created!\\n\\nToken: ${newToken.name} (${newToken.symbol})\\nMint Address: ${data.mintAddress}\\nExplorer: ${data.explorerUrl}`);
         setShowCreateForm(false);
         setNewToken({ name: '', symbol: '', description: '', supply: 1000000, projectId: '' });
         fetchUserTokens(userAlias);
@@ -98,7 +92,7 @@ export default function Tokens() {
       }
     } catch (error) {
       console.error('Error creating token:', error);
-      alert(`❌ Token creation failed: ${error.message}\n\nMake sure the AI wallet has enough SOL for transaction fees.`);
+      alert(`❌ Token creation failed: ${error.message}`);
     }
   };
 
@@ -140,7 +134,7 @@ export default function Tokens() {
       
       if (response.ok) {
         alert(`✅ Distributed ${amount.toLocaleString()} ${token.symbol} to ${addresses.length} recipients`);
-        fetchUserTokens(userAlias); // Refresh tokens
+        fetchUserTokens(userAlias);
       } else {
         const errorData = await response.json();
         alert(`❌ Distribution failed: ${errorData.error || 'Unknown error'}`);
@@ -152,17 +146,15 @@ export default function Tokens() {
   };
   
   const viewTokenDetails = (token) => {
-    const details = `Token Details:\n\nName: ${token.name}\nSymbol: ${token.symbol}\nTotal Supply: ${token.supply?.toLocaleString() || 'N/A'}\nYour Balance: ${token.balance?.toLocaleString() || '0'}\nCreated: ${new Date(token.created_at).toLocaleDateString()}\n\n${token.description || 'No description'}`;
-    
+    const details = `Token Details:\\n\\nName: ${token.name}\\nSymbol: ${token.symbol}\\nTotal Supply: ${token.supply?.toLocaleString() || 'N/A'}\\nYour Balance: ${token.balance?.toLocaleString() || '0'}\\nCreated: ${new Date(token.created_at).toLocaleDateString()}\\n\\n${token.description || 'No description'}`;
     alert(details);
   };
 
   const connectWallet = () => {
-    // Simple wallet connection simulation
     const demoWallet = 'FcgjXDi62rzFT5eMVxQQy6WPvKLZVcRHakDYTM5E6k6W';
     localStorage.setItem('walletAddress', demoWallet);
     setWalletAddress(demoWallet);
-    alert('Demo wallet connected! You can now create tokens.');
+    alert('Wallet connected! You can now create real Solana tokens.');
   };
 
   return (
@@ -172,7 +164,6 @@ export default function Tokens() {
       color: 'white',
       fontFamily: 'system-ui, -apple-system, sans-serif'
     }}>
-      {/* Header */}
       <div style={{
         padding: '20px',
         borderBottom: '1px solid rgba(255,255,255,0.1)',
@@ -197,7 +188,6 @@ export default function Tokens() {
           <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>
             Token Manager
           </h1>
-          {/* Build: 2024-12-19 */}
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {walletAddress ? (
@@ -228,20 +218,6 @@ export default function Tokens() {
             </button>
           )}
           <button
-            onClick={() => router.push('/nfts')}
-            style={{
-              background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '10px 20px',
-              color: 'white',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
-            🔗 Real Tokens (NFT Page)
-          </button>
-          <button
             onClick={() => setShowCreateForm(true)}
             disabled={!walletAddress}
             style={{
@@ -263,7 +239,6 @@ export default function Tokens() {
       </div>
 
       <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-        {/* Token Status */}
         <div style={{
           background: walletAddress ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
           border: walletAddress ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)',
@@ -286,7 +261,7 @@ export default function Tokens() {
             </div>
           </div>
         </div>
-        {/* Create Token Modal */}
+
         {showCreateForm && (
           <div style={{
             position: 'fixed',
@@ -438,7 +413,6 @@ export default function Tokens() {
           </div>
         )}
 
-        {/* Tokens Grid */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',

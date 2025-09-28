@@ -401,23 +401,45 @@ try {
         nfts.map(async (nft) => {
           try {
             const fullNft = await metaplex.nfts().load({ metadata: nft })
+            
+            // Decode data URI metadata if present
+            let imageUrl = fullNft.json?.image
+            let nftName = fullNft.name || nft.name
+            let nftDescription = fullNft.description || nft.description
+            
+            if (nft.uri && nft.uri.startsWith('data:application/json')) {
+              try {
+                const metadataStr = nft.uri.includes('base64,') 
+                  ? Buffer.from(nft.uri.split('base64,')[1], 'base64').toString()
+                  : decodeURIComponent(nft.uri.split(',')[1])
+                const metadata = JSON.parse(metadataStr)
+                imageUrl = metadata.image || imageUrl
+                nftName = metadata.name || nftName
+                nftDescription = metadata.description || nftDescription
+                console.log('✅ Decoded data URI metadata for', nft.address.toString(), ':', metadata)
+              } catch (decodeError) {
+                console.log('⚠️ Failed to decode metadata for', nft.address.toString())
+              }
+            }
+            
             return {
               mint: nft.address.toString(),
-              name: nft.name || `NFT ${nft.address.toString().slice(0, 8)}...`,
-              description: nft.description || 'Consilience DAO NFT',
-              image: fullNft.json?.image || `https://api.dicebear.com/7.x/shapes/svg?seed=${nft.address.toString()}&backgroundColor=00ff88`,
+              name: nftName || `NFT ${nft.address.toString().slice(0, 8)}...`,
+              description: nftDescription || 'Consilience DAO NFT',
+              image: imageUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${nft.address.toString()}&backgroundColor=00ff88`,
               symbol: nft.symbol || 'CNSL',
               uri: nft.uri,
               explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`,
               isRealNFT: true
             }
           } catch (error) {
+            console.log('⚠️ Error loading NFT', nft.address.toString(), ':', error.message)
             return {
               mint: nft.address.toString(),
-              name: `NFT ${nft.address.toString().slice(0, 8)}...`,
-              description: 'Consilience DAO NFT',
+              name: nft.name || `NFT ${nft.address.toString().slice(0, 8)}...`,
+              description: nft.description || 'Consilience DAO NFT',
               image: `https://api.dicebear.com/7.x/shapes/svg?seed=${nft.address.toString()}&backgroundColor=ff6b6b`,
-              symbol: 'CNSL',
+              symbol: nft.symbol || 'CNSL',
               explorerUrl: `https://explorer.solana.com/address/${nft.address.toString()}?cluster=devnet`,
               isRealNFT: true
             }
@@ -425,7 +447,7 @@ try {
         })
       )
       
-      console.log(`✅ Returning ${nftData.length} NFTs`)
+      console.log(`✅ Returning ${nftData.length} NFTs with images`)
       res.json({ nfts: nftData })
       
     } catch (error) {

@@ -1,7 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 
-console.log('🚀 Starting Consilience DAO Server v2.2 with Bundlr...')
+console.log('🚀 Starting Consilience DAO Server v2.3 - Dec 19 2024...')
 
 const app = express()
 app.use(cors({
@@ -107,7 +107,25 @@ try {
       }
       userTokens[walletAddress].push(tokenData)
       
-      console.log('✅ SPL Token created (metadata stored locally):', name, symbol)
+      // Create proper SPL token metadata
+      try {
+        const metaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet))
+        
+        const { nft } = await metaplex.nfts().create({
+          name: name,
+          symbol: symbol,
+          uri: '',
+          sellerFeeBasisPoints: 0,
+          tokenStandard: 0, // Fungible token
+          useNewMint: mint
+        })
+        
+        console.log('✅ SPL Token metadata created:', name, symbol, nft.address.toString())
+      } catch (error) {
+        console.log('⚠️ Metadata failed:', error.message)
+      }
+      
+      console.log('✅ SPL Token created:', name, symbol, mint.toString())
       
       console.log('✅ Token saved to user collection:', name, symbol)
       

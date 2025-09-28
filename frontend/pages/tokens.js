@@ -197,6 +197,7 @@ export default function Tokens() {
           <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>
             Token Manager
           </h1>
+          {/* Build: 2024-12-19 */}
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {walletAddress ? (

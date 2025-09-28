@@ -90,13 +90,35 @@ try {
         6
       )
       
-      // Store token info in memory for display
+      // Create token metadata using Metaplex
+      try {
+        const metaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet))
+        
+        const { nft } = await metaplex.nfts().create({
+          uri: `data:application/json,${encodeURIComponent(JSON.stringify({
+            name: name,
+            symbol: symbol,
+            description: description || `${name} token created on Consilience DAO`
+          }))}`,
+          name: name,
+          symbol: symbol,
+          sellerFeeBasisPoints: 0,
+          useNewMint: mint
+        })
+        
+        console.log('✅ Token metadata created:', name, symbol)
+      } catch (metaError) {
+        console.log('⚠️ Metadata creation failed:', metaError.message)
+      }
+      
+      // Store token info for display
       global.tokenRegistry = global.tokenRegistry || {}
       global.tokenRegistry[mint.toString()] = {
         name,
         symbol,
         description: description || `${name} token`,
-        creator: walletAddress
+        creator: walletAddress,
+        supply
       }
       
       const userTokenAccount = await getOrCreateAssociatedTokenAccount(
@@ -654,12 +676,21 @@ app.get('/api/user-tokens/:walletAddress', async (req, res) => {
         let tokenSymbol = tokenInfo.mint.slice(0, 4).toUpperCase()
         let tokenDescription = 'SPL Token on Solana'
         
-        // Get token info from registry
-        const tokenData = global.tokenRegistry?.[tokenInfo.mint]
-        if (tokenData) {
-          tokenName = tokenData.name
-          tokenSymbol = tokenData.symbol
-          tokenDescription = tokenData.description
+        // Try to get metadata from Metaplex first
+        try {
+          const metaplex = Metaplex.make(connection).use(keypairIdentity(aiWallet))
+          const nft = await metaplex.nfts().findByMint({ mintAddress: new PublicKey(tokenInfo.mint) })
+          if (nft.name) tokenName = nft.name
+          if (nft.symbol) tokenSymbol = nft.symbol
+          if (nft.json?.description) tokenDescription = nft.json.description
+        } catch (e) {
+          // Fallback to registry
+          const tokenData = global.tokenRegistry?.[tokenInfo.mint]
+          if (tokenData) {
+            tokenName = tokenData.name
+            tokenSymbol = tokenData.symbol
+            tokenDescription = tokenData.description
+          }
         }
         
         return {

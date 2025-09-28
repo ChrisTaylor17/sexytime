@@ -38,11 +38,17 @@ export default function Tokens() {
   }, [connected, publicKey]);
 
   const fetchUserTokens = async () => {
-    if (!connected || !publicKey) return;
+    if (!connected || !publicKey) {
+      console.log('Not connected or no publicKey');
+      return;
+    }
+    console.log('Fetching tokens for:', publicKey.toString());
     try {
       const response = await fetch(`https://sexytime-production.up.railway.app/api/user-tokens/${publicKey.toString()}`);
+      console.log('Token fetch response:', response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log('Token data received:', data);
         setUserTokens(data.tokens || []);
       }
     } catch (error) {

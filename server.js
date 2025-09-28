@@ -622,29 +622,38 @@ app.post('/api/mint-nft', async (req, res) => {
 })
 
 // Token management endpoints
-app.get('/api/user-tokens/:alias', (req, res) => {
-  const { alias } = req.params
-  const tokens = [
-    {
-      id: 1,
-      name: 'Mars Colony Token',
-      symbol: 'MCT',
-      supply: 1000000,
-      balance: 50000,
-      description: 'Token for Mars Colony Planning project',
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 2,
-      name: 'Ocean Token',
-      symbol: 'OCEAN',
-      supply: 500000,
-      balance: 25000,
-      description: 'Token for Ocean Cleanup Initiative',
-      created_at: new Date().toISOString()
-    }
-  ]
-  res.json({ tokens })
+app.get('/api/user-tokens/:walletAddress', async (req, res) => {
+  const { walletAddress } = req.params
+  
+  if (!solanaEnabled) {
+    return res.json({ tokens: [] })
+  }
+  
+  try {
+    const publicKey = new PublicKey(walletAddress)
+    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, {
+      programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
+    })
+    
+    const tokens = tokenAccounts.value.map(account => {
+      const tokenInfo = account.account.data.parsed.info
+      return {
+        id: tokenInfo.mint,
+        name: `Token ${tokenInfo.mint.slice(0, 8)}`,
+        symbol: tokenInfo.mint.slice(0, 4).toUpperCase(),
+        supply: 1000000,
+        balance: Math.floor(parseFloat(tokenInfo.tokenAmount.uiAmount) || 0),
+        description: `SPL Token on Solana`,
+        mint: tokenInfo.mint,
+        created_at: new Date().toISOString()
+      }
+    }).filter(token => token.balance > 0)
+    
+    res.json({ tokens })
+  } catch (error) {
+    console.error('Error fetching user tokens:', error)
+    res.json({ tokens: [] })
+  }
 })
 
 app.post('/api/distribute-tokens', (req, res) => {

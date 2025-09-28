@@ -25,14 +25,16 @@ export default function Tokens() {
       return;
     }
     setUserAlias(alias);
-    fetchUserTokens(alias);
+    if (connected && publicKey) {
+      fetchUserTokens();
+    }
     fetchProjects();
   }, [router]);
 
-  const fetchUserTokens = async (alias) => {
-    if (!alias) return;
+  const fetchUserTokens = async () => {
+    if (!connected || !publicKey) return;
     try {
-      const response = await fetch(`https://sexytime-production.up.railway.app/api/user-tokens/${alias}`);
+      const response = await fetch(`https://sexytime-production.up.railway.app/api/user-tokens/${publicKey.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setUserTokens(data.tokens || []);

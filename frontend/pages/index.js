@@ -30,139 +30,428 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white">
-      <nav className="p-6">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">C</span>
+    <>
+      <style jsx global>{`
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        
+        body {
+          font-family: 'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace;
+          background: linear-gradient(135deg, #1f2937 0%, #1e40af 50%, #7c3aed 100%);
+          color: white;
+          min-height: 100vh;
+        }
+        
+        .container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 24px;
+        }
+        
+        .nav {
+          padding: 24px 0;
+        }
+        
+        .nav-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        
+        .logo {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        
+        .logo-icon {
+          width: 32px;
+          height: 32px;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: bold;
+          font-size: 14px;
+        }
+        
+        .logo-text {
+          font-size: 20px;
+          font-weight: bold;
+        }
+        
+        .nav-links {
+          display: flex;
+          gap: 24px;
+        }
+        
+        .nav-link {
+          background: none;
+          border: none;
+          color: rgba(255, 255, 255, 0.8);
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+          transition: color 0.2s;
+        }
+        
+        .nav-link:hover {
+          color: #60a5fa;
+        }
+        
+        .main {
+          padding: 48px 0;
+        }
+        
+        .hero {
+          text-align: center;
+          margin-bottom: 64px;
+        }
+        
+        .hero-title {
+          font-size: 56px;
+          font-weight: bold;
+          margin-bottom: 24px;
+          background: linear-gradient(135deg, #60a5fa, #a78bfa);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          line-height: 1.1;
+        }
+        
+        .hero-subtitle {
+          font-size: 20px;
+          color: rgba(255, 255, 255, 0.8);
+          max-width: 600px;
+          margin: 0 auto 32px;
+        }
+        
+        .content-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 48px;
+          align-items: start;
+        }
+        
+        .signup-card {
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 16px;
+          padding: 32px;
+        }
+        
+        .signup-title {
+          font-size: 24px;
+          font-weight: bold;
+          margin-bottom: 24px;
+        }
+        
+        .form-group {
+          margin-bottom: 20px;
+        }
+        
+        .label {
+          display: block;
+          font-size: 14px;
+          font-weight: 500;
+          margin-bottom: 8px;
+        }
+        
+        .input {
+          width: 100%;
+          padding: 12px 16px;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 8px;
+          color: white;
+          font-size: 14px;
+          font-family: inherit;
+        }
+        
+        .input::placeholder {
+          color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .input:focus {
+          outline: none;
+          border-color: #60a5fa;
+          box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+        }
+        
+        .textarea {
+          height: 96px;
+          resize: vertical;
+        }
+        
+        .button {
+          width: 100%;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          color: white;
+          font-weight: 600;
+          padding: 12px 24px;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: transform 0.2s;
+        }
+        
+        .button:hover {
+          transform: translateY(-2px);
+        }
+        
+        .button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none;
+        }
+        
+        .signin-link {
+          text-align: center;
+          margin-top: 24px;
+        }
+        
+        .signin-link button {
+          background: none;
+          border: none;
+          color: #60a5fa;
+          font-size: 14px;
+          cursor: pointer;
+        }
+        
+        .features {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+        
+        .feature-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          padding: 24px;
+        }
+        
+        .feature-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 12px;
+        }
+        
+        .feature-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+        }
+        
+        .feature-title {
+          font-size: 18px;
+          font-weight: 600;
+        }
+        
+        .feature-description {
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 14px;
+          line-height: 1.5;
+        }
+        
+        .stats {
+          margin-top: 64px;
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 24px;
+        }
+        
+        .stat-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          padding: 24px;
+          text-align: center;
+        }
+        
+        .stat-number {
+          font-size: 28px;
+          font-weight: bold;
+          color: #60a5fa;
+          margin-bottom: 4px;
+        }
+        
+        .stat-label {
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+          .content-grid {
+            grid-template-columns: 1fr;
+            gap: 32px;
+          }
+          
+          .hero-title {
+            font-size: 36px;
+          }
+          
+          .stats {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          
+          .nav-links {
+            display: none;
+          }
+        }
+      `}</style>
+      
+      <div className="container">
+        <nav className="nav">
+          <div className="nav-content">
+            <div className="logo">
+              <div className="logo-icon">C</div>
+              <span className="logo-text">Consilience DAO</span>
             </div>
-            <span className="text-xl font-bold">Consilience DAO</span>
-          </div>
-          <div className="space-x-4">
-            <button onClick={() => router.push('/features')} className="hover:text-blue-400">Features</button>
-            <button onClick={() => router.push('/about')} className="hover:text-blue-400">About</button>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-6xl mx-auto px-6 py-12">
-        <div className="text-center mb-16">
-          <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Decentralized Innovation for Web3 Builders
-          </h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            AI-powered matchmaking, real-time collaboration, and blockchain rewards. Build the future with Consilience DAO.
-          </p>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-12 items-start">
-          <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl border border-gray-700">
-            <h2 className="text-2xl font-bold mb-6">Join the Platform</h2>
-            
-            <form onSubmit={handleSignup} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Your Alias</label>
-                <input
-                  type="text"
-                  value={alias}
-                  onChange={(e) => setAlias(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="alex.builder"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Skills & Interests</label>
-                <textarea
-                  value={interests}
-                  onChange={(e) => setInterests(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-24 resize-none"
-                  placeholder="AI, blockchain, design, marketing..."
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 disabled:opacity-50"
-              >
-                {loading ? 'Creating Account...' : 'Get Started'}
-              </button>
-            </form>
-
-            <div className="text-center mt-6">
+            <div className="nav-links">
               <button 
-                onClick={() => {
-                  const existingAlias = prompt('Enter your alias:')
-                  if (existingAlias) {
-                    localStorage.setItem('userAlias', existingAlias)
-                    router.push('/dashboard')
-                  }
-                }}
-                className="text-blue-400 hover:text-blue-300 text-sm"
+                onClick={() => router.push('/features')}
+                className="nav-link"
               >
-                Already have an account? Sign in
+                Features
+              </button>
+              <button 
+                onClick={() => router.push('/about')}
+                className="nav-link"
+              >
+                About
               </button>
             </div>
           </div>
+        </nav>
 
-          <div className="space-y-6">
-            <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700">
-              <div className="flex items-center mb-3">
-                <span className="text-2xl mr-3">🤖</span>
-                <h3 className="text-lg font-semibold">AI Matching</h3>
+        <div className="main">
+          <div className="hero">
+            <h1 className="hero-title">Decentralized Innovation for Web3 Builders</h1>
+            <p className="hero-subtitle">
+              AI-powered matchmaking, real-time collaboration, and blockchain rewards. Build the future with Consilience DAO.
+            </p>
+          </div>
+
+          <div className="content-grid">
+            <div className="signup-card">
+              <h2 className="signup-title">Join the Platform</h2>
+              
+              <form onSubmit={handleSignup}>
+                <div className="form-group">
+                  <label className="label">Your Alias</label>
+                  <input
+                    type="text"
+                    value={alias}
+                    onChange={(e) => setAlias(e.target.value)}
+                    className="input"
+                    placeholder="alex.builder"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="label">Skills & Interests</label>
+                  <textarea
+                    value={interests}
+                    onChange={(e) => setInterests(e.target.value)}
+                    className="input textarea"
+                    placeholder="AI, blockchain, design, marketing..."
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="button"
+                >
+                  {loading ? 'Creating Account...' : 'Get Started'}
+                </button>
+              </form>
+
+              <div className="signin-link">
+                <button 
+                  onClick={() => {
+                    const existingAlias = prompt('Enter your alias:')
+                    if (existingAlias) {
+                      localStorage.setItem('userAlias', existingAlias)
+                      router.push('/dashboard')
+                    }
+                  }}
+                >
+                  Already have an account? Sign in
+                </button>
               </div>
-              <p className="text-gray-300 text-sm">Smart project and collaborator matching powered by GPT-3.5</p>
             </div>
 
-            <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700">
-              <div className="flex items-center mb-3">
-                <span className="text-2xl mr-3">💰</span>
-                <h3 className="text-lg font-semibold">Earn Rewards</h3>
+            <div className="features">
+              <div className="feature-card">
+                <div className="feature-header">
+                  <div className="feature-icon" style={{background: '#8b5cf6'}}>🤖</div>
+                  <h3 className="feature-title">AI Matching</h3>
+                </div>
+                <p className="feature-description">Smart project and collaborator matching powered by GPT-3.5</p>
               </div>
-              <p className="text-gray-300 text-sm">Get CS tokens and NFTs for completed tasks and contributions</p>
-            </div>
 
-            <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700">
-              <div className="flex items-center mb-3">
-                <span className="text-2xl mr-3">🔗</span>
-                <h3 className="text-lg font-semibold">Web3 Integration</h3>
+              <div className="feature-card">
+                <div className="feature-header">
+                  <div className="feature-icon" style={{background: '#10b981'}}>💰</div>
+                  <h3 className="feature-title">Earn Rewards</h3>
+                </div>
+                <p className="feature-description">Get CS tokens and NFTs for completed tasks and contributions</p>
               </div>
-              <p className="text-gray-300 text-sm">Seamless Solana wallet integration for decentralized rewards</p>
-            </div>
 
-            <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700">
-              <div className="flex items-center mb-3">
-                <span className="text-2xl mr-3">💬</span>
-                <h3 className="text-lg font-semibold">Real-time Chat</h3>
+              <div className="feature-card">
+                <div className="feature-header">
+                  <div className="feature-icon" style={{background: '#3b82f6'}}>🔗</div>
+                  <h3 className="feature-title">Web3 Integration</h3>
+                </div>
+                <p className="feature-description">Seamless Solana wallet integration for decentralized rewards</p>
               </div>
-              <p className="text-gray-300 text-sm">Collaborate with team members in dedicated project rooms</p>
+
+              <div className="feature-card">
+                <div className="feature-header">
+                  <div className="feature-icon" style={{background: '#f59e0b'}}>💬</div>
+                  <h3 className="feature-title">Real-time Chat</h3>
+                </div>
+                <p className="feature-description">Collaborate with team members in dedicated project rooms</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="stats">
+            <div className="stat-card">
+              <div className="stat-number">1,200+</div>
+              <div className="stat-label">Active Users</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">350+</div>
+              <div className="stat-label">Projects</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">50K+</div>
+              <div className="stat-label">CS Tokens</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">24/7</div>
+              <div className="stat-label">AI Support</div>
             </div>
           </div>
         </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16">
-          <div className="text-center bg-gray-800/30 p-6 rounded-xl">
-            <div className="text-3xl font-bold text-blue-400 mb-2">1,200+</div>
-            <div className="text-sm text-gray-400">Active Users</div>
-          </div>
-          <div className="text-center bg-gray-800/30 p-6 rounded-xl">
-            <div className="text-3xl font-bold text-blue-400 mb-2">350+</div>
-            <div className="text-sm text-gray-400">Projects</div>
-          </div>
-          <div className="text-center bg-gray-800/30 p-6 rounded-xl">
-            <div className="text-3xl font-bold text-blue-400 mb-2">50K+</div>
-            <div className="text-sm text-gray-400">CS Tokens</div>
-          </div>
-          <div className="text-center bg-gray-800/30 p-6 rounded-xl">
-            <div className="text-3xl font-bold text-blue-400 mb-2">24/7</div>
-            <div className="text-sm text-gray-400">AI Support</div>
-          </div>
-        </div>
-      </main>
-    </div>
+      </div>
+    </>
   )
 }

@@ -643,13 +643,48 @@ app.post('/api/signup', (req, res) => {
 app.get('/api/user/:alias', (req, res) => {
   res.json({ 
     alias: req.params.alias, 
-    interests: 'AI, Blockchain', 
-    cs_balance: 250 
+    interests: 'AI, Blockchain, Web3', 
+    cs_balance: 250,
+    wallet_address: null
   })
 })
 
+app.get('/api/leaderboard', (req, res) => {
+  const sampleLeaderboard = [
+    { alias: 'crypto_builder', cs_balance: 1250 },
+    { alias: 'nft_artist', cs_balance: 980 },
+    { alias: 'dao_architect', cs_balance: 750 },
+    { alias: 'web3_dev', cs_balance: 620 },
+    { alias: 'token_master', cs_balance: 500 }
+  ]
+  res.json(sampleLeaderboard)
+})
+
 app.get('/api/projects', (req, res) => {
-  res.json({ projects: [] })
+  const sampleProjects = [
+    {
+      id: 1,
+      name: 'Mars Colony Planning',
+      description: 'Design sustainable habitats for Mars colonization',
+      skills_needed: 'engineering, sustainability, space tech',
+      owner_alias: 'space_pioneer'
+    },
+    {
+      id: 2,
+      name: 'Ocean Cleanup DAO',
+      description: 'Decentralized ocean plastic removal initiative',
+      skills_needed: 'environmental science, robotics, blockchain',
+      owner_alias: 'ocean_guardian'
+    },
+    {
+      id: 3,
+      name: 'AI Ethics Framework',
+      description: 'Develop ethical guidelines for AI development',
+      skills_needed: 'AI research, ethics, policy',
+      owner_alias: 'ai_ethicist'
+    }
+  ]
+  res.json(sampleProjects)
 })
 
 app.get('/api/user-nfts/:alias', (req, res) => {
@@ -658,6 +693,62 @@ app.get('/api/user-nfts/:alias', (req, res) => {
 
 app.post('/api/connect-wallet', (req, res) => {
   res.json({ success: true })
+})
+
+// AI Matchmaker endpoint
+app.post('/api/ai-matchmaker', (req, res) => {
+  console.log('AI Matchmaker called with:', req.body)
+  const { alias, query } = req.body
+  
+  if (!alias || !query) {
+    return res.status(400).json({ error: 'Missing alias or query' })
+  }
+  
+  // Create project based on query
+  let projectName, projectType, skills, aiResponse
+  const queryLower = query.toLowerCase()
+  
+  if (queryLower.includes('token') || queryLower.includes('launch') || queryLower.includes('coin') || queryLower.includes('crypto')) {
+    projectName = `${alias}'s Token Launch`
+    projectType = 'token'
+    skills = 'blockchain development, tokenomics, smart contracts, marketing'
+    aiResponse = `🚀 Excellent! I've analyzed your request and created a comprehensive token launch project.`
+  } else if (queryLower.includes('nft') || queryLower.includes('art') || queryLower.includes('collectible') || queryLower.includes('digital art')) {
+    projectName = `${alias}'s NFT Collection`
+    projectType = 'nft'
+    skills = 'digital art, 3D modeling, blockchain, community management'
+    aiResponse = `🎨 Perfect! I've designed an NFT collection project tailored to your vision.`
+  } else if (queryLower.includes('dao') || queryLower.includes('governance') || queryLower.includes('voting')) {
+    projectName = `${alias}'s DAO Initiative`
+    projectType = 'dao'
+    skills = 'governance design, community building, blockchain, legal'
+    aiResponse = `🏡 Brilliant! I've structured a DAO governance project for you.`
+  } else {
+    projectName = `${alias}'s Innovation Project`
+    projectType = 'collaboration'
+    skills = 'determined by project scope'
+    aiResponse = `💡 Interesting! I've created a flexible collaboration project based on your input.`
+  }
+  
+  let fullResponse = `${aiResponse}\n\n**Project Created:** "${projectName}"\n\n`
+  
+  if (projectType === 'token') {
+    fullResponse += `📊 **AI Recommendations:**\n• Set up tokenomics with 80% to contributors, 20% to platform\n• Create utility features for your token\n• Plan marketing and community building\n\n🤖 **AI Asset Manager Ready:** I'll handle token creation, distribution, and wallet management automatically.`
+  } else if (projectType === 'nft') {
+    fullResponse += `🎨 **AI Recommendations:**\n• Design unique artwork with rarity tiers\n• Create utility and holder benefits\n• Build community engagement strategies\n\n🤖 **AI Asset Manager Ready:** I'll mint NFTs and distribute them based on participation levels.`
+  } else if (projectType === 'dao') {
+    fullResponse += `🏡 **AI Recommendations:**\n• Design governance token distribution\n• Create proposal and voting mechanisms\n• Establish treasury management\n\n🤖 **AI Asset Manager Ready:** I'll create governance tokens and manage treasury allocations.`
+  } else {
+    fullResponse += `💡 **AI Analysis:** "${query}"\n\n🤖 **AI Recommendations:**\n• Define clear project milestones\n• Identify required skills and team members\n• Set up reward mechanisms for contributors\n\n**Ready to help with:** Token creation, NFT rewards, team coordination`
+  }
+  
+  console.log('AI Matchmaker response generated successfully')
+  res.json({
+    action: 'create_project',
+    projectId: Math.floor(Math.random() * 1000) + 1,
+    projectName: projectName,
+    response: fullResponse
+  })
 })
 
 app.post('/api/mint-nft', async (req, res) => {

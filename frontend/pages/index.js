@@ -34,14 +34,14 @@ export default function Home() {
       <style jsx>{`
         .container {
           min-height: 100vh;
-          background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+          font-family: 'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace;
         }
         .nav {
-          background: rgba(30, 41, 59, 0.8);
-          backdrop-filter: blur(10px);
-          border-bottom: 1px solid #475569;
-          padding: 12px 0;
+          background: rgba(13, 17, 23, 0.9);
+          backdrop-filter: blur(15px);
+          border-bottom: 2px solid #30363d;
+          padding: 16px 0;
         }
         .nav-content {
           max-width: 1200px;
@@ -57,34 +57,42 @@ export default function Home() {
           gap: 8px;
         }
         .logo-icon {
-          width: 28px;
-          height: 28px;
-          background: #3b82f6;
-          border-radius: 6px;
+          width: 32px;
+          height: 32px;
+          background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
+          border-radius: 4px;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: white;
-          font-weight: bold;
-          font-size: 12px;
+          color: black;
+          font-weight: 900;
+          font-size: 14px;
+          border: 2px solid #ff6b35;
         }
         .logo-text {
-          color: white;
-          font-weight: 600;
-          font-size: 18px;
+          color: #ff6b35;
+          font-weight: 900;
+          font-size: 20px;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          text-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
         }
         .nav-links {
           display: flex;
           gap: 24px;
         }
         .nav-link {
-          color: #cbd5e1;
+          color: #8b949e;
           text-decoration: none;
-          font-size: 14px;
-          transition: color 0.2s;
+          font-size: 13px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          transition: all 0.2s;
         }
         .nav-link:hover {
-          color: white;
+          color: #ff6b35;
+          text-shadow: 0 0 8px rgba(255, 107, 53, 0.4);
         }
         .main {
           max-width: 1200px;
@@ -96,19 +104,24 @@ export default function Home() {
           margin-bottom: 64px;
         }
         .hero-title {
-          font-size: 48px;
-          font-weight: bold;
-          color: white;
-          margin-bottom: 16px;
+          font-size: 52px;
+          font-weight: 900;
+          color: #ff6b35;
+          margin-bottom: 20px;
           line-height: 1.1;
+          text-transform: uppercase;
+          letter-spacing: 3px;
+          text-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
         }
         .hero-subtitle {
-          font-size: 20px;
-          color: #cbd5e1;
-          margin-bottom: 32px;
-          max-width: 600px;
+          font-size: 18px;
+          color: #8b949e;
+          margin-bottom: 40px;
+          max-width: 650px;
           margin-left: auto;
           margin-right: auto;
+          font-weight: 500;
+          letter-spacing: 1px;
         }
         .content-grid {
           display: grid;
@@ -117,44 +130,53 @@ export default function Home() {
           align-items: start;
         }
         .signup-card {
-          background: rgba(30, 41, 59, 0.6);
-          backdrop-filter: blur(10px);
-          border: 1px solid #475569;
-          border-radius: 16px;
-          padding: 32px;
+          background: rgba(28, 33, 40, 0.8);
+          backdrop-filter: blur(15px);
+          border: 2px solid #30363d;
+          border-radius: 8px;
+          padding: 36px;
+          position: relative;
         }
         .signup-title {
-          font-size: 24px;
-          font-weight: bold;
-          color: white;
-          margin-bottom: 24px;
+          font-size: 22px;
+          font-weight: 900;
+          color: #ff6b35;
+          margin-bottom: 28px;
+          text-transform: uppercase;
+          letter-spacing: 2px;
         }
         .form-group {
           margin-bottom: 20px;
         }
         .label {
           display: block;
-          color: #cbd5e1;
-          font-size: 14px;
-          font-weight: 500;
-          margin-bottom: 8px;
+          color: #f0f6fc;
+          font-size: 12px;
+          font-weight: 700;
+          margin-bottom: 10px;
+          text-transform: uppercase;
+          letter-spacing: 1px;
         }
         .input {
           width: 100%;
-          padding: 12px 16px;
-          background: #475569;
-          border: 1px solid #64748b;
-          border-radius: 8px;
-          color: white;
+          padding: 14px 18px;
+          background: #21262d;
+          border: 2px solid #30363d;
+          border-radius: 4px;
+          color: #f0f6fc;
           font-size: 14px;
-          transition: border-color 0.2s;
+          font-family: 'JetBrains Mono', monospace;
+          font-weight: 500;
+          transition: all 0.2s;
         }
         .input:focus {
           outline: none;
-          border-color: #3b82f6;
+          border-color: #ff6b35;
+          box-shadow: 0 0 15px rgba(255, 107, 53, 0.3);
         }
         .input::placeholder {
-          color: #94a3b8;
+          color: #484f58;
+          font-style: italic;
         }
         .textarea {
           height: 96px;
@@ -162,17 +184,21 @@ export default function Home() {
         }
         .button {
           width: 100%;
-          background: #3b82f6;
-          color: white;
-          font-weight: 600;
-          padding: 12px 24px;
-          border: none;
-          border-radius: 8px;
+          background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
+          color: black;
+          font-weight: 900;
+          padding: 16px 28px;
+          border: 2px solid #ff6b35;
+          border-radius: 4px;
           cursor: pointer;
-          transition: background-color 0.2s;
+          transition: all 0.2s;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          font-size: 13px;
         }
         .button:hover {
-          background: #2563eb;
+          box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+          border-color: #e55a2b;
         }
         .button:disabled {
           opacity: 0.5;
@@ -185,13 +211,17 @@ export default function Home() {
         .signin-link button {
           background: none;
           border: none;
-          color: #60a5fa;
-          font-size: 14px;
+          color: #ff6b35;
+          font-size: 13px;
+          font-weight: 600;
           cursor: pointer;
-          transition: color 0.2s;
+          transition: all 0.2s;
+          text-transform: uppercase;
+          letter-spacing: 1px;
         }
         .signin-link button:hover {
-          color: #93c5fd;
+          color: #f72585;
+          text-shadow: 0 0 8px rgba(255, 107, 53, 0.4);
         }
         .features {
           display: flex;
@@ -199,11 +229,12 @@ export default function Home() {
           gap: 24px;
         }
         .feature-card {
-          background: rgba(30, 41, 59, 0.4);
-          backdrop-filter: blur(10px);
-          border: 1px solid #475569;
-          border-radius: 12px;
-          padding: 24px;
+          background: rgba(28, 33, 40, 0.6);
+          backdrop-filter: blur(15px);
+          border: 2px solid #30363d;
+          border-radius: 6px;
+          padding: 28px;
+          transition: all 0.2s;
         }
         .feature-header {
           display: flex;
@@ -221,14 +252,17 @@ export default function Home() {
           font-size: 14px;
         }
         .feature-title {
-          font-size: 18px;
-          font-weight: 600;
-          color: white;
+          font-size: 16px;
+          font-weight: 700;
+          color: #ff6b35;
+          text-transform: uppercase;
+          letter-spacing: 1px;
         }
         .feature-description {
-          color: #cbd5e1;
-          font-size: 14px;
-          line-height: 1.5;
+          color: #8b949e;
+          font-size: 13px;
+          line-height: 1.4;
+          font-weight: 500;
         }
         .stats {
           margin-top: 64px;
@@ -237,22 +271,27 @@ export default function Home() {
           gap: 24px;
         }
         .stat-card {
-          background: rgba(30, 41, 59, 0.4);
-          backdrop-filter: blur(10px);
-          border: 1px solid #475569;
-          border-radius: 12px;
-          padding: 24px;
+          background: rgba(28, 33, 40, 0.6);
+          backdrop-filter: blur(15px);
+          border: 2px solid #30363d;
+          border-radius: 6px;
+          padding: 28px;
           text-align: center;
+          transition: all 0.2s;
         }
         .stat-number {
-          font-size: 24px;
-          font-weight: bold;
-          color: white;
-          margin-bottom: 4px;
+          font-size: 28px;
+          font-weight: 900;
+          color: #ff6b35;
+          margin-bottom: 6px;
+          text-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
         }
         .stat-label {
-          color: #94a3b8;
-          font-size: 14px;
+          color: #8b949e;
+          font-size: 12px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 1px;
         }
         @media (max-width: 1024px) {
           .content-grid {

@@ -43,6 +43,7 @@ export default function Home() {
           background: linear-gradient(135deg, #1f2937 0%, #1e40af 50%, #7c3aed 100%);
           color: white;
           min-height: 100vh;
+          overflow-x: hidden;
         }
         
         .container {

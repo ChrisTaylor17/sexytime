@@ -57,25 +57,25 @@ export default function Home() {
           gap: 8px;
         }
         .logo-icon {
-          width: 32px;
-          height: 32px;
-          background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
-          border-radius: 4px;
+          width: 28px;
+          height: 28px;
+          background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+          border-radius: 6px;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: black;
-          font-weight: 900;
-          font-size: 14px;
-          border: 2px solid #ff6b35;
+          color: white;
+          font-weight: 700;
+          font-size: 12px;
+          border: 1px solid #3b82f6;
         }
         .logo-text {
-          color: #ff6b35;
-          font-weight: 900;
-          font-size: 20px;
+          color: #3b82f6;
+          font-weight: 700;
+          font-size: 18px;
           text-transform: uppercase;
-          letter-spacing: 2px;
-          text-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
+          letter-spacing: 1px;
+          text-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
         }
         .nav-links {
           display: flex;
@@ -91,8 +91,8 @@ export default function Home() {
           transition: all 0.2s;
         }
         .nav-link:hover {
-          color: #ff6b35;
-          text-shadow: 0 0 8px rgba(255, 107, 53, 0.4);
+          color: #3b82f6;
+          text-shadow: 0 0 6px rgba(59, 130, 246, 0.3);
         }
         .main {
           max-width: 1200px;
@@ -104,14 +104,14 @@ export default function Home() {
           margin-bottom: 64px;
         }
         .hero-title {
-          font-size: 52px;
-          font-weight: 900;
-          color: #ff6b35;
-          margin-bottom: 20px;
+          font-size: 48px;
+          font-weight: 700;
+          color: #3b82f6;
+          margin-bottom: 16px;
           line-height: 1.1;
           text-transform: uppercase;
-          letter-spacing: 3px;
-          text-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+          letter-spacing: 2px;
+          text-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
         }
         .hero-subtitle {
           font-size: 18px;
@@ -130,20 +130,20 @@ export default function Home() {
           align-items: start;
         }
         .signup-card {
-          background: rgba(28, 33, 40, 0.8);
+          background: rgba(26, 32, 44, 0.8);
           backdrop-filter: blur(15px);
-          border: 2px solid #30363d;
-          border-radius: 8px;
-          padding: 36px;
+          border: 1px solid #374151;
+          border-radius: 12px;
+          padding: 32px;
           position: relative;
         }
         .signup-title {
-          font-size: 22px;
-          font-weight: 900;
-          color: #ff6b35;
-          margin-bottom: 28px;
+          font-size: 24px;
+          font-weight: 700;
+          color: #3b82f6;
+          margin-bottom: 24px;
           text-transform: uppercase;
-          letter-spacing: 2px;
+          letter-spacing: 1px;
         }
         .form-group {
           margin-bottom: 20px;
@@ -171,8 +171,8 @@ export default function Home() {
         }
         .input:focus {
           outline: none;
-          border-color: #ff6b35;
-          box-shadow: 0 0 15px rgba(255, 107, 53, 0.3);
+          border-color: #3b82f6;
+          box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
         }
         .input::placeholder {
           color: #484f58;
@@ -184,21 +184,21 @@ export default function Home() {
         }
         .button {
           width: 100%;
-          background: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
-          color: black;
-          font-weight: 900;
-          padding: 16px 28px;
-          border: 2px solid #ff6b35;
-          border-radius: 4px;
+          background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+          color: white;
+          font-weight: 600;
+          padding: 12px 24px;
+          border: 1px solid #3b82f6;
+          border-radius: 8px;
           cursor: pointer;
           transition: all 0.2s;
           text-transform: uppercase;
-          letter-spacing: 2px;
-          font-size: 13px;
+          letter-spacing: 1px;
+          font-size: 14px;
         }
         .button:hover {
-          box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
-          border-color: #e55a2b;
+          box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+          border-color: #2563eb;
         }
         .button:disabled {
           opacity: 0.5;
@@ -211,17 +211,15 @@ export default function Home() {
         .signin-link button {
           background: none;
           border: none;
-          color: #ff6b35;
-          font-size: 13px;
-          font-weight: 600;
+          color: #3b82f6;
+          font-size: 14px;
+          font-weight: 500;
           cursor: pointer;
           transition: all 0.2s;
-          text-transform: uppercase;
-          letter-spacing: 1px;
         }
         .signin-link button:hover {
-          color: #f72585;
-          text-shadow: 0 0 8px rgba(255, 107, 53, 0.4);
+          color: #1e40af;
+          text-shadow: 0 0 6px rgba(59, 130, 246, 0.3);
         }
         .features {
           display: flex;
@@ -252,11 +250,9 @@ export default function Home() {
           font-size: 14px;
         }
         .feature-title {
-          font-size: 16px;
-          font-weight: 700;
-          color: #ff6b35;
-          text-transform: uppercase;
-          letter-spacing: 1px;
+          font-size: 18px;
+          font-weight: 600;
+          color: #3b82f6;
         }
         .feature-description {
           color: #8b949e;
@@ -280,11 +276,11 @@ export default function Home() {
           transition: all 0.2s;
         }
         .stat-number {
-          font-size: 28px;
-          font-weight: 900;
-          color: #ff6b35;
-          margin-bottom: 6px;
-          text-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
+          font-size: 24px;
+          font-weight: 700;
+          color: #3b82f6;
+          margin-bottom: 4px;
+          text-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
         }
         .stat-label {
           color: #8b949e;

@@ -1,21 +1,21 @@
-/* Masculine DAO Platform Styles */
+/* Refined Masculine DAO Platform Styles */
 :root {
-    --bg-primary: #0d1117;
-    --bg-secondary: #161b22;
-    --bg-tertiary: #21262d;
-    --bg-card: #1c2128;
-    --text-primary: #f0f6fc;
-    --text-secondary: #8b949e;
-    --text-muted: #484f58;
-    --border: #30363d;
-    --accent: #ff6b35;
-    --accent-hover: #e55a2b;
-    --danger: #da3633;
-    --warning: #fb8500;
-    --success: #238636;
-    --gradient: linear-gradient(135deg, #ff6b35 0%, #f72585 100%);
-    --shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-    --radius: 4px;
+    --bg-primary: #0a0e13;
+    --bg-secondary: #151a21;
+    --bg-tertiary: #1f2937;
+    --bg-card: #1a202c;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #374151;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --success: #10b981;
+    --gradient: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    --radius: 6px;
     --transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
@@ -73,12 +73,12 @@ body {
 }
 
 .logo {
-    font-weight: 900;
-    font-size: 22px;
+    font-weight: 700;
+    font-size: 20px;
     color: var(--accent);
     text-transform: uppercase;
-    letter-spacing: 2px;
-    text-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
 }
 
 .theme-toggle {
@@ -113,31 +113,29 @@ body {
 .nav-item {
     display: flex;
     align-items: center;
-    padding: 14px 18px;
+    padding: 12px 16px;
     border-radius: var(--radius);
     cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
     transition: var(--transition);
     position: relative;
-    text-transform: uppercase;
-    letter-spacing: 1px;
     border: 1px solid transparent;
 }
 
 .nav-item:hover {
     background: var(--bg-tertiary);
     border-color: var(--accent);
-    box-shadow: 0 0 15px rgba(255, 107, 53, 0.2);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
 }
 
 .nav-item.active {
     background: var(--gradient);
-    color: #000;
+    color: white;
     box-shadow: var(--shadow);
     border-color: var(--accent);
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .nav-item.active::before {
@@ -176,13 +174,12 @@ body {
 }
 
 .dashboard-header h1 {
-    font-size: 36px;
-    font-weight: 900;
+    font-size: 32px;
+    font-weight: 700;
     margin-bottom: 16px;
     color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    text-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+    letter-spacing: 1px;
+    text-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
 }
 
 .quick-stats {
@@ -192,11 +189,11 @@ body {
 
 .stat-card {
     background: var(--bg-card);
-    padding: 28px;
+    padding: 24px;
     border-radius: var(--radius);
-    border: 2px solid var(--border);
+    border: 1px solid var(--border);
     text-align: center;
-    min-width: 140px;
+    min-width: 120px;
     transition: var(--transition);
     position: relative;
     overflow: hidden;
@@ -204,23 +201,23 @@ body {
 
 .stat-card:hover {
     border-color: var(--accent);
-    box-shadow: var(--shadow), 0 0 25px rgba(255, 107, 53, 0.3);
+    box-shadow: var(--shadow), 0 0 20px rgba(59, 130, 246, 0.2);
 }
 
 .stat-number {
-    font-size: 32px;
-    font-weight: 900;
+    font-size: 28px;
+    font-weight: 700;
     color: var(--accent);
-    margin-bottom: 6px;
-    text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+    margin-bottom: 4px;
+    text-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
 }
 
 .stat-label {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 2px;
-    font-weight: 600;
+    letter-spacing: 1px;
+    font-weight: 500;
 }
 
 .dashboard-grid {

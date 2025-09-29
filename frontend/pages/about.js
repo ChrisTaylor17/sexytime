@@ -1,329 +1,116 @@
-import { useRouter } from 'next/router';
+import { Layout } from '../components/ui/layout'
+import { Button } from '../components/ui/button'
+import { AnimatedGroup } from '../components/ui/animated-group'
+import Link from 'next/link'
 
 export default function About() {
-  const router = useRouter();
-
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-      color: 'white',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      padding: '40px 20px'
-    }}>
-      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <button
-            onClick={() => router.push('/')}
-            style={{
-              background: 'rgba(255,255,255,0.1)',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '8px 16px',
-              color: 'white',
-              cursor: 'pointer',
-              marginBottom: '20px'
-            }}
-          >
-            ← Back to Home
-          </button>
-          <h1 style={{
-            fontSize: '48px',
-            fontWeight: '800',
-            margin: '0 0 20px 0',
-            background: 'linear-gradient(135deg, #a855f7, #3b82f6, #22c55e, #f59e0b)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}>
-            About Consilience
-          </h1>
-          <p style={{ fontSize: '20px', opacity: 0.9, lineHeight: '1.7' }}>
-            We believe the future belongs to those who can connect, create, and collaborate 
-            without boundaries. Consilience is more than a platform—it's a movement toward 
-            a more equitable, transparent, and innovative global economy.
-          </p>
-        </div>
+    <Layout>
+      <div className="min-h-screen bg-background">
+        <section className="py-24">
+          <div className="mx-auto max-w-4xl px-6">
+            <AnimatedGroup className="text-center mb-16">
+              <h1 className="text-5xl font-bold mb-6">About Consilience DAO</h1>
+              <p className="text-xl text-muted-foreground">
+                Building the future of decentralized collaboration through AI-powered innovation
+              </p>
+            </AnimatedGroup>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '60px',
-          alignItems: 'center',
-          marginBottom: '80px'
-        }}>
-          <div>
-            <h3 style={{
-              fontSize: '32px',
-              fontWeight: '700',
-              margin: '0 0 25px 0',
-              color: '#a855f7'
-            }}>
-              Our Vision
-            </h3>
-            <p style={{
-              fontSize: '18px',
-              lineHeight: '1.7',
-              opacity: 0.9,
-              marginBottom: '20px'
-            }}>
-              Imagine a world where your next breakthrough collaboration is just one AI conversation away. 
-              Where your contributions are automatically and fairly rewarded. Where geographic boundaries 
-              dissolve and the best ideas rise to the top through pure merit.
-            </p>
-            <p style={{
-              fontSize: '18px',
-              lineHeight: '1.7',
-              opacity: 0.9
-            }}>
-              We're architecting the infrastructure for humanity's next evolutionary leap in how we work, 
-              create, and prosper together.
-            </p>
-          </div>
-          <div style={{
-            background: 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '20px',
-            padding: '40px',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '60px', marginBottom: '20px' }}>🌍</div>
-            <h4 style={{ fontSize: '20px', fontWeight: '600', margin: '0 0 15px 0' }}>
-              Global Impact
-            </h4>
-            <p style={{ fontSize: '16px', opacity: 0.8, lineHeight: '1.6' }}>
-              Connecting minds across continents, cultures, and disciplines to solve 
-              humanity's greatest challenges through collaborative innovation.
-            </p>
-          </div>
-        </div>
+            <AnimatedGroup className="prose prose-lg max-w-none">
+              <div className="bg-card p-8 rounded-lg border mb-8">
+                <h2 className="text-2xl font-semibold mb-4">Our Mission</h2>
+                <p className="text-muted-foreground mb-4">
+                  Consilience DAO is revolutionizing how people collaborate in the Web3 space. We combine artificial intelligence, 
+                  blockchain technology, and human creativity to create a platform where innovation thrives through meaningful connections.
+                </p>
+                <p className="text-muted-foreground">
+                  Our AI-powered matchmaking system connects builders, creators, and visionaries based on complementary skills and 
+                  shared interests, fostering collaborations that drive the decentralized economy forward.
+                </p>
+              </div>
 
-        <div style={{
-          background: 'rgba(255,255,255,0.02)',
-          padding: '60px 40px',
-          borderRadius: '20px',
-          marginBottom: '80px'
-        }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '60px'
-          }}>
-            <div>
-              <h3 style={{
-                fontSize: '28px',
-                fontWeight: '700',
-                margin: '0 0 25px 0',
-                color: '#ef4444'
-              }}>
-                The Problem We're Solving
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  padding: '20px',
-                  borderRadius: '12px',
-                  borderLeft: '4px solid #ef4444'
-                }}>
-                  <h4 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 10px 0' }}>
-                    Broken Discovery
-                  </h4>
-                  <p style={{ fontSize: '14px', opacity: 0.8, margin: 0, lineHeight: '1.6' }}>
-                    Talented people struggle to find meaningful collaborations, while great projects 
-                    fail due to lack of the right team members.
+              <div className="grid md:grid-cols-2 gap-8 mb-8">
+                <div className="bg-card p-6 rounded-lg border">
+                  <h3 className="text-xl font-semibold mb-3">🎯 Vision</h3>
+                  <p className="text-muted-foreground">
+                    A world where every innovator finds their perfect collaborators, and every great idea gets the team it deserves.
                   </p>
                 </div>
-                <div style={{
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  padding: '20px',
-                  borderRadius: '12px',
-                  borderLeft: '4px solid #ef4444'
-                }}>
-                  <h4 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 10px 0' }}>
-                    Unfair Value Distribution
-                  </h4>
-                  <p style={{ fontSize: '14px', opacity: 0.8, margin: 0, lineHeight: '1.6' }}>
-                    Traditional systems concentrate wealth at the top, leaving contributors 
-                    undervalued and unmotivated.
+                <div className="bg-card p-6 rounded-lg border">
+                  <h3 className="text-xl font-semibold mb-3">⚡ Values</h3>
+                  <p className="text-muted-foreground">
+                    Transparency, innovation, collaboration, and fair reward distribution through decentralized governance.
                   </p>
                 </div>
               </div>
-            </div>
 
-            <div>
-              <h3 style={{
-                fontSize: '28px',
-                fontWeight: '700',
-                margin: '0 0 25px 0',
-                color: '#22c55e'
-              }}>
-                Our Revolutionary Solution
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{
-                  background: 'rgba(34, 197, 94, 0.1)',
-                  padding: '20px',
-                  borderRadius: '12px',
-                  borderLeft: '4px solid #22c55e'
-                }}>
-                  <h4 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 10px 0' }}>
-                    AI-Powered Matching
-                  </h4>
-                  <p style={{ fontSize: '14px', opacity: 0.8, margin: 0, lineHeight: '1.6' }}>
-                    Advanced algorithms create perfect collaborations that would never happen by chance.
-                  </p>
-                </div>
-                <div style={{
-                  background: 'rgba(34, 197, 94, 0.1)',
-                  padding: '20px',
-                  borderRadius: '12px',
-                  borderLeft: '4px solid #22c55e'
-                }}>
-                  <h4 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 10px 0' }}>
-                    Transparent Blockchain Rewards
-                  </h4>
-                  <p style={{ fontSize: '14px', opacity: 0.8, margin: 0, lineHeight: '1.6' }}>
-                    Smart contracts automatically distribute tokens based on actual contributions.
-                  </p>
+              <div className="bg-card p-8 rounded-lg border mb-8">
+                <h2 className="text-2xl font-semibold mb-4">Technology Stack</h2>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <h4 className="font-semibold mb-2">Frontend</h4>
+                    <ul className="text-muted-foreground text-sm space-y-1">
+                      <li>Next.js 14</li>
+                      <li>React 18</li>
+                      <li>Tailwind CSS</li>
+                      <li>Framer Motion</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Backend</h4>
+                    <ul className="text-muted-foreground text-sm space-y-1">
+                      <li>Node.js</li>
+                      <li>Express</li>
+                      <li>PostgreSQL</li>
+                      <li>Socket.io</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Web3</h4>
+                    <ul className="text-muted-foreground text-sm space-y-1">
+                      <li>Solana Blockchain</li>
+                      <li>SPL Tokens</li>
+                      <li>Metaplex NFTs</li>
+                      <li>OpenAI GPT-3.5</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
 
-        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <h3 style={{
-            fontSize: '32px',
-            fontWeight: '700',
-            margin: '0 0 25px 0',
-            background: 'linear-gradient(135deg, #f59e0b, #ec4899)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}>
-            A New Economic Paradigm
-          </h3>
-          <p style={{
-            fontSize: '18px',
-            lineHeight: '1.7',
-            opacity: 0.9,
-            margin: '0 0 40px 0',
-            maxWidth: '700px',
-            marginLeft: 'auto',
-            marginRight: 'auto'
-          }}>
-            We're pioneering a fundamental shift from scarcity-based competition to abundance-based 
-            collaboration. Success is measured by what you contribute, not what you extract.
-          </p>
-          
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '30px',
-            marginTop: '40px'
-          }}>
-            <div style={{
-              background: 'rgba(255,255,255,0.05)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '16px',
-              padding: '25px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '36px', marginBottom: '15px' }}>⚖️</div>
-              <h4 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 10px 0' }}>
-                Equity by Design
-              </h4>
-              <p style={{ fontSize: '14px', opacity: 0.8, lineHeight: '1.5' }}>
-                Fair compensation based on actual contributions, verified by blockchain technology.
-              </p>
-            </div>
-            
-            <div style={{
-              background: 'rgba(255,255,255,0.05)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '16px',
-              padding: '25px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '36px', marginBottom: '15px' }}>🔄</div>
-              <h4 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 10px 0' }}>
-                Circular Value Creation
-              </h4>
-              <p style={{ fontSize: '14px', opacity: 0.8, lineHeight: '1.5' }}>
-                Value flows back to contributors, creating sustainable incentives for innovation.
-              </p>
-            </div>
-            
-            <div style={{
-              background: 'rgba(255,255,255,0.05)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '16px',
-              padding: '25px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '36px', marginBottom: '15px' }}>🌱</div>
-              <h4 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 10px 0' }}>
-                Regenerative Growth
-              </h4>
-              <p style={{ fontSize: '14px', opacity: 0.8, lineHeight: '1.5' }}>
-                Success of one project seeds the next, creating an ever-expanding ecosystem.
-              </p>
-            </div>
-          </div>
-        </div>
+              <div className="bg-card p-8 rounded-lg border">
+                <h2 className="text-2xl font-semibold mb-4">Token Economics</h2>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span>Task Completion Rewards</span>
+                    <span className="font-semibold">100 CS (80% user, 20% platform)</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>QR Check-in Rewards</span>
+                    <span className="font-semibold">5 CS (80% user, 20% platform)</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Project Marketplace</span>
+                    <span className="font-semibold">Variable CS cost</span>
+                  </div>
+                </div>
+              </div>
+            </AnimatedGroup>
 
-        <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 20px 0' }}>
-            The Future is Collaborative
-          </h2>
-          <p style={{
-            fontSize: '16px',
-            opacity: 0.8,
-            margin: '0 0 30px 0',
-            lineHeight: '1.6',
-            maxWidth: '600px',
-            marginLeft: 'auto',
-            marginRight: 'auto'
-          }}>
-            Join us in building an economy where everyone wins, where the best ideas flourish, 
-            and where human potential knows no bounds.
-          </p>
-          <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-            <button
-              onClick={() => router.push('/dashboard')}
-              style={{
-                background: 'linear-gradient(135deg, #a855f7, #3b82f6)',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '16px 32px',
-                color: 'white',
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: '600'
-              }}
-            >
-              Start Building →
-            </button>
-            <button
-              onClick={() => router.push('/features')}
-              style={{
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '12px',
-                padding: '16px 32px',
-                color: 'white',
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: '600'
-              }}
-            >
-              Explore Features
-            </button>
+            <AnimatedGroup className="text-center mt-16">
+              <div className="space-y-4">
+                <Button asChild size="lg">
+                  <Link href="/dashboard">Join Our Community</Link>
+                </Button>
+                <div>
+                  <Button asChild variant="outline" size="lg">
+                    <Link href="/features">Explore Features</Link>
+                  </Button>
+                </div>
+              </div>
+            </AnimatedGroup>
           </div>
-        </div>
+        </section>
       </div>
-    </div>
-  );
+    </Layout>
+  )
 }

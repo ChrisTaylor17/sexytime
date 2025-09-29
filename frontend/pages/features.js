@@ -1,328 +1,109 @@
-import { useRouter } from 'next/router';
+import { Layout } from '../components/ui/layout'
+import { Button } from '../components/ui/button'
+import { AnimatedGroup } from '../components/ui/animated-group'
+import Link from 'next/link'
 
 export default function Features() {
-  const router = useRouter();
-
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-      color: 'white',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      padding: '40px 20px'
-    }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <button
-            onClick={() => router.push('/')}
-            style={{
-              background: 'rgba(255,255,255,0.1)',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '8px 16px',
-              color: 'white',
-              cursor: 'pointer',
-              marginBottom: '20px'
-            }}
-          >
-            ← Back to Home
-          </button>
-          <h1 style={{
-            fontSize: '48px',
-            fontWeight: '800',
-            margin: '0 0 20px 0',
-            background: 'linear-gradient(135deg, #a855f7, #3b82f6, #22c55e)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}>
-            Platform Features
-          </h1>
-          <p style={{ fontSize: '20px', opacity: 0.8, maxWidth: '600px', margin: '0 auto' }}>
-            Discover how Consilience is revolutionizing collaboration and transforming the global economy
-          </p>
-        </div>
+    <Layout>
+      <div className="min-h-screen bg-background">
+        <section className="py-24">
+          <div className="mx-auto max-w-7xl px-6">
+            <AnimatedGroup className="text-center mb-16">
+              <h1 className="text-5xl font-bold mb-6">Platform Features</h1>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                Discover the powerful tools that make Consilience DAO the ultimate platform for decentralized collaboration
+              </p>
+            </AnimatedGroup>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-          gap: '30px',
-          marginBottom: '80px'
-        }}>
-          <div style={{
-            background: 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '20px',
-            padding: '30px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
-              borderRadius: '15px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px auto',
-              fontSize: '24px'
-            }}>
-              🤖
-            </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 15px 0' }}>
-              AI-Powered Matchmaking
-            </h3>
-            <p style={{ fontSize: '16px', opacity: 0.8, lineHeight: '1.6' }}>
-              Advanced AI connects you with perfect collaborators and projects based on your skills and interests
-            </p>
+            <AnimatedGroup className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="bg-card p-8 rounded-lg border">
+                <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-2xl">🤖</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-3">AI Matchmaking</h3>
+                <p className="text-muted-foreground mb-4">
+                  Advanced GPT-powered algorithms match you with perfect collaborators and projects based on your skills and interests.
+                </p>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/chatbot">Try AI Matchmaker</Link>
+                </Button>
+              </div>
+
+              <div className="bg-card p-8 rounded-lg border">
+                <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-2xl">💰</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-3">Token Rewards</h3>
+                <p className="text-muted-foreground mb-4">
+                  Earn CS tokens for contributions with our 80/20 reward split. Real blockchain rewards on Solana devnet.
+                </p>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/tokens">View Tokens</Link>
+                </Button>
+              </div>
+
+              <div className="bg-card p-8 rounded-lg border">
+                <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-2xl">🎨</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-3">NFT Creation</h3>
+                <p className="text-muted-foreground mb-4">
+                  Create and mint real NFTs on Solana. Achievement badges and custom collections for your projects.
+                </p>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/nfts">Explore NFTs</Link>
+                </Button>
+              </div>
+
+              <div className="bg-card p-8 rounded-lg border">
+                <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-2xl">💬</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-3">Real-time Chat</h3>
+                <p className="text-muted-foreground mb-4">
+                  WebSocket-powered collaboration rooms for seamless team communication and project coordination.
+                </p>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/projects">Join Projects</Link>
+                </Button>
+              </div>
+
+              <div className="bg-card p-8 rounded-lg border">
+                <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-2xl">🏛️</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-3">DAO Governance</h3>
+                <p className="text-muted-foreground mb-4">
+                  Participate in decentralized decision-making with transparent voting and proposal systems.
+                </p>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/dashboard">Join DAO</Link>
+                </Button>
+              </div>
+
+              <div className="bg-card p-8 rounded-lg border">
+                <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-2xl">🔗</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-3">Web3 Integration</h3>
+                <p className="text-muted-foreground mb-4">
+                  Native Solana wallet integration with real blockchain transactions and decentralized asset management.
+                </p>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/dashboard">Connect Wallet</Link>
+                </Button>
+              </div>
+            </AnimatedGroup>
+
+            <AnimatedGroup className="text-center mt-16">
+              <Button asChild size="lg">
+                <Link href="/dashboard">Get Started Today</Link>
+              </Button>
+            </AnimatedGroup>
           </div>
-
-          <div style={{
-            background: 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '20px',
-            padding: '30px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-              borderRadius: '15px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px auto',
-              fontSize: '24px'
-            }}>
-              💰
-            </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 15px 0' }}>
-              Automatic Rewards
-            </h3>
-            <p style={{ fontSize: '16px', opacity: 0.8, lineHeight: '1.6' }}>
-              Fair token and NFT distribution based on contributions. 80% to contributors, 20% to platform
-            </p>
-          </div>
-
-          <div style={{
-            background: 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '20px',
-            padding: '30px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-              borderRadius: '15px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px auto',
-              fontSize: '24px'
-            }}>
-              💬
-            </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 15px 0' }}>
-              Real-time Workrooms
-            </h3>
-            <p style={{ fontSize: '16px', opacity: 0.8, lineHeight: '1.6' }}>
-              Collaborate seamlessly with WebSocket-powered chat and project management tools
-            </p>
-          </div>
-
-          <div style={{
-            background: 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '20px',
-            padding: '30px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-              borderRadius: '15px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px auto',
-              fontSize: '24px'
-            }}>
-              🎨
-            </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 15px 0' }}>
-              NFT Achievements
-            </h3>
-            <p style={{ fontSize: '16px', opacity: 0.8, lineHeight: '1.6' }}>
-              Earn unique NFT badges for milestones and build a verifiable portfolio of achievements
-            </p>
-          </div>
-
-          <div style={{
-            background: 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '20px',
-            padding: '30px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              background: 'linear-gradient(135deg, #ec4899, #be185d)',
-              borderRadius: '15px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px auto',
-              fontSize: '24px'
-            }}>
-              🚀
-            </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 15px 0' }}>
-              Project Marketplace
-            </h3>
-            <p style={{ fontSize: '16px', opacity: 0.8, lineHeight: '1.6' }}>
-              Discover, join, or trade projects. Buy into successful initiatives with CS tokens
-            </p>
-          </div>
-
-          <div style={{
-            background: 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '20px',
-            padding: '30px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
-              background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-              borderRadius: '15px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px auto',
-              fontSize: '24px'
-            }}>
-              📱
-            </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 15px 0' }}>
-              Event Integration
-            </h3>
-            <p style={{ fontSize: '16px', opacity: 0.8, lineHeight: '1.6' }}>
-              QR check-ins at events automatically reward attendance and connect participants
-            </p>
-          </div>
-        </div>
-
-        <div style={{
-          background: 'rgba(255,255,255,0.02)',
-          padding: '60px 40px',
-          borderRadius: '20px',
-          textAlign: 'center',
-          marginBottom: '60px'
-        }}>
-          <h2 style={{
-            fontSize: '32px',
-            fontWeight: '700',
-            margin: '0 0 20px 0',
-            background: 'linear-gradient(135deg, #22c55e, #3b82f6)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}>
-            Transforming the Global Economy
-          </h2>
-          <p style={{
-            fontSize: '18px',
-            opacity: 0.8,
-            maxWidth: '600px',
-            margin: '0 auto 40px auto',
-            lineHeight: '1.6'
-          }}>
-            By removing barriers and creating transparent value distribution, we're building 
-            the foundation for a more equitable and efficient global economy.
-          </p>
-          
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '30px',
-            marginTop: '40px'
-          }}>
-            <div>
-              <div style={{ fontSize: '36px', fontWeight: '800', color: '#22c55e', marginBottom: '10px' }}>
-                Zero
-              </div>
-              <div style={{ fontSize: '16px', opacity: 0.8 }}>
-                Barriers to Entry
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '36px', fontWeight: '800', color: '#3b82f6', marginBottom: '10px' }}>
-                100%
-              </div>
-              <div style={{ fontSize: '16px', opacity: 0.8 }}>
-                Transparent Distribution
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '36px', fontWeight: '800', color: '#a855f7', marginBottom: '10px' }}>
-                Infinite
-              </div>
-              <div style={{ fontSize: '16px', opacity: 0.8 }}>
-                Collaboration Possibilities
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '36px', fontWeight: '800', color: '#f59e0b', marginBottom: '10px' }}>
-                24/7
-              </div>
-              <div style={{ fontSize: '16px', opacity: 0.8 }}>
-                Global Accessibility
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 20px 0' }}>
-            Ready to Shape the Future?
-          </h2>
-          <p style={{
-            fontSize: '16px',
-            opacity: 0.8,
-            margin: '0 0 30px 0',
-            maxWidth: '500px',
-            marginLeft: 'auto',
-            marginRight: 'auto'
-          }}>
-            Join innovators who are transforming how we collaborate and create value together.
-          </p>
-          <button
-            onClick={() => router.push('/dashboard')}
-            style={{
-              background: 'linear-gradient(135deg, #a855f7, #3b82f6)',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '16px 32px',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: '600'
-            }}
-          >
-            Start Collaborating Now →
-          </button>
-        </div>
+        </section>
       </div>
-    </div>
-  );
+    </Layout>
+  )
 }
